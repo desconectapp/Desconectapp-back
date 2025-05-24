@@ -7,7 +7,7 @@ dev: sqlc
 	docker compose -f $(COMPOSE_FILE) up -d --build
 
 sqlc:
-	sqlc generate -f $(SQLC_CONFIG)
+	docker run --rm -v ./src:/src -w /src sqlc/sqlc generate -f /src/sqlc.yaml
 
 logs:
 	docker compose -f $(COMPOSE_FILE) logs -f $(MAIN_SERVICE)
