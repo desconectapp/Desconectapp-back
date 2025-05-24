@@ -35,14 +35,16 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 	return i, err
 }
 
-const deleteUser = `-- name: DeleteUser :exec
+const deleteUser = `-- name: DeleteUser :one
 DELETE FROM users
 WHERE id = $1
+RETURNING id
 `
 
-func (q *Queries) DeleteUser(ctx context.Context, id int32) error {
-	_, err := q.db.Exec(ctx, deleteUser, id)
-	return err
+func (q *Queries) DeleteUser(ctx context.Context, id int32) (int32, error) {
+	row := q.db.QueryRow(ctx, deleteUser, id)
+	err := row.Scan(&id)
+	return id, err
 }
 
 const getUser = `-- name: GetUser :one
@@ -92,11 +94,12 @@ func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
 	return items, nil
 }
 
-const updateUser = `-- name: UpdateUser :exec
+const updateUser = `-- name: UpdateUser :one
 UPDATE users
   set name = $2,
   email = $3
 WHERE id = $1
+RETURNING id
 `
 
 type UpdateUserParams struct {
@@ -105,7 +108,9 @@ type UpdateUserParams struct {
 	Email string
 }
 
-func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {
-	_, err := q.db.Exec(ctx, updateUser, arg.ID, arg.Name, arg.Email)
-	return err
+func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (int32, error) {
+	row := q.db.QueryRow(ctx, updateUser, arg.ID, arg.Name, arg.Email)
+	var id int32
+	err := row.Scan(&id)
+	return id, err
 }

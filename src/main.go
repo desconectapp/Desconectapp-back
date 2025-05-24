@@ -59,14 +59,16 @@ func setupRouter(conn repository.DBTX) *gin.Engine {
 			return
 		}
 
-		err = queries.DeleteUser(ctx, int32(stringId))
+		id, err := queries.DeleteUser(ctx, int32(stringId))
 		if err != nil {
 			log.Println(err)
 			c.String(http.StatusBadRequest, "Error deleting the user")
 			return
 		}
 
-		c.JSON(http.StatusOK, "User deleted")
+		c.JSON(http.StatusOK, gin.H{
+			"deleted": id,
+		})
 	})
 
 	r.PUT("/users/:userId", func(c *gin.Context) {
@@ -85,14 +87,16 @@ func setupRouter(conn repository.DBTX) *gin.Engine {
 
 		userParams.ID = int32(stringId)
 
-		err = queries.UpdateUser(ctx, userParams)
+		id, err := queries.UpdateUser(ctx, userParams)
 		if err != nil {
 			log.Println(err)
 			c.String(http.StatusBadRequest, "Error updating the user")
 			return
 		}
 
-		c.JSON(http.StatusOK, "User updated")
+		c.JSON(http.StatusOK, gin.H{
+			"updated": id,
+		})
 	})
 
 	return r
