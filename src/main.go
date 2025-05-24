@@ -3,14 +3,15 @@ package main
 import (
 	"context"
 	"fmt"
-	repository "gin/db/generated"
-
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
+
+	repository "gin/db/generated"
 )
 
 func setupRouter(conn repository.DBTX) *gin.Engine {
@@ -48,6 +49,50 @@ func setupRouter(conn repository.DBTX) *gin.Engine {
 		}
 
 		c.JSON(http.StatusOK, user)
+	})
+
+	r.DELETE("/users/:userId", func(c *gin.Context) {
+		userId := c.Param("userId")
+		stringId, err := strconv.Atoi(userId)
+		if err != nil {
+			c.String(http.StatusBadRequest, "userId must be an integer")
+			return
+		}
+
+		err = queries.DeleteUser(ctx, int32(stringId))
+		if err != nil {
+			log.Println(err)
+			c.String(http.StatusBadRequest, "Error deleting the user")
+			return
+		}
+
+		c.JSON(http.StatusOK, "User deleted")
+	})
+
+	r.PUT("/users/:userId", func(c *gin.Context) {
+		userId := c.Param("userId")
+		stringId, err := strconv.Atoi(userId)
+		if err != nil {
+			c.String(http.StatusBadRequest, "userId must be an integer")
+			return
+		}
+
+		var userParams repository.UpdateUserParams
+		if err := c.ShouldBind(&userParams); err != nil {
+			c.String(http.StatusBadRequest, err.Error())
+			return
+		}
+
+		userParams.ID = int32(stringId)
+
+		err = queries.UpdateUser(ctx, userParams)
+		if err != nil {
+			log.Println(err)
+			c.String(http.StatusBadRequest, "Error updating the user")
+			return
+		}
+
+		c.JSON(http.StatusOK, "User updated")
 	})
 
 	return r
