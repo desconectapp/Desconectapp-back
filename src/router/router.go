@@ -3,6 +3,7 @@ package router
 import (
 	"github.com/gin-gonic/gin"
 	controller "gin/controller"
+	"gin/middleware"
 )
 
 type Router struct {
@@ -14,6 +15,7 @@ type Router struct {
 func NewRouter() *Router {
 	controller := controller.NewController()
 	r := gin.Default()
+	r.Use(middleware.ErrorHandler())
 	return &Router{
 		controller: controller,
 		r:       r,

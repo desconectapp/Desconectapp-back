@@ -47,7 +47,7 @@ func (s *Service) CreateUser(userParams repository.CreateUserParams) (repository
 }
 
 func (s *Service) GetUser(userId int32) (repository.User, error) {
-	user, err := s.queries.GetUser(s.ctx, userId)
+	user, err := s.queries.GetUser(s. ctx, userId)
 	if err != nil {
 		return repository.User{}, err
 	}

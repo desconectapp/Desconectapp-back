@@ -101,7 +101,6 @@ func setupRouter(conn repository.DBTX) *gin.Engine {
 }
 
 func main() {
-
 	router := router.NewRouter()
 	router.SetupRoutes()
 	router.Run(":8080")
