@@ -2,16 +2,14 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5"
 
 	repository "gin/db/generated"
+	"gin/router"
 )
 
 func setupRouter(conn repository.DBTX) *gin.Engine {
@@ -103,15 +101,8 @@ func setupRouter(conn repository.DBTX) *gin.Engine {
 }
 
 func main() {
-	conn, err := pgx.Connect(context.Background(), os.Getenv("DATABASE_URL"))
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
-		os.Exit(1)
-	}
-	defer conn.Close(context.Background())
 
-	fmt.Fprintf(os.Stdout, "Connection to database established successfully\n")
-
-	r := setupRouter(conn)
-	r.Run(":8080")
+	router := router.NewRouter()
+	router.SetupRoutes()
+	router.Run(":8080")
 }
