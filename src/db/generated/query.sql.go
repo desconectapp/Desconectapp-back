@@ -19,8 +19,8 @@ RETURNING id, name, email, created_at
 `
 
 type CreateUserParams struct {
-	Name  string
-	Email string
+	Name  string `json:"name"`
+	Email string `json:"email"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
@@ -75,7 +75,7 @@ func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []User
+	items := []User{}
 	for rows.Next() {
 		var i User
 		if err := rows.Scan(
@@ -103,9 +103,9 @@ RETURNING id
 `
 
 type UpdateUserParams struct {
-	ID    int32
-	Name  string
-	Email string
+	ID    int32  `json:"id"`
+	Name  string `json:"name"`
+	Email string `json:"email"`
 }
 
 func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (int32, error) {
