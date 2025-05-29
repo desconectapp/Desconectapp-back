@@ -1,9 +1,14 @@
 package router
 
 import (
-	"github.com/gin-gonic/gin"
+	"context"
+	"fmt"
 	controller "gin/controller"
 	"gin/middleware"
+	"os"
+
+	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5"
 )
 
 type Router struct {
@@ -13,7 +18,14 @@ type Router struct {
 
 
 func NewRouter() *Router {
-	controller := controller.NewController()
+	conn, err := pgx.Connect(context.Background(), os.Getenv("DATABASE_URL"))
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
+		os.Exit(1)
+	}
+	// defer conn.Close(context.Background()) 
+
+	controller := controller.NewController(conn)
 	r := gin.Default()
 	r.Use(middleware.ErrorHandler())
 	return &Router{

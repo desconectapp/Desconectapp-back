@@ -3,8 +3,10 @@ package controller
 import (
 	"gin/service"
 	"net/http"
-	"github.com/gin-gonic/gin"
 	"strconv"
+
+	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5"
 
 	repository "gin/db/generated"
 )
@@ -13,8 +15,8 @@ type Controller struct {
 	service *service.Service
 }
 
-func NewController() *Controller {
-	service := service.NewService()
+func NewController(conn *pgx.Conn) *Controller {
+	service := service.NewService(conn)
 	return &Controller{
 		service: service,
 	}

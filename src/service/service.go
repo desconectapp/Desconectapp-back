@@ -4,8 +4,6 @@ import (
 	repository "gin/db/generated"
 	"context"
 	"github.com/jackc/pgx/v5"
-	"fmt"
-	"os"
 )
 
 type Service struct {
@@ -13,14 +11,7 @@ type Service struct {
 	ctx    context.Context
 }
 
-func NewService() *Service {
-	conn, err := pgx.Connect(context.Background(), os.Getenv("DATABASE_URL"))
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
-		os.Exit(1)
-	}
-	defer conn.Close(context.Background())
-
+func NewService(conn *pgx.Conn) *Service {
 	queries := repository.New(conn)
 	ctx := context.Background()
 
