@@ -5,8 +5,72 @@
 package repository
 
 import (
+	"database/sql/driver"
+	"fmt"
+
 	"github.com/jackc/pgx/v5/pgtype"
 )
+
+type DayOption string
+
+const (
+	DayOptionEVERYDAY  DayOption = "EVERYDAY"
+	DayOptionWEEKDAYS  DayOption = "WEEKDAYS"
+	DayOptionWEEKEND   DayOption = "WEEKEND"
+	DayOptionMONDAY    DayOption = "MONDAY"
+	DayOptionTUESDAY   DayOption = "TUESDAY"
+	DayOptionWEDNESDAY DayOption = "WEDNESDAY"
+	DayOptionTHURSDAY  DayOption = "THURSDAY"
+	DayOptionFRIDAY    DayOption = "FRIDAY"
+	DayOptionSATURDAY  DayOption = "SATURDAY"
+	DayOptionSUNDAY    DayOption = "SUNDAY"
+)
+
+func (e *DayOption) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = DayOption(s)
+	case string:
+		*e = DayOption(s)
+	default:
+		return fmt.Errorf("unsupported scan type for DayOption: %T", src)
+	}
+	return nil
+}
+
+type NullDayOption struct {
+	DayOption DayOption `json:"day_option"`
+	Valid     bool      `json:"valid"` // Valid is true if DayOption is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullDayOption) Scan(value interface{}) error {
+	if value == nil {
+		ns.DayOption, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.DayOption.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullDayOption) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.DayOption), nil
+}
+
+type ActivityRequest struct {
+	ID                 int32            `json:"id"`
+	UserID             *int32           `json:"user_id"`
+	Activity           string           `json:"activity"`
+	Description        *string          `json:"description"`
+	DayOfWeek          DayOption        `json:"day_of_week"`
+	ParticipantsNeeded *int32           `json:"participants_needed"`
+	CreatedAt          pgtype.Timestamp `json:"created_at"`
+	ExpiresAt          pgtype.Timestamp `json:"expires_at"`
+}
 
 type User struct {
 	ID        int32            `json:"id"`

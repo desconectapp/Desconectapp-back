@@ -12,10 +12,10 @@ import (
 )
 
 type Router struct {
-	controller *controller.Controller
-	r *gin.Engine
+	controller           *controller.Controller
+	activitiesController *controller.ActivitiesController
+	r                    *gin.Engine
 }
-
 
 func NewRouter() *Router {
 	conn, err := pgx.Connect(context.Background(), os.Getenv("DATABASE_URL"))
@@ -23,14 +23,17 @@ func NewRouter() *Router {
 		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
 		os.Exit(1)
 	}
-	// defer conn.Close(context.Background()) 
+	// defer conn.Close(context.Background())
 
-	controller := controller.NewController(conn)
+	c := controller.NewController(conn)
+	activitiesController := controller.NewActivitesController(conn)
+
 	r := gin.Default()
 	r.Use(middleware.ErrorHandler())
 	return &Router{
-		controller: controller,
-		r:       r,
+		controller:           c,
+		activitiesController: activitiesController,
+		r:                    r,
 	}
 }
 
@@ -39,12 +42,18 @@ func (router *Router) Run(port string) {
 }
 
 func (router *Router) SetupRoutes() {
-	users := router.r.Group("/users") 
+	users := router.r.Group("/users")
 	{
 		users.GET("", router.controller.ListUsers)
 		users.POST("", router.controller.CreateUser)
 		users.DELETE("/:userId", router.controller.DeleteUser)
 		users.GET("/:userId", router.controller.GetUser)
 		users.PUT("/:userId", router.controller.UpdateUser)
+	}
+
+	activities := router.r.Group("/activities")
+	{
+		activities.GET("", router.activitiesController.ListActivities)
+		activities.POST("", router.activitiesController.CreateActivity)
 	}
 }

@@ -25,3 +25,18 @@ RETURNING id;
 DELETE FROM users
 WHERE id = $1
 RETURNING id;
+
+-- name: CreateActivityRequest :one
+INSERT INTO activity_requests (
+  user_id, activity, description,
+  day_of_week, 
+  participants_needed
+) VALUES (
+  $1, $2, $3,
+  $4, $5
+)
+RETURNING *;
+
+-- name: ListActivityRequests :many
+SELECT * FROM activity_requests
+ORDER BY created_at DESC;

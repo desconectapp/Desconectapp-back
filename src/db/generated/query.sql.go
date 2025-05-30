@@ -9,6 +9,48 @@ import (
 	"context"
 )
 
+const createActivityRequest = `-- name: CreateActivityRequest :one
+INSERT INTO activity_requests (
+  user_id, activity, description,
+  day_of_week, 
+  participants_needed
+) VALUES (
+  $1, $2, $3,
+  $4, $5
+)
+RETURNING id, user_id, activity, description, day_of_week, participants_needed, created_at, expires_at
+`
+
+type CreateActivityRequestParams struct {
+	UserID             *int32    `json:"user_id"`
+	Activity           string    `json:"activity"`
+	Description        *string   `json:"description"`
+	DayOfWeek          DayOption `json:"day_of_week"`
+	ParticipantsNeeded *int32    `json:"participants_needed"`
+}
+
+func (q *Queries) CreateActivityRequest(ctx context.Context, arg CreateActivityRequestParams) (ActivityRequest, error) {
+	row := q.db.QueryRow(ctx, createActivityRequest,
+		arg.UserID,
+		arg.Activity,
+		arg.Description,
+		arg.DayOfWeek,
+		arg.ParticipantsNeeded,
+	)
+	var i ActivityRequest
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Activity,
+		&i.Description,
+		&i.DayOfWeek,
+		&i.ParticipantsNeeded,
+		&i.CreatedAt,
+		&i.ExpiresAt,
+	)
+	return i, err
+}
+
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (
   name, email
@@ -62,6 +104,40 @@ func (q *Queries) GetUser(ctx context.Context, id int32) (User, error) {
 		&i.CreatedAt,
 	)
 	return i, err
+}
+
+const listActivityRequests = `-- name: ListActivityRequests :many
+SELECT id, user_id, activity, description, day_of_week, participants_needed, created_at, expires_at FROM activity_requests
+ORDER BY created_at DESC
+`
+
+func (q *Queries) ListActivityRequests(ctx context.Context) ([]ActivityRequest, error) {
+	rows, err := q.db.Query(ctx, listActivityRequests)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ActivityRequest{}
+	for rows.Next() {
+		var i ActivityRequest
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.Activity,
+			&i.Description,
+			&i.DayOfWeek,
+			&i.ParticipantsNeeded,
+			&i.CreatedAt,
+			&i.ExpiresAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listUsers = `-- name: ListUsers :many
