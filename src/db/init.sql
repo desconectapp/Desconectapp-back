@@ -4,6 +4,7 @@ CREATE TABLE users (
     id SERIAL PRIMARY KEY,
     name TEXT NOT NULL,
     email TEXT UNIQUE NOT NULL,
+    password TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT now()
 );
 
@@ -29,3 +30,25 @@ CREATE TABLE activity_requests (
   created_at TIMESTAMP DEFAULT NOW(),
   expires_at TIMESTAMP DEFAULT (NOW() + INTERVAL '7 days')
 );
+
+CREATE TABLE sessions (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token TEXT NOT NULL UNIQUE,
+    refresh_token TEXT NOT NULL UNIQUE,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    refresh_expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_sessions_token ON sessions(token);
+
+CREATE INDEX idx_sessions_user_id ON sessions(user_id);
+
+CREATE OR REPLACE FUNCTION cleanup_expired_sessions()
+RETURNS void AS $$
+BEGIN
+    DELETE FROM sessions WHERE expires_at < CURRENT_TIMESTAMP;
+END;
+$$ LANGUAGE plpgsql; 

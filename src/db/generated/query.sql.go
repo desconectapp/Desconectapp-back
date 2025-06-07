@@ -57,7 +57,7 @@ INSERT INTO users (
 ) VALUES (
   $1, $2
 )
-RETURNING id, name, email, created_at
+RETURNING id, name, email, password, created_at
 `
 
 type CreateUserParams struct {
@@ -72,6 +72,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.ID,
 		&i.Name,
 		&i.Email,
+		&i.Password,
 		&i.CreatedAt,
 	)
 	return i, err
@@ -90,7 +91,7 @@ func (q *Queries) DeleteUser(ctx context.Context, id int32) (int32, error) {
 }
 
 const getUser = `-- name: GetUser :one
-SELECT id, name, email, created_at FROM users
+SELECT id, name, email, password, created_at FROM users
 WHERE id = $1 LIMIT 1
 `
 
@@ -101,6 +102,7 @@ func (q *Queries) GetUser(ctx context.Context, id int32) (User, error) {
 		&i.ID,
 		&i.Name,
 		&i.Email,
+		&i.Password,
 		&i.CreatedAt,
 	)
 	return i, err
@@ -141,7 +143,7 @@ func (q *Queries) ListActivityRequests(ctx context.Context) ([]ActivityRequest, 
 }
 
 const listUsers = `-- name: ListUsers :many
-SELECT id, name, email, created_at FROM users
+SELECT id, name, email, password, created_at FROM users
 ORDER BY name
 `
 
@@ -158,6 +160,7 @@ func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
 			&i.ID,
 			&i.Name,
 			&i.Email,
+			&i.Password,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err
