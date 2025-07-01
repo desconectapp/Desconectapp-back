@@ -11,6 +11,53 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Categories string
+
+const (
+	CategoriesSPORT    Categories = "SPORT"
+	CategoriesCREATIVE Categories = "CREATIVE"
+	CategoriesOUTDOOR  Categories = "OUTDOOR"
+	CategoriesINDOOR   Categories = "INDOOR"
+	CategoriesGAME     Categories = "GAME"
+	CategoriesSOCIAL   Categories = "SOCIAL"
+	CategoriesWELLNESS Categories = "WELLNESS"
+)
+
+func (e *Categories) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = Categories(s)
+	case string:
+		*e = Categories(s)
+	default:
+		return fmt.Errorf("unsupported scan type for Categories: %T", src)
+	}
+	return nil
+}
+
+type NullCategories struct {
+	Categories Categories `json:"categories"`
+	Valid      bool       `json:"valid"` // Valid is true if Categories is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullCategories) Scan(value interface{}) error {
+	if value == nil {
+		ns.Categories, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.Categories.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullCategories) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.Categories), nil
+}
+
 type DayOption string
 
 const (
@@ -61,10 +108,18 @@ func (ns NullDayOption) Value() (driver.Value, error) {
 	return string(ns.DayOption), nil
 }
 
+type Activity struct {
+	ID        int32              `json:"id"`
+	Name      string             `json:"name"`
+	Emoji     *string            `json:"emoji"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+	Category  Categories         `json:"category"`
+}
+
 type ActivityRequest struct {
 	ID                 int32            `json:"id"`
 	UserID             *int32           `json:"user_id"`
-	Activity           string           `json:"activity"`
+	ActivityID         *int32           `json:"activity_id"`
 	Description        *string          `json:"description"`
 	DayOfWeek          DayOption        `json:"day_of_week"`
 	ParticipantsNeeded *int32           `json:"participants_needed"`

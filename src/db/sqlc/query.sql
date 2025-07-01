@@ -28,7 +28,7 @@ RETURNING id;
 
 -- name: CreateActivityRequest :one
 INSERT INTO activity_requests (
-  user_id, activity, description,
+  user_id, activity_id, description,
   day_of_week, 
   participants_needed
 ) VALUES (

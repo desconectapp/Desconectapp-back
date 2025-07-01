@@ -81,7 +81,7 @@ func (router *Router) SetupRoutes() {
 	activities := router.r.Group("/activities")
 	activities.Use(router.authController.AuthMiddleware())
 	{
-		activities.GET("", router.activitiesController.ListActivities)
-		activities.POST("", router.activitiesController.CreateActivity)
+		activities.GET("", router.activitiesController.ListActivitiesRequests)
+		activities.POST("", router.activitiesController.CreateActivityRequest)
 	}
 }

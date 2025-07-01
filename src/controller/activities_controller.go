@@ -10,18 +10,18 @@ import (
 )
 
 type ActivitiesController struct {
-	service *service.ActivitiesService
+	service *service.ActivitiesRequestService
 }
 
 func NewActivitesController(conn *pgx.Conn) *ActivitiesController {
-	service := service.NewActivitiesService(conn)
+	service := service.NewActivitiesRequestService(conn)
 	return &ActivitiesController{
 		service: service,
 	}
 }
 
-func (c *ActivitiesController) ListActivities(ctx *gin.Context) {
-	activities, err := c.service.ListActivities()
+func (c *ActivitiesController) ListActivitiesRequests(ctx *gin.Context) {
+	activities, err := c.service.ListActivitiesRequests()
 	if err != nil {
 		ctx.Error(gin.Error{
 			Err:  err,
@@ -31,7 +31,7 @@ func (c *ActivitiesController) ListActivities(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, activities)
 }
 
-func (c *ActivitiesController) CreateActivity(ctx *gin.Context) {
+func (c *ActivitiesController) CreateActivityRequest(ctx *gin.Context) {
 	var activityParams repository.CreateActivityRequestParams
 	if err := ctx.ShouldBind(&activityParams); err != nil {
 		ctx.Error(gin.Error{
@@ -40,7 +40,7 @@ func (c *ActivitiesController) CreateActivity(ctx *gin.Context) {
 		return
 	}
 
-	activity, err := c.service.CreateActivity(activityParams)
+	activity, err := c.service.CreateActivityRequest(activityParams)
 	if err != nil {
 		ctx.Error(gin.Error{
 			Err:  err,

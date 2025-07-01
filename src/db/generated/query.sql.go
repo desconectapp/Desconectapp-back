@@ -11,19 +11,19 @@ import (
 
 const createActivityRequest = `-- name: CreateActivityRequest :one
 INSERT INTO activity_requests (
-  user_id, activity, description,
+  user_id, activity_id, description,
   day_of_week, 
   participants_needed
 ) VALUES (
   $1, $2, $3,
   $4, $5
 )
-RETURNING id, user_id, activity, description, day_of_week, participants_needed, created_at, expires_at
+RETURNING id, user_id, activity_id, description, day_of_week, participants_needed, created_at, expires_at
 `
 
 type CreateActivityRequestParams struct {
 	UserID             *int32    `json:"user_id"`
-	Activity           string    `json:"activity"`
+	ActivityID         *int32    `json:"activity_id"`
 	Description        *string   `json:"description"`
 	DayOfWeek          DayOption `json:"day_of_week"`
 	ParticipantsNeeded *int32    `json:"participants_needed"`
@@ -32,7 +32,7 @@ type CreateActivityRequestParams struct {
 func (q *Queries) CreateActivityRequest(ctx context.Context, arg CreateActivityRequestParams) (ActivityRequest, error) {
 	row := q.db.QueryRow(ctx, createActivityRequest,
 		arg.UserID,
-		arg.Activity,
+		arg.ActivityID,
 		arg.Description,
 		arg.DayOfWeek,
 		arg.ParticipantsNeeded,
@@ -41,7 +41,7 @@ func (q *Queries) CreateActivityRequest(ctx context.Context, arg CreateActivityR
 	err := row.Scan(
 		&i.ID,
 		&i.UserID,
-		&i.Activity,
+		&i.ActivityID,
 		&i.Description,
 		&i.DayOfWeek,
 		&i.ParticipantsNeeded,
@@ -109,7 +109,7 @@ func (q *Queries) GetUser(ctx context.Context, id int32) (User, error) {
 }
 
 const listActivityRequests = `-- name: ListActivityRequests :many
-SELECT id, user_id, activity, description, day_of_week, participants_needed, created_at, expires_at FROM activity_requests
+SELECT id, user_id, activity_id, description, day_of_week, participants_needed, created_at, expires_at FROM activity_requests
 ORDER BY created_at DESC
 `
 
@@ -125,7 +125,7 @@ func (q *Queries) ListActivityRequests(ctx context.Context) ([]ActivityRequest, 
 		if err := rows.Scan(
 			&i.ID,
 			&i.UserID,
-			&i.Activity,
+			&i.ActivityID,
 			&i.Description,
 			&i.DayOfWeek,
 			&i.ParticipantsNeeded,

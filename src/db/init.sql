@@ -15,12 +15,28 @@ CREATE TYPE day_option AS ENUM (
   'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'
 );
 
+DROP TYPE IF EXISTS categories;
+
+CREATE TYPE categories as ENUM (
+  'SPORT', 'CREATIVE', 'OUTDOOR', 'INDOOR', 'GAME', 'SOCIAL', 'WELLNESS'
+);
+
+DROP TABLE IF EXISTS activities;
+
+CREATE TABLE activities(
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL,
+  emoji TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  category categories NOT NULL DEFAULT 'SOCIAL'
+);
+
 DROP TABLE IF EXISTS activity_requests;
 
 CREATE TABLE activity_requests (
   id SERIAL PRIMARY KEY,
   user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-  activity TEXT NOT NULL,
+  activity_id INTEGER REFERENCES activities(id) ON DELETE CASCADE,
   description TEXT,
 
   day_of_week day_option NOT NULL DEFAULT 'EVERYDAY',
@@ -45,6 +61,7 @@ CREATE TABLE sessions (
 CREATE INDEX idx_sessions_token ON sessions(token);
 
 CREATE INDEX idx_sessions_user_id ON sessions(user_id);
+
 
 CREATE OR REPLACE FUNCTION cleanup_expired_sessions()
 RETURNS void AS $$

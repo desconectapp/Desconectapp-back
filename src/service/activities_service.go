@@ -6,22 +6,22 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-type ActivitiesService struct {
+type ActivitiesRequestService struct {
 	queries *repository.Queries
 	ctx     context.Context
 }
 
-func NewActivitiesService(conn *pgx.Conn) *ActivitiesService {
+func NewActivitiesRequestService(conn *pgx.Conn) *ActivitiesRequestService {
 	queries := repository.New(conn)
 	ctx := context.Background()
 
-	return &ActivitiesService{
+	return &ActivitiesRequestService{
 		queries: queries,
 		ctx:     ctx,
 	}
 }
 
-func (s *ActivitiesService) ListActivities() ([]repository.ActivityRequest, error) {
+func (s *ActivitiesRequestService) ListActivitiesRequests() ([]repository.ActivityRequest, error) {
 	activities, err := s.queries.ListActivityRequests(s.ctx)
 	if err != nil {
 		return nil, err
@@ -29,7 +29,7 @@ func (s *ActivitiesService) ListActivities() ([]repository.ActivityRequest, erro
 	return activities, nil
 }
 
-func (s *ActivitiesService) CreateActivity(params repository.CreateActivityRequestParams) (repository.ActivityRequest, error) {
+func (s *ActivitiesRequestService) CreateActivityRequest(params repository.CreateActivityRequestParams) (repository.ActivityRequest, error) {
 	activity, err := s.queries.CreateActivityRequest(s.ctx, params)
 	if err != nil {
 		return repository.ActivityRequest{}, err
