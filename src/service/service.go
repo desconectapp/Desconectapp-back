@@ -21,8 +21,8 @@ func NewService(conn *pgx.Conn) *Service {
 	}
 }
 
-func (s *Service) ListUsers() ([]repository.User, error) {
-	users, err := s.queries.ListUsers(s.ctx)
+func (s *Service) ListUsers(params repository.ListUsersParams) ([]repository.User, error) {
+	users, err := s.queries.ListUsers(s.ctx, params)
 	if err != nil {
 		return nil, err
 	}

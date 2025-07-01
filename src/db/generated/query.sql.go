@@ -9,6 +9,17 @@ import (
 	"context"
 )
 
+const copyActivities = `-- name: CopyActivities :exec
+COPY activities(name, emoji, category)
+FROM '/db/files/activities.csv'
+WITH (FORMAT csv, HEADER true)
+`
+
+func (q *Queries) CopyActivities(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, copyActivities)
+	return err
+}
+
 const createActivityRequest = `-- name: CreateActivityRequest :one
 INSERT INTO activity_requests (
   user_id, activity_id, description,
@@ -90,6 +101,43 @@ func (q *Queries) DeleteUser(ctx context.Context, id int32) (int32, error) {
 	return id, err
 }
 
+const getActivities = `-- name: GetActivities :many
+SELECT id, name, emoji, created_at, category FROM activities
+ORDER BY category, created_at DESC
+LIMIT $1 OFFSET $2
+`
+
+type GetActivitiesParams struct {
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+}
+
+func (q *Queries) GetActivities(ctx context.Context, arg GetActivitiesParams) ([]Activity, error) {
+	rows, err := q.db.Query(ctx, getActivities, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Activity{}
+	for rows.Next() {
+		var i Activity
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Emoji,
+			&i.CreatedAt,
+			&i.Category,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getUser = `-- name: GetUser :one
 SELECT id, name, email, password, created_at FROM users
 WHERE id = $1 LIMIT 1
@@ -111,10 +159,16 @@ func (q *Queries) GetUser(ctx context.Context, id int32) (User, error) {
 const listActivityRequests = `-- name: ListActivityRequests :many
 SELECT id, user_id, activity_id, description, day_of_week, participants_needed, created_at, expires_at FROM activity_requests
 ORDER BY created_at DESC
+LIMIT $1 OFFSET $2
 `
 
-func (q *Queries) ListActivityRequests(ctx context.Context) ([]ActivityRequest, error) {
-	rows, err := q.db.Query(ctx, listActivityRequests)
+type ListActivityRequestsParams struct {
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+}
+
+func (q *Queries) ListActivityRequests(ctx context.Context, arg ListActivityRequestsParams) ([]ActivityRequest, error) {
+	rows, err := q.db.Query(ctx, listActivityRequests, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -145,10 +199,16 @@ func (q *Queries) ListActivityRequests(ctx context.Context) ([]ActivityRequest, 
 const listUsers = `-- name: ListUsers :many
 SELECT id, name, email, password, created_at FROM users
 ORDER BY name
+LIMIT $1 OFFSET $2
 `
 
-func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
-	rows, err := q.db.Query(ctx, listUsers)
+type ListUsersParams struct {
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+}
+
+func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]User, error) {
+	rows, err := q.db.Query(ctx, listUsers, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}

@@ -21,8 +21,8 @@ func NewActivitiesRequestService(conn *pgx.Conn) *ActivitiesRequestService {
 	}
 }
 
-func (s *ActivitiesRequestService) ListActivitiesRequests() ([]repository.ActivityRequest, error) {
-	activities, err := s.queries.ListActivityRequests(s.ctx)
+func (s *ActivitiesRequestService) ListActivitiesRequests(params repository.ListActivityRequestsParams) ([]repository.ActivityRequest, error) {
+	activities, err := s.queries.ListActivityRequests(s.ctx, params)
 	if err != nil {
 		return nil, err
 	}
@@ -35,4 +35,13 @@ func (s *ActivitiesRequestService) CreateActivityRequest(params repository.Creat
 		return repository.ActivityRequest{}, err
 	}
 	return activity, nil
+}
+
+func (s *ActivitiesRequestService) GetActivities(params repository.GetActivitiesParams) ([]repository.Activity, error) {
+	activities, err := s.queries.GetActivities(s.ctx, params)
+
+	if err != nil {
+		return nil, err
+	}
+	return activities, nil
 }

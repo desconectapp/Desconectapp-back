@@ -4,7 +4,6 @@ sql:
     queries:
       - "./db/sqlc/query.sql"
       - "./db/sqlc/sessions.sql"
-      - "./db/sqlc/activities.sql"
     schema: "./db/init.sql"
     gen:
       go:

@@ -21,7 +21,17 @@ func NewActivitesController(conn *pgx.Conn) *ActivitiesController {
 }
 
 func (c *ActivitiesController) ListActivitiesRequests(ctx *gin.Context) {
-	activities, err := c.service.ListActivitiesRequests()
+	var activityParams repository.ListActivityRequestsParams
+
+	if err := ctx.ShouldBind(&activityParams); err != nil {
+		ctx.Error(gin.Error{
+			Err:  err,
+			Type: gin.ErrorTypePublic})
+		return
+	}
+
+	activities, err := c.service.ListActivitiesRequests(activityParams)
+	
 	if err != nil {
 		ctx.Error(gin.Error{
 			Err:  err,
@@ -49,4 +59,26 @@ func (c *ActivitiesController) CreateActivityRequest(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, activity)
+}
+
+func (c *ActivitiesController) GetActivities(ctx *gin.Context) {
+	var activityParams repository.GetActivitiesParams
+
+	if err := ctx.ShouldBind(&activityParams); err != nil {
+		ctx.Error(gin.Error{
+			Err:  err,
+			Type: gin.ErrorTypePublic})
+		return
+	}
+
+	activities, err := c.service.GetActivities(activityParams)
+	if err != nil {
+		ctx.Error(gin.Error{
+			Err:  err,
+			Type: gin.ErrorTypePublic})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, activities)
+
 }

@@ -83,5 +83,6 @@ func (router *Router) SetupRoutes() {
 	{
 		activities.GET("", router.activitiesController.ListActivitiesRequests)
 		activities.POST("", router.activitiesController.CreateActivityRequest)
+		activities.GET("/plain", router.activitiesController.GetActivities)
 	}
 }
