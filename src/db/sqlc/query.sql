@@ -45,7 +45,7 @@ LIMIT $1 OFFSET $2;
 
 -- name: GetActivities :many
 SELECT * FROM activities
-ORDER BY category, created_at DESC
+ORDER BY category, id DESC
 LIMIT $1 OFFSET $2;
 
 -- name: GetUserPreferences :many

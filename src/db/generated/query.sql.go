@@ -145,7 +145,7 @@ func (q *Queries) DeleteUser(ctx context.Context, id int32) (int32, error) {
 
 const getActivities = `-- name: GetActivities :many
 SELECT id, name, emoji, created_at, category FROM activities
-ORDER BY category, created_at DESC
+ORDER BY category, id DESC
 LIMIT $1 OFFSET $2
 `
 
