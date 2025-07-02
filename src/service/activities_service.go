@@ -43,5 +43,6 @@ func (s *ActivitiesRequestService) GetActivities(params repository.GetActivities
 	if err != nil {
 		return nil, err
 	}
+
 	return activities, nil
 }

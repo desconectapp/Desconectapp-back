@@ -58,6 +58,54 @@ func (ns NullCategories) Value() (driver.Value, error) {
 	return string(ns.Categories), nil
 }
 
+type CurrentSituationOptions string
+
+const (
+	CurrentSituationOptionsWORKINGFULLTIME CurrentSituationOptions = "WORKING FULLTIME"
+	CurrentSituationOptionsWORKINGPARTIME  CurrentSituationOptions = "WORKING PARTIME"
+	CurrentSituationOptionsSTUDENT         CurrentSituationOptions = "STUDENT"
+	CurrentSituationOptionsSTAYATHOME      CurrentSituationOptions = "STAY AT HOME"
+	CurrentSituationOptionsENTREPRENEUR    CurrentSituationOptions = "ENTREPRENEUR"
+	CurrentSituationOptionsLOTSOFFREETIME  CurrentSituationOptions = "LOTS OF FREE TIME"
+	CurrentSituationOptionsLOOKINGFORWORK  CurrentSituationOptions = "LOOKING FOR WORK"
+	CurrentSituationOptionsOTHER           CurrentSituationOptions = "OTHER"
+)
+
+func (e *CurrentSituationOptions) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = CurrentSituationOptions(s)
+	case string:
+		*e = CurrentSituationOptions(s)
+	default:
+		return fmt.Errorf("unsupported scan type for CurrentSituationOptions: %T", src)
+	}
+	return nil
+}
+
+type NullCurrentSituationOptions struct {
+	CurrentSituationOptions CurrentSituationOptions `json:"current_situation_options"`
+	Valid                   bool                    `json:"valid"` // Valid is true if CurrentSituationOptions is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullCurrentSituationOptions) Scan(value interface{}) error {
+	if value == nil {
+		ns.CurrentSituationOptions, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.CurrentSituationOptions.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullCurrentSituationOptions) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.CurrentSituationOptions), nil
+}
+
 type DayOption string
 
 const (
@@ -139,9 +187,18 @@ type Session struct {
 }
 
 type User struct {
-	ID        int32            `json:"id"`
-	Name      string           `json:"name"`
-	Email     string           `json:"email"`
-	Password  string           `json:"password"`
-	CreatedAt pgtype.Timestamp `json:"created_at"`
+	ID               int32                   `json:"id"`
+	Name             string                  `json:"name"`
+	Email            string                  `json:"email"`
+	Password         string                  `json:"password"`
+	CreatedAt        pgtype.Timestamp        `json:"created_at"`
+	Age              int32                   `json:"age"`
+	City             string                  `json:"city"`
+	CurrentSituation CurrentSituationOptions `json:"current_situation"`
+	ProfileComplete  bool                    `json:"profile_complete"`
+}
+
+type UsersPreference struct {
+	UserID     int32 `json:"user_id"`
+	ActivityID int32 `json:"activity_id"`
 }

@@ -26,12 +26,10 @@ func NewController(conn *pgx.Conn) *Controller {
 func (c *Controller) ListUsers(ctx *gin.Context) {
 	var userParams repository.ListUsersParams
 
-	if err := ctx.ShouldBind(&userParams); err != nil {
-		ctx.Error(gin.Error{
-			Err:  err,
-			Type: gin.ErrorTypePublic,})
-		return
-	}
+	limit, offset := GetLimmitAndOffset(ctx)
+
+	userParams.Limit = int32(limit)
+	userParams.Offset = int32(offset)
 
 	users, err := c.service.ListUsers(userParams)
 	if err != nil {

@@ -9,14 +9,37 @@ import (
 	"context"
 )
 
-const copyActivities = `-- name: CopyActivities :exec
-COPY activities(name, emoji, category)
-FROM '/db/files/activities.csv'
-WITH (FORMAT csv, HEADER true)
+const addPreference = `-- name: AddPreference :exec
+INSERT INTO users_preference (
+  user_id, activity_id
+) VALUES (
+  $1, $2
+)
 `
 
-func (q *Queries) CopyActivities(ctx context.Context) error {
-	_, err := q.db.Exec(ctx, copyActivities)
+type AddPreferenceParams struct {
+	UserID     int32 `json:"user_id"`
+	ActivityID int32 `json:"activity_id"`
+}
+
+func (q *Queries) AddPreference(ctx context.Context, arg AddPreferenceParams) error {
+	_, err := q.db.Exec(ctx, addPreference, arg.UserID, arg.ActivityID)
+	return err
+}
+
+const batchAddPreferences = `-- name: BatchAddPreferences :exec
+INSERT INTO users_preference (user_id, activity_id)
+SELECT $1, id FROM activities WHERE id = ANY($2)
+ON CONFLICT DO NOTHING
+`
+
+type BatchAddPreferencesParams struct {
+	UserID int32 `json:"user_id"`
+	ID     int32 `json:"id"`
+}
+
+func (q *Queries) BatchAddPreferences(ctx context.Context, arg BatchAddPreferencesParams) error {
+	_, err := q.db.Exec(ctx, batchAddPreferences, arg.UserID, arg.ID)
 	return err
 }
 
@@ -68,7 +91,7 @@ INSERT INTO users (
 ) VALUES (
   $1, $2
 )
-RETURNING id, name, email, password, created_at
+RETURNING id, name, email, password, created_at, age, city, current_situation, profile_complete
 `
 
 type CreateUserParams struct {
@@ -85,8 +108,27 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.Email,
 		&i.Password,
 		&i.CreatedAt,
+		&i.Age,
+		&i.City,
+		&i.CurrentSituation,
+		&i.ProfileComplete,
 	)
 	return i, err
+}
+
+const deletePreference = `-- name: DeletePreference :exec
+DELETE FROM users_preference
+WHERE user_id = $1 AND activity_id = $2
+`
+
+type DeletePreferenceParams struct {
+	UserID     int32 `json:"user_id"`
+	ActivityID int32 `json:"activity_id"`
+}
+
+func (q *Queries) DeletePreference(ctx context.Context, arg DeletePreferenceParams) error {
+	_, err := q.db.Exec(ctx, deletePreference, arg.UserID, arg.ActivityID)
+	return err
 }
 
 const deleteUser = `-- name: DeleteUser :one
@@ -139,7 +181,7 @@ func (q *Queries) GetActivities(ctx context.Context, arg GetActivitiesParams) ([
 }
 
 const getUser = `-- name: GetUser :one
-SELECT id, name, email, password, created_at FROM users
+SELECT id, name, email, password, created_at, age, city, current_situation, profile_complete FROM users
 WHERE id = $1 LIMIT 1
 `
 
@@ -152,8 +194,50 @@ func (q *Queries) GetUser(ctx context.Context, id int32) (User, error) {
 		&i.Email,
 		&i.Password,
 		&i.CreatedAt,
+		&i.Age,
+		&i.City,
+		&i.CurrentSituation,
+		&i.ProfileComplete,
 	)
 	return i, err
+}
+
+const getUserPreferences = `-- name: GetUserPreferences :many
+SELECT a.id, a.name FROM activities a
+JOIN users_preference up ON a.id = up.activity_id
+WHERE up.user_id = $1
+LIMIT $2 OFFSET $3
+`
+
+type GetUserPreferencesParams struct {
+	UserID int32 `json:"user_id"`
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+}
+
+type GetUserPreferencesRow struct {
+	ID   int32  `json:"id"`
+	Name string `json:"name"`
+}
+
+func (q *Queries) GetUserPreferences(ctx context.Context, arg GetUserPreferencesParams) ([]GetUserPreferencesRow, error) {
+	rows, err := q.db.Query(ctx, getUserPreferences, arg.UserID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetUserPreferencesRow{}
+	for rows.Next() {
+		var i GetUserPreferencesRow
+		if err := rows.Scan(&i.ID, &i.Name); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listActivityRequests = `-- name: ListActivityRequests :many
@@ -197,7 +281,7 @@ func (q *Queries) ListActivityRequests(ctx context.Context, arg ListActivityRequ
 }
 
 const listUsers = `-- name: ListUsers :many
-SELECT id, name, email, password, created_at FROM users
+SELECT id, name, email, password, created_at, age, city, current_situation, profile_complete FROM users
 ORDER BY name
 LIMIT $1 OFFSET $2
 `
@@ -222,6 +306,10 @@ func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]User, e
 			&i.Email,
 			&i.Password,
 			&i.CreatedAt,
+			&i.Age,
+			&i.City,
+			&i.CurrentSituation,
+			&i.ProfileComplete,
 		); err != nil {
 			return nil, err
 		}

@@ -19,6 +19,7 @@ type Router struct {
 	controller           *controller.Controller
 	activitiesController *controller.ActivitiesController
 	authController       *controller.AuthController
+	preferencesController *controller.PreferencesController
 	r                    *gin.Engine
 }
 
@@ -37,6 +38,8 @@ func NewRouter() *Router {
 	authService := service.NewAuthService(conn)
 	authController := controller.NewAuthController(authService)
 
+	preferencesController := controller.NewPreferencesController(conn)
+
 	r := gin.Default()
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"*"},
@@ -51,7 +54,9 @@ func NewRouter() *Router {
 		controller:           c,
 		activitiesController: activitiesController,
 		authController:       authController,
+		preferencesController: preferencesController,
 		r:                    r,
+
 	}
 }
 
@@ -79,10 +84,17 @@ func (router *Router) SetupRoutes() {
 	}
 
 	activities := router.r.Group("/activities")
-	activities.Use(router.authController.AuthMiddleware())
+	// activities.Use(router.authController.AuthMiddleware())
 	{
-		activities.GET("", router.activitiesController.ListActivitiesRequests)
-		activities.POST("", router.activitiesController.CreateActivityRequest)
-		activities.GET("/plain", router.activitiesController.GetActivities)
+		activities.GET("/request", router.activitiesController.ListActivitiesRequests)
+		activities.POST("/request", router.activitiesController.CreateActivityRequest)
+		activities.GET("", router.activitiesController.GetActivities)
+	}
+
+	preferences := router.r.Group("/preferences")
+	// preferences.Use(router.authController.AuthMiddleware())
+
+	{
+		preferences.GET("/:userId", router.preferencesController.GetUserPreferences)
 	}
 }
