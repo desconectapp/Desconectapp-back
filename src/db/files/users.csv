@@ -1,0 +1,12 @@
+name,email,password,age,city,current_situation,profile_complete
+Juan Pérez,juan@example.com,password123,20,Buenos Aires,STUDENT,true
+Juana díaz,juana@example.com,password123,19,Buenos Aires,STUDENT,true
+Sofia Pérez,sofii@example.com,password123,20,Buenos Aires,STUDENT,true
+Maximo díaz,maxi@example.com,password123,19,Buenos Aires,STUDENT,true
+Supremo Pérez,supre@example.com,password123,20,Buenos Aires,STUDENT,true
+Anita díaz,anita@example.com,password123,19,Buenos Aires,STUDENT,true
+Luciano Lorenzo,llorenzo@example.com,password123,23,Buenos Aires,WORKING,true
+Martina Lozano,martina@example.com,password123,23,Buenos Aires,WORKING,true
+Valen Scheider,valen@example.com,password123,23,Buenos Aires,UNEMPLOYED,true 
+Marco Natalini, marco@example.com, password123,23, Buenos Aires, WORKING,true 
+Pablo Cosso, pablo@example.com, password123,72, Buenos Aires, UNEMPLOYED,true 

@@ -80,6 +80,18 @@ COPY activities(name, emoji, category)
 FROM '/activities.csv'
 WITH (FORMAT csv, HEADER true);
 
+COPY users(name, email, password, age, city, current_situation, profile_complete)
+FROM '/users.csv'
+WITH (FORMAT csv, HEADER true);
+
+COPY activity_requests(user_id, activity_id, description, day_of_week, participants_needed)
+FROM '/activity_requests.csv'
+WITH (FORMAT csv, HEADER true);
+
+COPY users_preference(user_id, activity_id)
+FROM '/users_preference.csv'
+WITH (FORMAT csv, HEADER true);
+
 
 CREATE OR REPLACE FUNCTION cleanup_expired_sessions()
 RETURNS void AS $$
