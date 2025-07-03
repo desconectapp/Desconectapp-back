@@ -37,13 +37,15 @@ func (c *PreferencesController) GetUserPreferences(ctx *gin.Context) {
 	userStr := ctx.Param("userId")
 
 	userId, err := strconv.Atoi(userStr)
+	
 	if err != nil {
-		limit = 10
+		ctx.Error(gin.Error{
+			Err:  err,
+			Type: gin.ErrorTypePublic})
+		return
 	}
 
 	preferencesParams.UserID = int32(userId)
-
-	log.Printf("UserID %d", userStr )
 
 	preferences, err := c.service.GetUserPreferences(preferencesParams)
 	if err != nil {
@@ -55,4 +57,73 @@ func (c *PreferencesController) GetUserPreferences(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, preferences)
 
+}
+
+func (c *PreferencesController) AddPreference(ctx *gin.Context) {
+	var addPreferenceParams repository.AddPreferenceParams
+
+	if err := ctx.ShouldBind(&addPreferenceParams); err != nil {
+		ctx.Error(gin.Error{
+			Err:  err,
+			Type: gin.ErrorTypePublic})
+		return
+	}
+
+	userStr := ctx.Param("userId")
+	userId, err := strconv.Atoi(userStr)
+
+	if err != nil {
+		ctx.Error(gin.Error{
+			Err:  err,
+			Type: gin.ErrorTypePublic})
+		return
+	}
+
+	addPreferenceParams.UserID = int32(userId)
+
+	err = c.service.AddPreference(addPreferenceParams)
+
+	if err != nil {
+		ctx.Error(gin.Error{
+			Err:  err,
+			Type: gin.ErrorTypePublic})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{})
+	
+}
+
+func (c *PreferencesController) DeletePreference(ctx *gin.Context) {
+	var deletePreferenceParams repository.DeletePreferenceParams
+
+	if err := ctx.ShouldBind(&deletePreferenceParams); err != nil {
+		ctx.Error(gin.Error{
+			Err:  err,
+			Type: gin.ErrorTypePublic})
+		return
+	}
+
+	userStr := ctx.Param("userId")
+	userId, err := strconv.Atoi(userStr)
+
+	if err != nil {
+		ctx.Error(gin.Error{
+			Err:  err,
+			Type: gin.ErrorTypePublic})
+		return
+	}
+
+	deletePreferenceParams.UserID = int32(userId)
+
+	err = c.service.DeletePreference(deletePreferenceParams)
+
+	if err != nil {
+		ctx.Error(gin.Error{
+			Err:  err,
+			Type: gin.ErrorTypePublic})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{})
 }

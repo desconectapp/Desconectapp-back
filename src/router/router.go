@@ -96,5 +96,7 @@ func (router *Router) SetupRoutes() {
 
 	{
 		preferences.GET("/:userId", router.preferencesController.GetUserPreferences)
+		preferences.POST("/:userId", router.preferencesController.AddPreference)
+		preferences.DELETE("/:userId", router.preferencesController.DeletePreference)
 	}
 }
