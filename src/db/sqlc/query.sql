@@ -9,16 +9,20 @@ LIMIT $1 OFFSET $2;
 
 -- name: CreateUser :one
 INSERT INTO users (
-  name, email
+  name, email, password
 ) VALUES (
-  $1, $2
+  $1, $2, 'password'
 )
 RETURNING *;
 
 -- name: UpdateUser :one
 UPDATE users
   set name = $2,
-  email = $3
+  email = $3,
+  age = $4,
+  city = $5,
+  current_situation = $6,
+  profile_complete = true
 WHERE id = $1
 RETURNING id;
 
@@ -67,5 +71,7 @@ WHERE user_id = $1 AND activity_id = $2;
 
 -- name: BatchAddPreferences :exec
 INSERT INTO users_preference (user_id, activity_id)
-SELECT $1, id FROM activities WHERE id = ANY($2)
+SELECT sqlc.arg(user_id), id
+FROM activities
+WHERE id = ANY(sqlc.arg(activity_ids)::int[])
 ON CONFLICT DO NOTHING;

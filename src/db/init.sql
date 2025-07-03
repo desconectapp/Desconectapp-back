@@ -1,8 +1,3 @@
-DROP TYPE IF EXISTS current_situation_options;
-
-CREATE TYPE current_situation_options AS ENUM (
-  'WORKING FULLTIME', 'WORKING PARTIME', 'STUDENT', 'STAY AT HOME', 'ENTREPRENEUR', 'LOTS OF FREE TIME', 'LOOKING FOR WORK', 'OTHER'
-);
 
 DROP TABLE IF EXISTS users CASCADE;
 
@@ -13,8 +8,8 @@ CREATE TABLE users (
   password TEXT NOT NULL,
   created_at TIMESTAMP DEFAULT now(),
   age INTEGER NOT NULL DEFAULT 18,
-  city TEXT NOT NULL DEFAULT 'Buenos Aires, Argentina',
-  current_situation current_situation_options NOT NULL DEFAULT 'OTHER', 
+  city TEXT NOT NULL DEFAULT 'Buenos Aires',
+  current_situation TEXT NOT NULL DEFAULT 'OTHER', 
   profile_complete BOOLEAN NOT NULL DEFAULT false
 );
 
@@ -24,7 +19,7 @@ CREATE TYPE categories as ENUM (
   'SPORT', 'CREATIVE', 'OUTDOOR', 'INDOOR', 'GAME', 'SOCIAL', 'WELLNESS'
 );
 
-DROP TABLE IF EXISTS activities;
+DROP TABLE IF EXISTS activities CASCADE;
 
 CREATE TABLE activities(
   id SERIAL PRIMARY KEY,

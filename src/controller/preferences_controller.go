@@ -2,6 +2,7 @@ package controller
 
 import (
 	repository "gin/db/generated"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -31,6 +32,8 @@ func (c *PreferencesController) GetUserPreferences(ctx *gin.Context) {
 	preferencesParams.Limit = int32(limit)
 	preferencesParams.Offset = int32(offset)
 
+	log.Printf("Limit %d", preferencesParams.Limit)
+
 	userStr := ctx.Param("id")
 
 	userId, err := strconv.Atoi(userStr)
@@ -39,13 +42,6 @@ func (c *PreferencesController) GetUserPreferences(ctx *gin.Context) {
 	}
 
 	preferencesParams.UserID = int32(userId)
-
-	if err := ctx.ShouldBind(&preferencesParams); err != nil {
-		ctx.Error(gin.Error{
-			Err:  err,
-			Type: gin.ErrorTypePublic})
-		return
-	}
 
 	preferences, err := c.service.GetUserPreferences(preferencesParams)
 	if err != nil {

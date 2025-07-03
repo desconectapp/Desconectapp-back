@@ -74,7 +74,7 @@ func (router *Router) SetupRoutes() {
 	}
 
 	users := router.r.Group("/users")
-	users.Use(router.authController.AuthMiddleware())
+	// users.Use(router.authController.AuthMiddleware())
 	{
 		users.GET("", router.controller.ListUsers)
 		users.POST("", router.controller.CreateUser)

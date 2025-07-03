@@ -22,6 +22,15 @@ func NewController(conn *pgx.Conn) *Controller {
 	}
 }
 
+type UserUpdateInfo struct {
+	Name  string `json:"name"`
+	Email string `json:"email"`
+	Age   int32  `json:"age"`
+	City  string `json:"city"`
+	CurrentSituation string `json:"current_situation"`
+	ActivityIDs []int32  `json:"activity_ids"`
+}
+
 
 func (c *Controller) ListUsers(ctx *gin.Context) {
 	var userParams repository.ListUsersParams
@@ -103,8 +112,9 @@ func (c *Controller) DeleteUser(ctx *gin.Context) {
 }
 
 func (c *Controller) UpdateUser(ctx *gin.Context) {
-	userId := ctx.Param("userId")
-	stringId, err := strconv.Atoi(userId)
+
+	userParams, userPreferences, err := getParams(ctx)
+
 	if err != nil {
 		ctx.Error(gin.Error{
 			Err:  err,
@@ -112,17 +122,7 @@ func (c *Controller) UpdateUser(ctx *gin.Context) {
 		return
 	}
 
-	var userParams repository.UpdateUserParams
-	if err := ctx.ShouldBind(&userParams); err != nil {
-		ctx.Error(gin.Error{
-			Err:  err,
-			Type: gin.ErrorTypePublic,})
-		return
-	}
-
-	userParams.ID = int32(stringId)
-
-	id, err := c.service.UpdateUser(userParams)
+	id, err := c.service.UpdateUser(userParams, userPreferences)
 	if err != nil {
 		ctx.Error(gin.Error{
 			Err:  err,
@@ -132,5 +132,33 @@ func (c *Controller) UpdateUser(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{
 		"updated": id,
 	})
+}
+
+func getParams(ctx *gin.Context) ( repository.UpdateUserParams, repository.BatchAddPreferencesParams, error) {
+	var userInfo UserUpdateInfo
+	var userParams repository.UpdateUserParams
+	var preferenceParams repository.BatchAddPreferencesParams
+	
+	
+	userId := ctx.Param("userId")
+	stringId, err := strconv.Atoi(userId)
+	if err != nil {
+		return userParams, preferenceParams, err
+	}
+
+	if err = ctx.ShouldBind(&userInfo); err != nil {
+		return userParams, preferenceParams, err
+	}
+	userParams.ID = int32(stringId)
+	userParams.Age = userInfo.Age
+	userParams.City = userInfo.City
+	userParams.CurrentSituation = userInfo.CurrentSituation
+	userParams.Email = userInfo.Email
+	userParams.Name = userInfo.Name
+
+	preferenceParams.UserID = int32(stringId)
+	preferenceParams.ActivityIds = userInfo.ActivityIDs
+	
+	return userParams, preferenceParams, nil
 }
 

@@ -53,8 +53,12 @@ func (s *Service) DeleteUser(userId int32) (int32, error) {
 	return id, nil
 }
 
-func (s *Service) UpdateUser(userParams repository.UpdateUserParams) (int32, error) {
+func (s *Service) UpdateUser(userParams repository.UpdateUserParams, userPreferences repository.BatchAddPreferencesParams) (int32, error) {
 	id, err := s.queries.UpdateUser(s.ctx, userParams)
+	if err != nil {
+		return -1, err
+	}
+	err = s.queries.BatchAddPreferences(s.ctx, userPreferences)
 	if err != nil {
 		return -1, err
 	}

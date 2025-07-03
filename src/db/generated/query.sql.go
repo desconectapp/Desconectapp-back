@@ -29,17 +29,19 @@ func (q *Queries) AddPreference(ctx context.Context, arg AddPreferenceParams) er
 
 const batchAddPreferences = `-- name: BatchAddPreferences :exec
 INSERT INTO users_preference (user_id, activity_id)
-SELECT $1, id FROM activities WHERE id = ANY($2)
+SELECT $1, id
+FROM activities
+WHERE id = ANY($2::int[])
 ON CONFLICT DO NOTHING
 `
 
 type BatchAddPreferencesParams struct {
-	UserID int32 `json:"user_id"`
-	ID     int32 `json:"id"`
+	UserID      int32   `json:"user_id"`
+	ActivityIds []int32 `json:"activity_ids"`
 }
 
 func (q *Queries) BatchAddPreferences(ctx context.Context, arg BatchAddPreferencesParams) error {
-	_, err := q.db.Exec(ctx, batchAddPreferences, arg.UserID, arg.ID)
+	_, err := q.db.Exec(ctx, batchAddPreferences, arg.UserID, arg.ActivityIds)
 	return err
 }
 
@@ -87,9 +89,9 @@ func (q *Queries) CreateActivityRequest(ctx context.Context, arg CreateActivityR
 
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (
-  name, email
+  name, email, password
 ) VALUES (
-  $1, $2
+  $1, $2, 'password'
 )
 RETURNING id, name, email, password, created_at, age, city, current_situation, profile_complete
 `
@@ -324,19 +326,33 @@ func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]User, e
 const updateUser = `-- name: UpdateUser :one
 UPDATE users
   set name = $2,
-  email = $3
+  email = $3,
+  age = $4,
+  city = $5,
+  current_situation = $6,
+  profile_complete = true
 WHERE id = $1
 RETURNING id
 `
 
 type UpdateUserParams struct {
-	ID    int32  `json:"id"`
-	Name  string `json:"name"`
-	Email string `json:"email"`
+	ID               int32  `json:"id"`
+	Name             string `json:"name"`
+	Email            string `json:"email"`
+	Age              int32  `json:"age"`
+	City             string `json:"city"`
+	CurrentSituation string `json:"current_situation"`
 }
 
 func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (int32, error) {
-	row := q.db.QueryRow(ctx, updateUser, arg.ID, arg.Name, arg.Email)
+	row := q.db.QueryRow(ctx, updateUser,
+		arg.ID,
+		arg.Name,
+		arg.Email,
+		arg.Age,
+		arg.City,
+		arg.CurrentSituation,
+	)
 	var id int32
 	err := row.Scan(&id)
 	return id, err
