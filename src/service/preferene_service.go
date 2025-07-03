@@ -3,6 +3,8 @@ package service
 import (
 	"context"
 	repository "gin/db/generated"
+	"log"
+
 	"github.com/jackc/pgx/v5"
 )
 
@@ -22,6 +24,8 @@ func NewPreferenceService(conn *pgx.Conn) *PreferenceService {
 }
 
 func (s *PreferenceService) GetUserPreferences(params repository.GetUserPreferencesParams) ([]repository.GetUserPreferencesRow, error ) {
+	log.Printf("Params %s", params)
+	
 	preferences, err := s.queries.GetUserPreferences(s.ctx, params)
 
 	if err != nil {

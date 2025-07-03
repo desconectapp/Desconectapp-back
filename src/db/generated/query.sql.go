@@ -7,6 +7,7 @@ package repository
 
 import (
 	"context"
+	"log"
 )
 
 const addPreference = `-- name: AddPreference :exec
@@ -235,6 +236,7 @@ func (q *Queries) GetUserPreferences(ctx context.Context, arg GetUserPreferences
 			return nil, err
 		}
 		items = append(items, i)
+		log.Printf("Items %v", items)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

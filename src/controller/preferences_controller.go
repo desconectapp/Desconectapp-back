@@ -34,7 +34,7 @@ func (c *PreferencesController) GetUserPreferences(ctx *gin.Context) {
 
 	log.Printf("Limit %d", preferencesParams.Limit)
 
-	userStr := ctx.Param("id")
+	userStr := ctx.Param("userId")
 
 	userId, err := strconv.Atoi(userStr)
 	if err != nil {
@@ -42,6 +42,8 @@ func (c *PreferencesController) GetUserPreferences(ctx *gin.Context) {
 	}
 
 	preferencesParams.UserID = int32(userId)
+
+	log.Printf("UserID %d", userStr )
 
 	preferences, err := c.service.GetUserPreferences(preferencesParams)
 	if err != nil {
