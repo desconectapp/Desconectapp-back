@@ -11,7 +11,7 @@ LIMIT $1 OFFSET $2;
 INSERT INTO users (
   name, email, password
 ) VALUES (
-  $1, $2, 'password'
+  $1, $2, $3
 )
 RETURNING *;
 
