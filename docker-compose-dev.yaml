@@ -23,6 +23,9 @@ services:
       - ./database/postgres:/var/lib/postgresql/data
       - ./src/db/init.sql:/docker-entrypoint-initdb.d/init.sql
       - ./src/db/files/activities.csv:/activities.csv
+      - ./src/db/files/users.csv:/users.csv
+      - ./src/db/files/activity_requests.csv:/activity_requests.csv
+      - ./src/db/files/users_preference.csv:/users_preference.csv
 
   pgadmin:
     image: dpage/pgadmin4:7.5
