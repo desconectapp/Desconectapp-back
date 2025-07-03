@@ -8,5 +8,5 @@ Anita díaz,anita@example.com,password123,19,Buenos Aires,STUDENT,true
 Luciano Lorenzo,llorenzo@example.com,password123,23,Buenos Aires,WORKING,true
 Martina Lozano,martina@example.com,password123,23,Buenos Aires,WORKING,true
 Valen Scheider,valen@example.com,password123,23,Buenos Aires,UNEMPLOYED,true 
-Marco Natalini, marco@example.com, password123,23, Buenos Aires, WORKING
-Pablo Cosso, pablo@example.com, password123,72, Buenos Aires, UNEMPLOYED
+Marco Natalini, marco@example.com, password123,23, Buenos Aires, WORKING,true 
+Pablo Cosso, pablo@example.com, password123,72, Buenos Aires, UNEMPLOYED,true 
