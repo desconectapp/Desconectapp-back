@@ -188,3 +188,79 @@ func (s *AuthService) ValidateSession(tokenString string) (int32, error) {
 func (s *AuthService) Logout(tokenString string) error {
 	return s.queries.DeleteSessionByToken(s.ctx, tokenString)
 }
+
+func (s *AuthService) Signup(name, email, password string) (*Session, error) {
+	_, err := s.queries.GetUserByEmail(s.ctx, email)
+	if err == nil {
+		return nil, errors.New("user with this email already exists")
+	}
+	if err != nil && err != pgx.ErrNoRows {
+		return nil, err
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, err
+	}
+
+	user, err := s.queries.CreateUser(s.ctx, repository.CreateUserParams{
+		Name:     name,
+		Email:    email,
+		Password: string(hashedPassword),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Generate access token
+	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"sub": user.ID,
+		"exp": time.Now().Add(1 * time.Hour).Unix(),
+	})
+
+	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"sub": user.ID,
+		"exp": time.Now().Add(7 * 24 * time.Hour).Unix(),
+	})
+
+	accessTokenString, err := accessToken.SignedString(s.jwtKey)
+	if err != nil {
+		return nil, err
+	}
+
+	refreshTokenString, err := refreshToken.SignedString(s.jwtKey)
+	if err != nil {
+		return nil, err
+	}
+
+	expiresAt := time.Now().Add(1 * time.Hour)
+	refreshExpiresAt := time.Now().Add(7 * 24 * time.Hour)
+
+	pgExpiresAt := pgtype.Timestamptz{
+		Time:  expiresAt,
+		Valid: true,
+	}
+	pgRefreshExpiresAt := pgtype.Timestamptz{
+		Time:  refreshExpiresAt,
+		Valid: true,
+	}
+
+	// Create session
+	_, err = s.queries.CreateSession(s.ctx, repository.CreateSessionParams{
+		UserID:           user.ID,
+		Token:            accessTokenString,
+		RefreshToken:     refreshTokenString,
+		ExpiresAt:        pgExpiresAt,
+		RefreshExpiresAt: pgRefreshExpiresAt,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &Session{
+		Token:            accessTokenString,
+		RefreshToken:     refreshTokenString,
+		ExpiresAt:        expiresAt,
+		RefreshExpiresAt: refreshExpiresAt,
+	}, nil
+}

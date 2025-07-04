@@ -144,3 +144,37 @@ func (c *AuthController) AuthMiddleware() gin.HandlerFunc {
 		ctx.Next()
 	}
 }
+
+type SignupRequest struct {
+	Name     string `json:"name"`
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password" binding:"required,min=6"`
+}
+
+func (c *AuthController) Signup(ctx *gin.Context) {
+	var signupReq SignupRequest
+	if err := ctx.ShouldBind(&signupReq); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if signupReq.Name == "" {
+		signupReq.Name = "Test" 
+	}
+
+	session, err := c.authService.Signup(signupReq.Name, signupReq.Email, signupReq.Password)
+	if err != nil {
+		ctx.Error(gin.Error{
+			Err:  err,
+			Type: gin.ErrorTypePublic,
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusCreated, AuthResponse{
+		Token:            session.Token,
+		RefreshToken:     session.RefreshToken,
+		ExpiresAt:        session.ExpiresAt,
+		RefreshExpiresAt: session.RefreshExpiresAt,
+	})
+}

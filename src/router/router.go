@@ -69,6 +69,7 @@ func (router *Router) SetupRoutes() {
 	auth := router.r.Group("/auth")
 	{
 		auth.POST("/login", router.authController.Login)
+		auth.POST("/signup", router.authController.Signup)
 		auth.POST("/logout", router.authController.Logout)
 		auth.POST("/refresh", router.authController.Refresh)
 	}
