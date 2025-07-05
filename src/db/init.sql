@@ -1,4 +1,3 @@
-
 DROP TABLE IF EXISTS users CASCADE;
 
 CREATE TABLE users (
@@ -72,6 +71,20 @@ CREATE TABLE sessions (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+DROP TABLE IF EXISTS group_members;
+DROP TABLE IF EXISTS groups;
+
+CREATE TABLE groups (
+    id SERIAL PRIMARY KEY,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE group_members (
+    group_id INTEGER NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    PRIMARY KEY (group_id, user_id)
+);
+
 CREATE INDEX idx_sessions_token ON sessions(token);
 
 CREATE INDEX idx_sessions_user_id ON sessions(user_id);
@@ -98,4 +111,4 @@ RETURNS void AS $$
 BEGIN
     DELETE FROM sessions WHERE expires_at < CURRENT_TIMESTAMP;
 END;
-$$ LANGUAGE plpgsql; 
+$$ LANGUAGE plpgsql;
