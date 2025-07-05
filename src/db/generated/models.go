@@ -127,6 +127,16 @@ type ActivityRequest struct {
 	ExpiresAt          pgtype.Timestamp `json:"expires_at"`
 }
 
+type Group struct {
+	ID        int32              `json:"id"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+}
+
+type GroupMember struct {
+	GroupID int32 `json:"group_id"`
+	UserID  int32 `json:"user_id"`
+}
+
 type Session struct {
 	ID               int32              `json:"id"`
 	UserID           int32              `json:"user_id"`
