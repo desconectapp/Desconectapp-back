@@ -67,7 +67,7 @@ func (q *Queries) BatchAddPreferences(ctx context.Context, arg BatchAddPreferenc
 
 const batchAddUserToGroup = `-- name: BatchAddUserToGroup :exec
 INSERT INTO group_members (user_id, group_id)
-SELECT $1, id
+SELECT id, $1
 FROM users
 WHERE id = ANY($2::int[])
 ON CONFLICT DO NOTHING
@@ -75,11 +75,11 @@ ON CONFLICT DO NOTHING
 
 type BatchAddUserToGroupParams struct {
 	GroupID int32   `json:"group_id"`
-	UserID  []int32 `json:"user_id"`
+	UserIds []int32 `json:"user_ids"`
 }
 
 func (q *Queries) BatchAddUserToGroup(ctx context.Context, arg BatchAddUserToGroupParams) error {
-	_, err := q.db.Exec(ctx, batchAddUserToGroup, arg.GroupID, arg.UserID)
+	_, err := q.db.Exec(ctx, batchAddUserToGroup, arg.GroupID, arg.UserIds)
 	return err
 }
 

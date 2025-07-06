@@ -136,9 +136,9 @@ INSERT INTO group_members (
 
 -- name: BatchAddUserToGroup :exec
 INSERT INTO group_members (user_id, group_id)
-SELECT sqlc.arg(group_id), id
+SELECT id, sqlc.arg(group_id)
 FROM users
-WHERE id = ANY(sqlc.arg(user_id)::int[])
+WHERE id = ANY(sqlc.arg(user_ids)::int[])
 ON CONFLICT DO NOTHING;
 
 -- name: GetGroupMembers :many

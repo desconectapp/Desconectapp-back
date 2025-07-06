@@ -112,7 +112,7 @@ func getGroupParams(ctx *gin.Context) (repository.CreateGroupParams, repository.
 	groupParams.Location = &groupInfo.Location
 	groupParams.Name = &groupInfo.Name
 
-	groupBatchParams.UserID = groupInfo.MembersIds
+	groupBatchParams.UserIds = groupInfo.MembersIds
 	
 	return groupParams, groupBatchParams, nil
 }
