@@ -86,9 +86,9 @@ RETURNING id;
 
 -- name: ListGroups :many
 WITH selected_groups AS (
-  SELECT g.*
-  FROM groups g
-  ORDER BY g.created_at DESC
+  SELECT *
+  FROM groups
+  ORDER BY created_at DESC
   LIMIT $1 OFFSET $2
 )
 SELECT 
@@ -96,25 +96,30 @@ SELECT
   g.name,
   g.description,
   g.created_at,
+  g.location,
   a.name AS activity,
   a.emoji AS icon,
-  g.location,
-  json_agg(
-    json_build_object(
-      'user_id', u.id::text,
-      'name', u.name
-    )
-  ) FILTER (WHERE u.id IS NOT NULL) AS members
+  COUNT(gm.user_id) AS members_count
 FROM selected_groups g
 JOIN activities a ON g.activity_id = a.id
 LEFT JOIN group_members gm ON g.id = gm.group_id
-LEFT JOIN users u ON gm.user_id = u.id
-GROUP BY g.id, g.name, g.description, g.created_at, a.name, a.emoji, g.location
+GROUP BY g.id, g.name, g.description, g.created_at, g.location, a.name, a.emoji
 ORDER BY g.created_at DESC;
 
 -- name: GetGroup :one
-SELECT * FROM groups
-WHERE id = $1 LIMIT 1;
+SELECT 
+  g.id::text AS id,
+  g.name,
+  g.description,
+  g.created_at,
+  a.name AS activity,
+  a.emoji AS icon,
+  g.location
+FROM groups g
+JOIN activities a ON g.activity_id = a.id
+LEFT JOIN users u ON gm.user_id = u.id
+WHERE g.id = $1
+GROUP BY g.id, g.name, g.description, g.created_at, a.name, a.emoji, g.location;
 
 -- name: DeleteGroup :one
 DELETE FROM groups
@@ -134,3 +139,8 @@ SELECT sqlc.arg(group_id), id
 FROM users
 WHERE id = ANY(sqlc.arg(user_id)::int[])
 ON CONFLICT DO NOTHING;
+
+-- name: GetGroupMembers :many
+SELECT u.id, u.name FROM users u
+JOIN group_members gm ON u.id = gm.user_id
+WHERE gm.group_id = $1;

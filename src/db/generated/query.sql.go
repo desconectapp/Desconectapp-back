@@ -262,22 +262,75 @@ func (q *Queries) GetActivities(ctx context.Context, arg GetActivitiesParams) ([
 }
 
 const getGroup = `-- name: GetGroup :one
-SELECT id, name, description, location, activity_id, created_at FROM groups
-WHERE id = $1 LIMIT 1
+SELECT 
+  g.id::text AS id,
+  g.name,
+  g.description,
+  g.created_at,
+  a.name AS activity,
+  a.emoji AS icon,
+  g.location
+FROM groups g
+JOIN activities a ON g.activity_id = a.id
+LEFT JOIN users u ON gm.user_id = u.id
+WHERE g.id = $1
+GROUP BY g.id, g.name, g.description, g.created_at, a.name, a.emoji, g.location
 `
 
-func (q *Queries) GetGroup(ctx context.Context, id int32) (Group, error) {
+type GetGroupRow struct {
+	ID          string             `json:"id"`
+	Name        *string            `json:"name"`
+	Description *string            `json:"description"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	Activity    string             `json:"activity"`
+	Icon        *string            `json:"icon"`
+	Location    *string            `json:"location"`
+}
+
+func (q *Queries) GetGroup(ctx context.Context, id int32) (GetGroupRow, error) {
 	row := q.db.QueryRow(ctx, getGroup, id)
-	var i Group
+	var i GetGroupRow
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
 		&i.Description,
-		&i.Location,
-		&i.ActivityID,
 		&i.CreatedAt,
+		&i.Activity,
+		&i.Icon,
+		&i.Location,
 	)
 	return i, err
+}
+
+const getGroupMembers = `-- name: GetGroupMembers :many
+SELECT u.id, u.name FROM users u
+JOIN group_members gm ON u.id = gm.user_id
+WHERE gm.group_id = $1
+`
+
+type GetGroupMembersRow struct {
+	ID   int32  `json:"id"`
+	Name string `json:"name"`
+}
+
+func (q *Queries) GetGroupMembers(ctx context.Context, groupID int32) ([]GetGroupMembersRow, error) {
+	rows, err := q.db.Query(ctx, getGroupMembers, groupID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetGroupMembersRow{}
+	for rows.Next() {
+		var i GetGroupMembersRow
+		if err := rows.Scan(&i.ID, &i.Name); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getUser = `-- name: GetUser :one
@@ -382,9 +435,9 @@ func (q *Queries) ListActivityRequests(ctx context.Context, arg ListActivityRequ
 
 const listGroups = `-- name: ListGroups :many
 WITH selected_groups AS (
-  SELECT g.id, g.name, g.description, g.location, g.activity_id, g.created_at
-  FROM groups g
-  ORDER BY g.created_at DESC
+  SELECT id, name, description, location, activity_id, created_at
+  FROM groups
+  ORDER BY created_at DESC
   LIMIT $1 OFFSET $2
 )
 SELECT 
@@ -392,20 +445,14 @@ SELECT
   g.name,
   g.description,
   g.created_at,
+  g.location,
   a.name AS activity,
   a.emoji AS icon,
-  g.location,
-  json_agg(
-    json_build_object(
-      'user_id', u.id::text,
-      'name', u.name
-    )
-  ) FILTER (WHERE u.id IS NOT NULL) AS members
+  COUNT(gm.user_id) AS members_count
 FROM selected_groups g
 JOIN activities a ON g.activity_id = a.id
 LEFT JOIN group_members gm ON g.id = gm.group_id
-LEFT JOIN users u ON gm.user_id = u.id
-GROUP BY g.id, g.name, g.description, g.created_at, a.name, a.emoji, g.location
+GROUP BY g.id, g.name, g.description, g.created_at, g.location, a.name, a.emoji
 ORDER BY g.created_at DESC
 `
 
@@ -415,14 +462,14 @@ type ListGroupsParams struct {
 }
 
 type ListGroupsRow struct {
-	ID          string             `json:"id"`
-	Name        *string            `json:"name"`
-	Description *string            `json:"description"`
-	CreatedAt   pgtype.Timestamptz `json:"created_at"`
-	Activity    string             `json:"activity"`
-	Icon        *string            `json:"icon"`
-	Location    *string            `json:"location"`
-	Members     []byte             `json:"members"`
+	ID           string             `json:"id"`
+	Name         *string            `json:"name"`
+	Description  *string            `json:"description"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	Location     *string            `json:"location"`
+	Activity     string             `json:"activity"`
+	Icon         *string            `json:"icon"`
+	MembersCount int64              `json:"members_count"`
 }
 
 func (q *Queries) ListGroups(ctx context.Context, arg ListGroupsParams) ([]ListGroupsRow, error) {
@@ -439,10 +486,10 @@ func (q *Queries) ListGroups(ctx context.Context, arg ListGroupsParams) ([]ListG
 			&i.Name,
 			&i.Description,
 			&i.CreatedAt,
+			&i.Location,
 			&i.Activity,
 			&i.Icon,
-			&i.Location,
-			&i.Members,
+			&i.MembersCount,
 		); err != nil {
 			return nil, err
 		}
