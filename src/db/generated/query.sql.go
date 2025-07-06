@@ -7,6 +7,8 @@ package repository
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const addPreference = `-- name: AddPreference :exec
@@ -27,6 +29,24 @@ func (q *Queries) AddPreference(ctx context.Context, arg AddPreferenceParams) er
 	return err
 }
 
+const addUserToGroup = `-- name: AddUserToGroup :exec
+INSERT INTO group_members (
+  group_id, user_id
+) VALUES (
+  $1, $2
+)
+`
+
+type AddUserToGroupParams struct {
+	GroupID int32 `json:"group_id"`
+	UserID  int32 `json:"user_id"`
+}
+
+func (q *Queries) AddUserToGroup(ctx context.Context, arg AddUserToGroupParams) error {
+	_, err := q.db.Exec(ctx, addUserToGroup, arg.GroupID, arg.UserID)
+	return err
+}
+
 const batchAddPreferences = `-- name: BatchAddPreferences :exec
 INSERT INTO users_preference (user_id, activity_id)
 SELECT $1, id
@@ -42,6 +62,24 @@ type BatchAddPreferencesParams struct {
 
 func (q *Queries) BatchAddPreferences(ctx context.Context, arg BatchAddPreferencesParams) error {
 	_, err := q.db.Exec(ctx, batchAddPreferences, arg.UserID, arg.ActivityIds)
+	return err
+}
+
+const batchAddUserToGroup = `-- name: BatchAddUserToGroup :exec
+INSERT INTO group_members (user_id, group_id)
+SELECT id, $1
+FROM users
+WHERE id = ANY($2::int[])
+ON CONFLICT DO NOTHING
+`
+
+type BatchAddUserToGroupParams struct {
+	GroupID int32   `json:"group_id"`
+	UserIds []int32 `json:"user_ids"`
+}
+
+func (q *Queries) BatchAddUserToGroup(ctx context.Context, arg BatchAddUserToGroupParams) error {
+	_, err := q.db.Exec(ctx, batchAddUserToGroup, arg.GroupID, arg.UserIds)
 	return err
 }
 
@@ -87,6 +125,34 @@ func (q *Queries) CreateActivityRequest(ctx context.Context, arg CreateActivityR
 	return i, err
 }
 
+const createGroup = `-- name: CreateGroup :one
+INSERT INTO groups (
+  name, description, location, activity_id
+) VALUES (
+  $1, $2, $3, $4
+)
+RETURNING id
+`
+
+type CreateGroupParams struct {
+	Name        *string `json:"name"`
+	Description *string `json:"description"`
+	Location    *string `json:"location"`
+	ActivityID  int32   `json:"activity_id"`
+}
+
+func (q *Queries) CreateGroup(ctx context.Context, arg CreateGroupParams) (int32, error) {
+	row := q.db.QueryRow(ctx, createGroup,
+		arg.Name,
+		arg.Description,
+		arg.Location,
+		arg.ActivityID,
+	)
+	var id int32
+	err := row.Scan(&id)
+	return id, err
+}
+
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (
   name, email, password
@@ -119,6 +185,18 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 	return i, err
 }
 
+const deleteGroup = `-- name: DeleteGroup :one
+DELETE FROM groups
+WHERE id = $1
+RETURNING id
+`
+
+func (q *Queries) DeleteGroup(ctx context.Context, id int32) (int32, error) {
+	row := q.db.QueryRow(ctx, deleteGroup, id)
+	err := row.Scan(&id)
+	return id, err
+}
+
 const deletePreference = `-- name: DeletePreference :exec
 DELETE FROM users_preference
 WHERE user_id = $1 AND activity_id = $2
@@ -147,7 +225,7 @@ func (q *Queries) DeleteUser(ctx context.Context, id int32) (int32, error) {
 }
 
 const getActivities = `-- name: GetActivities :many
-SELECT id, name, emoji, created_at, category FROM activities
+SELECT id, name, icon, created_at, category FROM activities
 ORDER BY category, id DESC
 LIMIT $1 OFFSET $2
 `
@@ -169,10 +247,83 @@ func (q *Queries) GetActivities(ctx context.Context, arg GetActivitiesParams) ([
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
-			&i.Emoji,
+			&i.Icon,
 			&i.CreatedAt,
 			&i.Category,
 		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getGroup = `-- name: GetGroup :one
+SELECT 
+  g.id,
+  g.name,
+  g.description,
+  g.created_at,
+  a.name AS activity,
+  a.icon,
+  g.location
+FROM groups g
+JOIN activities a ON g.activity_id = a.id
+LEFT JOIN group_members gm ON gm.group_id = g.id
+LEFT JOIN users u ON gm.user_id = u.id
+WHERE g.id = $1
+GROUP BY g.id, g.name, g.description, g.created_at, a.name, a.icon, g.location
+`
+
+type GetGroupRow struct {
+	ID          int32              `json:"id"`
+	Name        *string            `json:"name"`
+	Description *string            `json:"description"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	Activity    string             `json:"activity"`
+	Icon        *string            `json:"icon"`
+	Location    *string            `json:"location"`
+}
+
+func (q *Queries) GetGroup(ctx context.Context, id int32) (GetGroupRow, error) {
+	row := q.db.QueryRow(ctx, getGroup, id)
+	var i GetGroupRow
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Description,
+		&i.CreatedAt,
+		&i.Activity,
+		&i.Icon,
+		&i.Location,
+	)
+	return i, err
+}
+
+const getGroupMembers = `-- name: GetGroupMembers :many
+SELECT u.id, u.name FROM users u
+JOIN group_members gm ON u.id = gm.user_id
+WHERE gm.group_id = $1
+`
+
+type GetGroupMembersRow struct {
+	ID   int32  `json:"id"`
+	Name string `json:"name"`
+}
+
+func (q *Queries) GetGroupMembers(ctx context.Context, groupID int32) ([]GetGroupMembersRow, error) {
+	rows, err := q.db.Query(ctx, getGroupMembers, groupID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetGroupMembersRow{}
+	for rows.Next() {
+		var i GetGroupMembersRow
+		if err := rows.Scan(&i.ID, &i.Name); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -272,6 +423,74 @@ func (q *Queries) ListActivityRequests(ctx context.Context, arg ListActivityRequ
 			&i.ParticipantsNeeded,
 			&i.CreatedAt,
 			&i.ExpiresAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listGroups = `-- name: ListGroups :many
+WITH selected_groups AS (
+  SELECT id, name, description, location, activity_id, created_at
+  FROM groups
+  ORDER BY created_at DESC
+  LIMIT $1 OFFSET $2
+)
+SELECT 
+  g.id,
+  g.name,
+  g.description,
+  g.created_at,
+  g.location,
+  a.name AS activity,
+  a.icon,
+  COUNT(gm.user_id) AS members_count
+FROM selected_groups g
+JOIN activities a ON g.activity_id = a.id
+LEFT JOIN group_members gm ON g.id = gm.group_id
+GROUP BY g.id, g.name, g.description, g.created_at, g.location, a.name, a.icon
+ORDER BY g.created_at DESC
+`
+
+type ListGroupsParams struct {
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+}
+
+type ListGroupsRow struct {
+	ID           int32              `json:"id"`
+	Name         *string            `json:"name"`
+	Description  *string            `json:"description"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	Location     *string            `json:"location"`
+	Activity     string             `json:"activity"`
+	Icon         *string            `json:"icon"`
+	MembersCount int64              `json:"members_count"`
+}
+
+func (q *Queries) ListGroups(ctx context.Context, arg ListGroupsParams) ([]ListGroupsRow, error) {
+	rows, err := q.db.Query(ctx, listGroups, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListGroupsRow{}
+	for rows.Next() {
+		var i ListGroupsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Description,
+			&i.CreatedAt,
+			&i.Location,
+			&i.Activity,
+			&i.Icon,
+			&i.MembersCount,
 		); err != nil {
 			return nil, err
 		}

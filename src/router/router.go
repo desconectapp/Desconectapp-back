@@ -20,6 +20,7 @@ type Router struct {
 	activitiesController *controller.ActivitiesController
 	authController       *controller.AuthController
 	preferencesController *controller.PreferencesController
+	groupsController		*controller.GroupsController
 	r                    *gin.Engine
 }
 
@@ -40,6 +41,8 @@ func NewRouter() *Router {
 
 	preferencesController := controller.NewPreferencesController(conn)
 
+	groupsController := controller.NewGroupsController(conn)
+
 	r := gin.Default()
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"*"},
@@ -55,6 +58,7 @@ func NewRouter() *Router {
 		activitiesController: activitiesController,
 		authController:       authController,
 		preferencesController: preferencesController,
+		groupsController: groupsController,
 		r:                    r,
 
 	}
@@ -99,5 +103,15 @@ func (router *Router) SetupRoutes() {
 		preferences.GET("/:userId", router.preferencesController.GetUserPreferences)
 		preferences.POST("/:userId", router.preferencesController.AddPreference)
 		preferences.DELETE("/:userId", router.preferencesController.DeletePreference)
+	}
+
+	groups := router.r.Group("/groups")
+	// preferences.Use(router.authController.AuthMiddleware())
+
+	{
+		groups.GET("/:groupId", router.groupsController.GetGroup)
+		groups.GET("", router.groupsController.ListGroups)
+		groups.POST("", router.groupsController.CreateGroup)
+		groups.DELETE("/:groupId", router.groupsController.DeleteGroup)
 	}
 }
