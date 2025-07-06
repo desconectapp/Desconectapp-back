@@ -23,7 +23,7 @@ DROP TABLE IF EXISTS activities CASCADE;
 CREATE TABLE activities(
   id SERIAL PRIMARY KEY,
   name TEXT NOT NULL,
-  emoji TEXT,
+  icon TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   category categories NOT NULL DEFAULT 'SOCIAL'
 );
@@ -93,7 +93,7 @@ CREATE INDEX idx_sessions_token ON sessions(token);
 
 CREATE INDEX idx_sessions_user_id ON sessions(user_id);
 
-COPY activities(name, emoji, category)
+COPY activities(name, icon, category)
 FROM '/activities.csv'
 WITH (FORMAT csv, HEADER true);
 

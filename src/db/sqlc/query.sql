@@ -98,12 +98,12 @@ SELECT
   g.created_at,
   g.location,
   a.name AS activity,
-  a.emoji AS icon,
+  a.icon,
   COUNT(gm.user_id) AS members_count
 FROM selected_groups g
 JOIN activities a ON g.activity_id = a.id
 LEFT JOIN group_members gm ON g.id = gm.group_id
-GROUP BY g.id, g.name, g.description, g.created_at, g.location, a.name, a.emoji
+GROUP BY g.id, g.name, g.description, g.created_at, g.location, a.name, a.icon
 ORDER BY g.created_at DESC;
 
 -- name: GetGroup :one
@@ -113,13 +113,13 @@ SELECT
   g.description,
   g.created_at,
   a.name AS activity,
-  a.emoji AS icon,
+  a.icon,
   g.location
 FROM groups g
 JOIN activities a ON g.activity_id = a.id
 LEFT JOIN users u ON gm.user_id = u.id
 WHERE g.id = $1
-GROUP BY g.id, g.name, g.description, g.created_at, a.name, a.emoji, g.location;
+GROUP BY g.id, g.name, g.description, g.created_at, a.name, a.icon, g.location;
 
 -- name: DeleteGroup :one
 DELETE FROM groups

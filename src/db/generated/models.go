@@ -111,7 +111,7 @@ func (ns NullDayOption) Value() (driver.Value, error) {
 type Activity struct {
 	ID        int32              `json:"id"`
 	Name      string             `json:"name"`
-	Emoji     *string            `json:"emoji"`
+	Icon      *string            `json:"icon"`
 	CreatedAt pgtype.Timestamptz `json:"created_at"`
 	Category  Categories         `json:"category"`
 }

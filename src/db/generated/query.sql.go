@@ -225,7 +225,7 @@ func (q *Queries) DeleteUser(ctx context.Context, id int32) (int32, error) {
 }
 
 const getActivities = `-- name: GetActivities :many
-SELECT id, name, emoji, created_at, category FROM activities
+SELECT id, name, icon, created_at, category FROM activities
 ORDER BY category, id DESC
 LIMIT $1 OFFSET $2
 `
@@ -247,7 +247,7 @@ func (q *Queries) GetActivities(ctx context.Context, arg GetActivitiesParams) ([
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
-			&i.Emoji,
+			&i.Icon,
 			&i.CreatedAt,
 			&i.Category,
 		); err != nil {
@@ -268,13 +268,13 @@ SELECT
   g.description,
   g.created_at,
   a.name AS activity,
-  a.emoji AS icon,
+  a.icon AS icon,
   g.location
 FROM groups g
 JOIN activities a ON g.activity_id = a.id
 LEFT JOIN users u ON gm.user_id = u.id
 WHERE g.id = $1
-GROUP BY g.id, g.name, g.description, g.created_at, a.name, a.emoji, g.location
+GROUP BY g.id, g.name, g.description, g.created_at, a.name, a.icon, g.location
 `
 
 type GetGroupRow struct {
@@ -447,12 +447,12 @@ SELECT
   g.created_at,
   g.location,
   a.name AS activity,
-  a.emoji AS icon,
+  a.icon AS icon,
   COUNT(gm.user_id) AS members_count
 FROM selected_groups g
 JOIN activities a ON g.activity_id = a.id
 LEFT JOIN group_members gm ON g.id = gm.group_id
-GROUP BY g.id, g.name, g.description, g.created_at, g.location, a.name, a.emoji
+GROUP BY g.id, g.name, g.description, g.created_at, g.location, a.name, a.icon
 ORDER BY g.created_at DESC
 `
 
