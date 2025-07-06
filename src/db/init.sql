@@ -76,6 +76,10 @@ DROP TABLE IF EXISTS groups;
 
 CREATE TABLE groups (
     id SERIAL PRIMARY KEY,
+    name TEXT,
+    description TEXT,
+    location TEXT,
+    activity_id INTEGER REFERENCES activities(id) ON DELETE CASCADE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 

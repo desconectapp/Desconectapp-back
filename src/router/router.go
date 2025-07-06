@@ -100,4 +100,13 @@ func (router *Router) SetupRoutes() {
 		preferences.POST("/:userId", router.preferencesController.AddPreference)
 		preferences.DELETE("/:userId", router.preferencesController.DeletePreference)
 	}
+
+	groups := router.r.Group("/groups")
+	// preferences.Use(router.authController.AuthMiddleware())
+
+	{
+		groups.GET("/:groupId", router.preferencesController.GetUserPreferences)
+		groups.GET("", router.preferencesController.AddPreference)
+		// preferences.DELETE("/:userId", router.preferencesController.DeletePreference)
+	}
 }

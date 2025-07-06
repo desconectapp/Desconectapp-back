@@ -75,3 +75,39 @@ SELECT sqlc.arg(user_id), id
 FROM activities
 WHERE id = ANY(sqlc.arg(activity_ids)::int[])
 ON CONFLICT DO NOTHING;
+
+-- name: CreateGroup :one
+INSERT INTO groups (
+  name, description, location, activity_id
+) VALUES (
+  $1, $2, $3, $4
+)
+RETURNING id;
+
+-- name: ListGroups :many
+SELECT * FROM groups
+ORDER BY created_at DESC
+LIMIT $1 OFFSET $2;
+
+-- name: GetGroup :one
+SELECT * FROM groups
+WHERE id = $1 LIMIT 1;
+
+-- name: DeleteGroup :one
+DELETE FROM groups
+WHERE id = $1
+RETURNING id;
+
+-- name: AddUserToGroup :exec
+INSERT INTO group_members (
+  group_id, user_id
+) VALUES (
+  $1, $2
+);
+
+-- name: BatchAddUserToGroup :exec
+INSERT INTO group_members (user_id, group_id)
+SELECT sqlc.arg(group_id), id
+FROM users
+WHERE id = ANY(sqlc.arg(user_id)::int[])
+ON CONFLICT DO NOTHING;
