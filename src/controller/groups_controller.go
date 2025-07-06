@@ -116,3 +116,25 @@ func getGroupParams(ctx *gin.Context) (repository.CreateGroupParams, repository.
 	
 	return groupParams, groupBatchParams, nil
 }
+
+func (c *GroupsController) DeleteGroup(ctx *gin.Context) {
+	groupIdStr := ctx.Param("groupId")
+	groupId, err := strconv.Atoi(groupIdStr)
+	if err != nil {
+		ctx.Error(gin.Error{
+			Err:  err,
+			Type: gin.ErrorTypePublic,})
+		return
+	}
+
+	id, err := c.service.DeleteGroup(int32(groupId))
+	if err != nil {
+		ctx.Error(gin.Error{
+			Err:  err,
+			Type: gin.ErrorTypePublic,})
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{
+		"deleted": id,
+	})
+}

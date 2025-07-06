@@ -92,7 +92,7 @@ WITH selected_groups AS (
   LIMIT $1 OFFSET $2
 )
 SELECT 
-  g.id::text AS id,
+  g.id,
   g.name,
   g.description,
   g.created_at,
@@ -108,7 +108,7 @@ ORDER BY g.created_at DESC;
 
 -- name: GetGroup :one
 SELECT 
-  g.id::text AS id,
+  g.id,
   g.name,
   g.description,
   g.created_at,

@@ -263,7 +263,7 @@ func (q *Queries) GetActivities(ctx context.Context, arg GetActivitiesParams) ([
 
 const getGroup = `-- name: GetGroup :one
 SELECT 
-  g.id::text AS id,
+  g.id,
   g.name,
   g.description,
   g.created_at,
@@ -279,7 +279,7 @@ GROUP BY g.id, g.name, g.description, g.created_at, a.name, a.icon, g.location
 `
 
 type GetGroupRow struct {
-	ID          string             `json:"id"`
+	ID          int32              `json:"id"`
 	Name        *string            `json:"name"`
 	Description *string            `json:"description"`
 	CreatedAt   pgtype.Timestamptz `json:"created_at"`
@@ -442,7 +442,7 @@ WITH selected_groups AS (
   LIMIT $1 OFFSET $2
 )
 SELECT 
-  g.id::text AS id,
+  g.id,
   g.name,
   g.description,
   g.created_at,
@@ -463,7 +463,7 @@ type ListGroupsParams struct {
 }
 
 type ListGroupsRow struct {
-	ID           string             `json:"id"`
+	ID           int32              `json:"id"`
 	Name         *string            `json:"name"`
 	Description  *string            `json:"description"`
 	CreatedAt    pgtype.Timestamptz `json:"created_at"`

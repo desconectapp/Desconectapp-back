@@ -8,7 +8,7 @@ import (
 )
 
 type GroupWithMembers struct {
-	ID          string             `json:"id"`
+	ID          int32             `json:"id"`
 	Name        *string            `json:"name"`
 	Description *string            `json:"description"`
 	CreatedAt   pgtype.Timestamptz `json:"created_at"`
@@ -42,6 +42,7 @@ func (s *GroupsService) CreateGroup(groupParams repository.CreateGroupParams, gr
 	groupMembersInfo.GroupID = id
 	err = s.queries.BatchAddUserToGroup(s.ctx, groupMembersInfo)
 	if err != nil {
+		s.queries.DeleteGroup(s.ctx, id)
 		return -1, err
 	}
 	return id, nil
@@ -86,4 +87,15 @@ func addMembers(group repository.GetGroupRow, members []repository.GetGroupMembe
         Icon:        group.Icon,
         Members:     members,
     }
+}
+
+func (s *GroupsService) DeleteGroup(id int32) (int32, error) {
+
+	groupId, err := s.queries.DeleteGroup(s.ctx, id) 
+
+	if err != nil {
+		return -1, err
+	}
+
+	return groupId, nil
 }
