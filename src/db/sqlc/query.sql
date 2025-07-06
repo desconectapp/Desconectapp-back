@@ -85,9 +85,32 @@ INSERT INTO groups (
 RETURNING id;
 
 -- name: ListGroups :many
-SELECT * FROM groups
-ORDER BY created_at DESC
-LIMIT $1 OFFSET $2;
+WITH selected_groups AS (
+  SELECT g.*
+  FROM groups g
+  ORDER BY g.created_at DESC
+  LIMIT $1 OFFSET $2
+)
+SELECT 
+  g.id::text AS id,
+  g.name,
+  g.description,
+  g.created_at,
+  a.name AS activity,
+  a.emoji AS icon,
+  g.location,
+  json_agg(
+    json_build_object(
+      'user_id', u.id::text,
+      'name', u.name
+    )
+  ) FILTER (WHERE u.id IS NOT NULL) AS members
+FROM selected_groups g
+JOIN activities a ON g.activity_id = a.id
+LEFT JOIN group_members gm ON g.id = gm.group_id
+LEFT JOIN users u ON gm.user_id = u.id
+GROUP BY g.id, g.name, g.description, g.created_at, a.name, a.emoji, g.location
+ORDER BY g.created_at DESC;
 
 -- name: GetGroup :one
 SELECT * FROM groups

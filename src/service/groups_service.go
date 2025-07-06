@@ -21,11 +21,13 @@ func NewGroupsService(conn *pgx.Conn) *GroupsService {
 	}
 }
 
-func (s *GroupsService) ListGroups(params repository.ListGroupsParams) ([]repository.Group, error) {
-	groups, err := s.queries.ListGroups(s.ctx, params)
+
+func (s *GroupsService) ListGroups(params repository.ListGroupsParams) ([]repository.ListGroupsRow, error) {
+	groupsList, err := s.queries.ListGroups(s.ctx, params)
 	if err != nil {
 		return nil, err
 	}
-	return groups, nil
+	return groupsList, nil
 }
+
 

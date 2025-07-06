@@ -7,6 +7,8 @@ package repository
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const addPreference = `-- name: AddPreference :exec
@@ -379,9 +381,32 @@ func (q *Queries) ListActivityRequests(ctx context.Context, arg ListActivityRequ
 }
 
 const listGroups = `-- name: ListGroups :many
-SELECT id, name, description, location, activity_id, created_at FROM groups
-ORDER BY created_at DESC
-LIMIT $1 OFFSET $2
+WITH selected_groups AS (
+  SELECT g.id, g.name, g.description, g.location, g.activity_id, g.created_at
+  FROM groups g
+  ORDER BY g.created_at DESC
+  LIMIT $1 OFFSET $2
+)
+SELECT 
+  g.id::text AS id,
+  g.name,
+  g.description,
+  g.created_at,
+  a.name AS activity,
+  a.emoji AS icon,
+  g.location,
+  json_agg(
+    json_build_object(
+      'user_id', u.id::text,
+      'name', u.name
+    )
+  ) FILTER (WHERE u.id IS NOT NULL) AS members
+FROM selected_groups g
+JOIN activities a ON g.activity_id = a.id
+LEFT JOIN group_members gm ON g.id = gm.group_id
+LEFT JOIN users u ON gm.user_id = u.id
+GROUP BY g.id, g.name, g.description, g.created_at, a.name, a.emoji, g.location
+ORDER BY g.created_at DESC
 `
 
 type ListGroupsParams struct {
@@ -389,22 +414,35 @@ type ListGroupsParams struct {
 	Offset int32 `json:"offset"`
 }
 
-func (q *Queries) ListGroups(ctx context.Context, arg ListGroupsParams) ([]Group, error) {
+type ListGroupsRow struct {
+	ID          string             `json:"id"`
+	Name        *string            `json:"name"`
+	Description *string            `json:"description"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	Activity    string             `json:"activity"`
+	Icon        *string            `json:"icon"`
+	Location    *string            `json:"location"`
+	Members     []byte             `json:"members"`
+}
+
+func (q *Queries) ListGroups(ctx context.Context, arg ListGroupsParams) ([]ListGroupsRow, error) {
 	rows, err := q.db.Query(ctx, listGroups, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []Group{}
+	items := []ListGroupsRow{}
 	for rows.Next() {
-		var i Group
+		var i ListGroupsRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
 			&i.Description,
-			&i.Location,
-			&i.ActivityID,
 			&i.CreatedAt,
+			&i.Activity,
+			&i.Icon,
+			&i.Location,
+			&i.Members,
 		); err != nil {
 			return nil, err
 		}
