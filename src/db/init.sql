@@ -79,7 +79,7 @@ CREATE TABLE groups (
     name TEXT,
     description TEXT,
     location TEXT,
-    activity_id INTEGER REFERENCES activities(id) ON DELETE CASCADE,
+    activity_id INTEGER NOT NULL REFERENCES activities(id) ON DELETE CASCADE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 

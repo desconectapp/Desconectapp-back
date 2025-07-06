@@ -117,6 +117,7 @@ SELECT
   g.location
 FROM groups g
 JOIN activities a ON g.activity_id = a.id
+LEFT JOIN group_members gm ON gm.group_id = g.id
 LEFT JOIN users u ON gm.user_id = u.id
 WHERE g.id = $1
 GROUP BY g.id, g.name, g.description, g.created_at, a.name, a.icon, g.location;

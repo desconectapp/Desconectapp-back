@@ -39,6 +39,7 @@ func (s *GroupsService) CreateGroup(groupParams repository.CreateGroupParams, gr
 	if err != nil {
 		return -1, err
 	}
+	groupMembersInfo.GroupID = id
 	err = s.queries.BatchAddUserToGroup(s.ctx, groupMembersInfo)
 	if err != nil {
 		return -1, err

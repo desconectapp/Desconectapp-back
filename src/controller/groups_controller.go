@@ -3,6 +3,7 @@ package controller
 import (
 	repository "gin/db/generated"
 	"gin/service"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -99,24 +100,18 @@ func getGroupParams(ctx *gin.Context) (repository.CreateGroupParams, repository.
 	var groupInfo GroupInfo
 	var groupParams repository.CreateGroupParams
 	var groupBatchParams repository.BatchAddUserToGroupParams
-	
-	
-	groupId := ctx.Param("groupId")
-	stringId, err := strconv.Atoi(groupId)
-	if err != nil {
+
+	if err := ctx.ShouldBind(&groupInfo); err != nil {
 		return groupParams, groupBatchParams, err
 	}
+	
+	log.Printf("Members IDa: %v", groupInfo.MembersIds)
 
-	if err = ctx.ShouldBind(&groupInfo); err != nil {
-		return groupParams, groupBatchParams, err
-	}
-
-	groupParams.ActivityID = &groupInfo.ActivityID
+	groupParams.ActivityID = groupInfo.ActivityID
 	groupParams.Description = &groupInfo.Description
 	groupParams.Location = &groupInfo.Location
 	groupParams.Name = &groupInfo.Name
 
-	groupBatchParams.GroupID = int32(stringId)
 	groupBatchParams.UserID = groupInfo.MembersIds
 	
 	return groupParams, groupBatchParams, nil

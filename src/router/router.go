@@ -111,6 +111,6 @@ func (router *Router) SetupRoutes() {
 	{
 		groups.GET("/:groupId", router.groupsController.GetGroup)
 		groups.GET("", router.groupsController.ListGroups)
-		preferences.POST("", router.groupsController.CreateGroup)
+		groups.POST("", router.groupsController.CreateGroup)
 	}
 }

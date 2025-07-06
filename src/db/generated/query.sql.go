@@ -138,7 +138,7 @@ type CreateGroupParams struct {
 	Name        *string `json:"name"`
 	Description *string `json:"description"`
 	Location    *string `json:"location"`
-	ActivityID  *int32  `json:"activity_id"`
+	ActivityID  int32   `json:"activity_id"`
 }
 
 func (q *Queries) CreateGroup(ctx context.Context, arg CreateGroupParams) (int32, error) {
@@ -268,10 +268,11 @@ SELECT
   g.description,
   g.created_at,
   a.name AS activity,
-  a.icon AS icon,
+  a.icon,
   g.location
 FROM groups g
 JOIN activities a ON g.activity_id = a.id
+LEFT JOIN group_members gm ON gm.group_id = g.id
 LEFT JOIN users u ON gm.user_id = u.id
 WHERE g.id = $1
 GROUP BY g.id, g.name, g.description, g.created_at, a.name, a.icon, g.location
@@ -447,7 +448,7 @@ SELECT
   g.created_at,
   g.location,
   a.name AS activity,
-  a.icon AS icon,
+  a.icon,
   COUNT(gm.user_id) AS members_count
 FROM selected_groups g
 JOIN activities a ON g.activity_id = a.id
