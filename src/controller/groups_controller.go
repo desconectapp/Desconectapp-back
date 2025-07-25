@@ -49,6 +49,36 @@ func (c *GroupsController) ListGroups(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, groupsList)
 }
 
+func (c *GroupsController) ListUserGroups(ctx *gin.Context) {
+	var groupParams repository.ListUserGroupsParams
+
+	limit, offset := GetLimmitAndOffset(ctx)
+
+	groupParams.Limit = int32(limit)
+	groupParams.Offset = int32(offset)
+
+	stringId := ctx.Param("userId")
+	userId, err := strconv.Atoi(stringId)
+	if err != nil {
+		ctx.Error(gin.Error{
+			Err:  err,
+			Type: gin.ErrorTypePublic,})
+		return
+	}
+
+	groupParams.UserID = int32(userId)
+
+	groupsList, err := c.service.ListUserGroups(groupParams)
+
+	if err != nil {
+		ctx.Error(gin.Error{
+			Err:  err,
+			Type: gin.ErrorTypePublic})
+		return
+	}
+	ctx.JSON(http.StatusOK, groupsList)
+}
+
 func (c *GroupsController) GetGroup(ctx *gin.Context) {
 	groupStr := ctx.Param("groupId")
 

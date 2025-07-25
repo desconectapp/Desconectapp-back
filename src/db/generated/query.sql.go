@@ -502,6 +502,77 @@ func (q *Queries) ListGroups(ctx context.Context, arg ListGroupsParams) ([]ListG
 	return items, nil
 }
 
+const listUserGroups = `-- name: ListUserGroups :many
+WITH user_groups AS (
+  SELECT g.id, g.name, g.description, g.location, g.activity_id, g.created_at
+  FROM groups g
+  JOIN group_members gm ON g.id = gm.group_id
+  WHERE gm.user_id = $3
+  ORDER BY g.created_at DESC
+  LIMIT $1 OFFSET $2
+)
+SELECT 
+  g.id,
+  g.name,
+  g.description,
+  g.created_at,
+  g.location,
+  a.name AS activity,
+  a.icon,
+  COUNT(gm_all.user_id) AS members_count
+FROM user_groups g
+JOIN activities a ON g.activity_id = a.id
+LEFT JOIN group_members gm_all ON g.id = gm_all.group_id
+GROUP BY g.id, g.name, g.description, g.created_at, g.location, a.name, a.icon
+ORDER BY g.created_at DESC
+`
+
+type ListUserGroupsParams struct {
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+	UserID int32 `json:"user_id"`
+}
+
+type ListUserGroupsRow struct {
+	ID           int32              `json:"id"`
+	Name         *string            `json:"name"`
+	Description  *string            `json:"description"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	Location     *string            `json:"location"`
+	Activity     string             `json:"activity"`
+	Icon         *string            `json:"icon"`
+	MembersCount int64              `json:"members_count"`
+}
+
+func (q *Queries) ListUserGroups(ctx context.Context, arg ListUserGroupsParams) ([]ListUserGroupsRow, error) {
+	rows, err := q.db.Query(ctx, listUserGroups, arg.Limit, arg.Offset, arg.UserID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListUserGroupsRow{}
+	for rows.Next() {
+		var i ListUserGroupsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Description,
+			&i.CreatedAt,
+			&i.Location,
+			&i.Activity,
+			&i.Icon,
+			&i.MembersCount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listUsers = `-- name: ListUsers :many
 SELECT id, name, email, password, created_at, age, city, current_situation, profile_complete FROM users
 ORDER BY name

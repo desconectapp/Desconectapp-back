@@ -57,6 +57,14 @@ func (s *GroupsService) ListGroups(params repository.ListGroupsParams) ([]reposi
 	return groupsList, nil
 }
 
+func (s *GroupsService) ListUserGroups(params repository.ListUserGroupsParams) ([]repository.ListUserGroupsRow, error) {
+	groupsList, err := s.queries.ListUserGroups(s.ctx, params)
+	if err != nil {
+		return nil, err
+	}
+	return groupsList, nil
+}
+
 func (s *GroupsService) GetGroup(groupId int32) (GroupWithMembers, error) {
 	var groupWithMembers GroupWithMembers
 
