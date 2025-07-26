@@ -70,6 +70,25 @@ CREATE TABLE sessions (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+DROP TABLE IF EXISTS group_members;
+DROP TABLE IF EXISTS groups;
+
+CREATE TABLE partial_matches (
+    id SERIAL PRIMARY KEY,
+    activity_id INTEGER REFERENCES activities(id) ON DELETE CASCADE,
+    description TEXT,
+    day_of_week day_option NOT NULL DEFAULT 'EVERYDAY',
+    members_count INTEGER DEFAULT 1,
+    participants_needed INTEGER DEFAULT 3,
+    created_at TIMESTAMP DEFAULT NOW(),
+    expires_at TIMESTAMP DEFAULT (NOW() + INTERVAL '7 days')
+);
+
+CREATE TABLE partial_match_members (
+    partial_match_id INTEGER REFERENCES partial_matches(id) ON DELETE CASCADE,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    PRIMARY KEY (partial_match_id, user_id)
+);
 
 DROP TABLE IF EXISTS group_members;
 DROP TABLE IF EXISTS groups;

@@ -145,3 +145,63 @@ ON CONFLICT DO NOTHING;
 SELECT u.id, u.name FROM users u
 JOIN group_members gm ON u.id = gm.user_id
 WHERE gm.group_id = $1;
+
+-- name: CreatePartialMatch :one
+INSERT INTO partial_matches (
+  activity_id, description, day_of_week, members_count, participants_needed
+) VALUES (
+  $1, $2, $3, $4, $5
+)
+RETURNING *;
+
+-- name: FindPartialMatches :many
+SELECT * FROM partial_matches
+WHERE activity_id = $1 
+  AND day_of_week = $2
+ORDER BY created_at DESC;
+
+-- name: AddUserToPartialMatch :exec
+INSERT INTO partial_match_members (
+  partial_match_id, user_id
+) VALUES (
+  $1, $2
+) ON CONFLICT DO NOTHING;
+
+-- name: BatchAddUsersToPartialMatch :exec
+INSERT INTO partial_match_members (partial_match_id, user_id)
+SELECT sqlc.arg(partial_match_id), id
+FROM users
+WHERE id = ANY(sqlc.arg(user_ids)::int[])
+ON CONFLICT DO NOTHING;
+
+-- name: GetPartialMatchesByActivity :many
+SELECT pm.*, COUNT(pmm.user_id) as current_members
+FROM partial_matches pm
+LEFT JOIN partial_match_members pmm ON pm.id = pmm.partial_match_id
+WHERE ($1::int IS NULL OR pm.activity_id = $1)
+GROUP BY pm.id
+ORDER BY pm.created_at DESC
+LIMIT $2 OFFSET $3;
+
+-- name: GetPartialMatchMembers :many
+SELECT u.id, u.name FROM users u
+JOIN partial_match_members pmm ON u.id = pmm.user_id
+WHERE pmm.partial_match_id = $1;
+
+-- name: DeletePartialMatch :one
+DELETE FROM partial_matches
+WHERE id = $1
+RETURNING id;
+
+-- name: DeletePartialMatchesByActivity :exec
+DELETE FROM partial_matches
+WHERE activity_id = $1;
+
+-- name: DeletePartialMatchesByUser :exec
+DELETE FROM partial_matches
+WHERE id IN (
+  SELECT pm.id
+  FROM partial_matches pm
+  JOIN partial_match_members pmm ON pm.id = pmm.partial_match_id
+  WHERE pmm.user_id = $1
+);

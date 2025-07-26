@@ -47,6 +47,24 @@ func (q *Queries) AddUserToGroup(ctx context.Context, arg AddUserToGroupParams) 
 	return err
 }
 
+const addUserToPartialMatch = `-- name: AddUserToPartialMatch :exec
+INSERT INTO partial_match_members (
+  partial_match_id, user_id
+) VALUES (
+  $1, $2
+) ON CONFLICT DO NOTHING
+`
+
+type AddUserToPartialMatchParams struct {
+	PartialMatchID int32 `json:"partial_match_id"`
+	UserID         int32 `json:"user_id"`
+}
+
+func (q *Queries) AddUserToPartialMatch(ctx context.Context, arg AddUserToPartialMatchParams) error {
+	_, err := q.db.Exec(ctx, addUserToPartialMatch, arg.PartialMatchID, arg.UserID)
+	return err
+}
+
 const batchAddPreferences = `-- name: BatchAddPreferences :exec
 INSERT INTO users_preference (user_id, activity_id)
 SELECT $1, id
@@ -80,6 +98,24 @@ type BatchAddUserToGroupParams struct {
 
 func (q *Queries) BatchAddUserToGroup(ctx context.Context, arg BatchAddUserToGroupParams) error {
 	_, err := q.db.Exec(ctx, batchAddUserToGroup, arg.GroupID, arg.UserIds)
+	return err
+}
+
+const batchAddUsersToPartialMatch = `-- name: BatchAddUsersToPartialMatch :exec
+INSERT INTO partial_match_members (partial_match_id, user_id)
+SELECT $1, id
+FROM users
+WHERE id = ANY($2::int[])
+ON CONFLICT DO NOTHING
+`
+
+type BatchAddUsersToPartialMatchParams struct {
+	PartialMatchID int32   `json:"partial_match_id"`
+	UserIds        []int32 `json:"user_ids"`
+}
+
+func (q *Queries) BatchAddUsersToPartialMatch(ctx context.Context, arg BatchAddUsersToPartialMatchParams) error {
+	_, err := q.db.Exec(ctx, batchAddUsersToPartialMatch, arg.PartialMatchID, arg.UserIds)
 	return err
 }
 
@@ -153,6 +189,45 @@ func (q *Queries) CreateGroup(ctx context.Context, arg CreateGroupParams) (int32
 	return id, err
 }
 
+const createPartialMatch = `-- name: CreatePartialMatch :one
+INSERT INTO partial_matches (
+  activity_id, description, day_of_week, members_count, participants_needed
+) VALUES (
+  $1, $2, $3, $4, $5
+)
+RETURNING id, activity_id, description, day_of_week, members_count, participants_needed, created_at, expires_at
+`
+
+type CreatePartialMatchParams struct {
+	ActivityID         *int32    `json:"activity_id"`
+	Description        *string   `json:"description"`
+	DayOfWeek          DayOption `json:"day_of_week"`
+	MembersCount       *int32    `json:"members_count"`
+	ParticipantsNeeded *int32    `json:"participants_needed"`
+}
+
+func (q *Queries) CreatePartialMatch(ctx context.Context, arg CreatePartialMatchParams) (PartialMatch, error) {
+	row := q.db.QueryRow(ctx, createPartialMatch,
+		arg.ActivityID,
+		arg.Description,
+		arg.DayOfWeek,
+		arg.MembersCount,
+		arg.ParticipantsNeeded,
+	)
+	var i PartialMatch
+	err := row.Scan(
+		&i.ID,
+		&i.ActivityID,
+		&i.Description,
+		&i.DayOfWeek,
+		&i.MembersCount,
+		&i.ParticipantsNeeded,
+		&i.CreatedAt,
+		&i.ExpiresAt,
+	)
+	return i, err
+}
+
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (
   name, email, password
@@ -197,6 +272,43 @@ func (q *Queries) DeleteGroup(ctx context.Context, id int32) (int32, error) {
 	return id, err
 }
 
+const deletePartialMatch = `-- name: DeletePartialMatch :one
+DELETE FROM partial_matches
+WHERE id = $1
+RETURNING id
+`
+
+func (q *Queries) DeletePartialMatch(ctx context.Context, id int32) (int32, error) {
+	row := q.db.QueryRow(ctx, deletePartialMatch, id)
+	err := row.Scan(&id)
+	return id, err
+}
+
+const deletePartialMatchesByActivity = `-- name: DeletePartialMatchesByActivity :exec
+DELETE FROM partial_matches
+WHERE activity_id = $1
+`
+
+func (q *Queries) DeletePartialMatchesByActivity(ctx context.Context, activityID *int32) error {
+	_, err := q.db.Exec(ctx, deletePartialMatchesByActivity, activityID)
+	return err
+}
+
+const deletePartialMatchesByUser = `-- name: DeletePartialMatchesByUser :exec
+DELETE FROM partial_matches
+WHERE id IN (
+  SELECT pm.id
+  FROM partial_matches pm
+  JOIN partial_match_members pmm ON pm.id = pmm.partial_match_id
+  WHERE pmm.user_id = $1
+)
+`
+
+func (q *Queries) DeletePartialMatchesByUser(ctx context.Context, userID int32) error {
+	_, err := q.db.Exec(ctx, deletePartialMatchesByUser, userID)
+	return err
+}
+
 const deletePreference = `-- name: DeletePreference :exec
 DELETE FROM users_preference
 WHERE user_id = $1 AND activity_id = $2
@@ -222,6 +334,47 @@ func (q *Queries) DeleteUser(ctx context.Context, id int32) (int32, error) {
 	row := q.db.QueryRow(ctx, deleteUser, id)
 	err := row.Scan(&id)
 	return id, err
+}
+
+const findPartialMatches = `-- name: FindPartialMatches :many
+SELECT id, activity_id, description, day_of_week, members_count, participants_needed, created_at, expires_at FROM partial_matches
+WHERE activity_id = $1 
+  AND day_of_week = $2
+ORDER BY created_at DESC
+`
+
+type FindPartialMatchesParams struct {
+	ActivityID *int32    `json:"activity_id"`
+	DayOfWeek  DayOption `json:"day_of_week"`
+}
+
+func (q *Queries) FindPartialMatches(ctx context.Context, arg FindPartialMatchesParams) ([]PartialMatch, error) {
+	rows, err := q.db.Query(ctx, findPartialMatches, arg.ActivityID, arg.DayOfWeek)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []PartialMatch{}
+	for rows.Next() {
+		var i PartialMatch
+		if err := rows.Scan(
+			&i.ID,
+			&i.ActivityID,
+			&i.Description,
+			&i.DayOfWeek,
+			&i.MembersCount,
+			&i.ParticipantsNeeded,
+			&i.CreatedAt,
+			&i.ExpiresAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getActivities = `-- name: GetActivities :many
@@ -324,6 +477,95 @@ func (q *Queries) GetGroupMembers(ctx context.Context, groupID int32) ([]GetGrou
 	for rows.Next() {
 		var i GetGroupMembersRow
 		if err := rows.Scan(&i.ID, &i.Name); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getPartialMatchMembers = `-- name: GetPartialMatchMembers :many
+SELECT u.id, u.name FROM users u
+JOIN partial_match_members pmm ON u.id = pmm.user_id
+WHERE pmm.partial_match_id = $1
+`
+
+type GetPartialMatchMembersRow struct {
+	ID   int32  `json:"id"`
+	Name string `json:"name"`
+}
+
+func (q *Queries) GetPartialMatchMembers(ctx context.Context, partialMatchID int32) ([]GetPartialMatchMembersRow, error) {
+	rows, err := q.db.Query(ctx, getPartialMatchMembers, partialMatchID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetPartialMatchMembersRow{}
+	for rows.Next() {
+		var i GetPartialMatchMembersRow
+		if err := rows.Scan(&i.ID, &i.Name); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getPartialMatchesByActivity = `-- name: GetPartialMatchesByActivity :many
+SELECT pm.id, pm.activity_id, pm.description, pm.day_of_week, pm.members_count, pm.participants_needed, pm.created_at, pm.expires_at, COUNT(pmm.user_id) as current_members
+FROM partial_matches pm
+LEFT JOIN partial_match_members pmm ON pm.id = pmm.partial_match_id
+WHERE ($1::int IS NULL OR pm.activity_id = $1)
+GROUP BY pm.id
+ORDER BY pm.created_at DESC
+LIMIT $2 OFFSET $3
+`
+
+type GetPartialMatchesByActivityParams struct {
+	Column1 int32 `json:"column_1"`
+	Limit   int32 `json:"limit"`
+	Offset  int32 `json:"offset"`
+}
+
+type GetPartialMatchesByActivityRow struct {
+	ID                 int32            `json:"id"`
+	ActivityID         *int32           `json:"activity_id"`
+	Description        *string          `json:"description"`
+	DayOfWeek          DayOption        `json:"day_of_week"`
+	MembersCount       *int32           `json:"members_count"`
+	ParticipantsNeeded *int32           `json:"participants_needed"`
+	CreatedAt          pgtype.Timestamp `json:"created_at"`
+	ExpiresAt          pgtype.Timestamp `json:"expires_at"`
+	CurrentMembers     int64            `json:"current_members"`
+}
+
+func (q *Queries) GetPartialMatchesByActivity(ctx context.Context, arg GetPartialMatchesByActivityParams) ([]GetPartialMatchesByActivityRow, error) {
+	rows, err := q.db.Query(ctx, getPartialMatchesByActivity, arg.Column1, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetPartialMatchesByActivityRow{}
+	for rows.Next() {
+		var i GetPartialMatchesByActivityRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.ActivityID,
+			&i.Description,
+			&i.DayOfWeek,
+			&i.MembersCount,
+			&i.ParticipantsNeeded,
+			&i.CreatedAt,
+			&i.ExpiresAt,
+			&i.CurrentMembers,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

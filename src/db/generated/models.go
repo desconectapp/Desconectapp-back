@@ -141,6 +141,22 @@ type GroupMember struct {
 	UserID  int32 `json:"user_id"`
 }
 
+type PartialMatch struct {
+	ID                 int32            `json:"id"`
+	ActivityID         *int32           `json:"activity_id"`
+	Description        *string          `json:"description"`
+	DayOfWeek          DayOption        `json:"day_of_week"`
+	MembersCount       *int32           `json:"members_count"`
+	ParticipantsNeeded *int32           `json:"participants_needed"`
+	CreatedAt          pgtype.Timestamp `json:"created_at"`
+	ExpiresAt          pgtype.Timestamp `json:"expires_at"`
+}
+
+type PartialMatchMember struct {
+	PartialMatchID int32 `json:"partial_match_id"`
+	UserID         int32 `json:"user_id"`
+}
+
 type Session struct {
 	ID               int32              `json:"id"`
 	UserID           int32              `json:"user_id"`
