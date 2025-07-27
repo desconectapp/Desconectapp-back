@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	repository "gin/db/generated"
 
 	"github.com/jackc/pgx/v5"
@@ -31,38 +32,21 @@ func (s *MatchingService) FindMatches(request repository.ActivityRequest) error 
 		return err
 	}
 
-	if len(matches) == 0 {
-		newMatch, err := s.queries.CreatePartialMatch(s.ctx, repository.CreatePartialMatchParams{
-			ActivityID:         request.ActivityID,
-			Description:        request.Description,
-			DayOfWeek:          request.DayOfWeek,
-			ParticipantsNeeded: request.ParticipantsNeeded,
-		})
-		if err != nil {
-			return err
-		}
-
-		if request.UserID != nil {
-			err = s.queries.AddUserToPartialMatch(s.ctx, repository.AddUserToPartialMatchParams{
-				PartialMatchID: newMatch.ID,
-				UserID:         *request.UserID,
-			})
-			if err != nil {
-				return err
-			}
-		}
-
-		return nil
-	}
+	// Debug: Log how many matches were found
+	fmt.Printf("DEBUG: Found %d matches for ActivityID=%v, DayOfWeek=%v\n", len(matches), request.ActivityID, request.DayOfWeek)
 
 	for _, match := range matches {
+		fmt.Printf("DEBUG: Checking match ID=%d\n", match.ID)
 		if isMatchCompatible(request, match) {
+			fmt.Printf("DEBUG: Match is compatible\n")
 			members, err := s.queries.GetPartialMatchMembers(s.ctx, match.ID)
 			if err != nil {
 				return err
 			}
 
+			fmt.Printf("DEBUG: Current members count: %d, participants needed: %d\n", len(members), *match.ParticipantsNeeded)
 			if len(members)+1 >= int(*match.ParticipantsNeeded) {
+				fmt.Printf("DEBUG: Creating group (enough members)\n")
 				groupID, err := s.queries.CreateGroup(s.ctx, repository.CreateGroupParams{
 					Name:        match.Description,
 					Description: match.Description,
@@ -111,6 +95,7 @@ func (s *MatchingService) FindMatches(request repository.ActivityRequest) error 
 
 				return nil
 			} else {
+				fmt.Printf("DEBUG: Creating combined partial match\n")
 				newMatch, err := s.queries.CreatePartialMatch(s.ctx, repository.CreatePartialMatchParams{
 					ActivityID:         match.ActivityID,
 					Description:        match.Description,
@@ -146,19 +131,59 @@ func (s *MatchingService) FindMatches(request repository.ActivityRequest) error 
 					}
 				}
 			}
+		} else {
+			fmt.Printf("DEBUG: Match is not compatible\n")
+		}
+	}
+
+	fmt.Printf("DEBUG: Creating unconditional partial match for user %v\n", request.UserID)
+	newMatch, err := s.queries.CreatePartialMatch(s.ctx, repository.CreatePartialMatchParams{
+		ActivityID:         request.ActivityID,
+		Description:        request.Description,
+		DayOfWeek:          request.DayOfWeek,
+		MembersCount:       &[]int32{1}[0],
+		ParticipantsNeeded: request.ParticipantsNeeded,
+	})
+	if err != nil {
+		return err
+	}
+
+	if request.UserID != nil {
+		err = s.queries.AddUserToPartialMatch(s.ctx, repository.AddUserToPartialMatchParams{
+			PartialMatchID: newMatch.ID,
+			UserID:         *request.UserID,
+		})
+		if err != nil {
+			return err
 		}
 	}
 
 	return nil
+
 }
 
 func isMatchCompatible(request repository.ActivityRequest, match repository.PartialMatch) bool {
-	if request.ActivityID != match.ActivityID {
+	reqActivityID := int32(0)
+	if request.ActivityID != nil {
+		reqActivityID = *request.ActivityID
+	}
+	matchActivityID := int32(0)
+	if match.ActivityID != nil {
+		matchActivityID = *match.ActivityID
+	}
+
+	fmt.Printf("DEBUG COMPATIBILITY: Request ActivityID=%d, Match ActivityID=%d\n", reqActivityID, matchActivityID)
+	fmt.Printf("DEBUG COMPATIBILITY: Request DayOfWeek=%v, Match DayOfWeek=%v\n", request.DayOfWeek, match.DayOfWeek)
+
+	if reqActivityID != matchActivityID {
+		fmt.Printf("DEBUG COMPATIBILITY: ActivityID mismatch!\n")
 		return false
 	}
 	if request.DayOfWeek != match.DayOfWeek {
+		fmt.Printf("DEBUG COMPATIBILITY: DayOfWeek mismatch!\n")
 		return false
 	}
 
+	fmt.Printf("DEBUG COMPATIBILITY: Match is compatible!\n")
 	return true
 }
