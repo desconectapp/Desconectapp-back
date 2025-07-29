@@ -65,6 +65,11 @@ func (s *GroupsService) ListUserGroups(params repository.ListUserGroupsParams) (
 	return groupsList, nil
 }
 
+func (s *GroupsService) ExitGroup(exitParams repository.ExitGroupParams) (error) {
+	err := s.queries.ExitGroup(s.ctx, exitParams)
+	return err
+}
+
 func (s *GroupsService) GetGroup(groupId int32) (GroupWithMembers, error) {
 	var groupWithMembers GroupWithMembers
 

@@ -224,6 +224,21 @@ func (q *Queries) DeleteUser(ctx context.Context, id int32) (int32, error) {
 	return id, err
 }
 
+const exitGroup = `-- name: ExitGroup :exec
+DELETE FROM group_members
+WHERE group_id = $1 AND user_id = $2
+`
+
+type ExitGroupParams struct {
+	GroupID int32 `json:"group_id"`
+	UserID  int32 `json:"user_id"`
+}
+
+func (q *Queries) ExitGroup(ctx context.Context, arg ExitGroupParams) error {
+	_, err := q.db.Exec(ctx, exitGroup, arg.GroupID, arg.UserID)
+	return err
+}
+
 const getActivities = `-- name: GetActivities :many
 SELECT id, name, icon, created_at, category FROM activities
 ORDER BY category, id DESC

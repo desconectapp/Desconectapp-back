@@ -169,3 +169,7 @@ JOIN activities a ON g.activity_id = a.id
 LEFT JOIN group_members gm_all ON g.id = gm_all.group_id
 GROUP BY g.id, g.name, g.description, g.created_at, g.location, a.name, a.icon
 ORDER BY g.created_at DESC;
+
+-- name: ExitGroup :exec
+DELETE FROM group_members
+WHERE group_id = $1 AND user_id = $2;
