@@ -87,7 +87,7 @@ func (router *Router) SetupRoutes() {
 		users.POST("/:userId/preferences", router.controller.AddUserPreferences)
 		users.DELETE("/:userId", router.controller.DeleteUser)
 		users.GET("/:userId", router.controller.GetUser)
-		users.PUT("/:userId", router.controller.UpdateUser)
+		// users.PUT("/:userId", router.controller.UpdateUser)
 	}
 
 	activities := router.r.Group("/activities")

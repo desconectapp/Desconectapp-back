@@ -64,9 +64,10 @@ WHERE id = ANY(sqlc.arg(user_ids)::int[])
 ON CONFLICT DO NOTHING;
 
 -- name: GetGroupMembers :many
-SELECT u.id, u.name FROM users u
-JOIN group_members gm ON u.id = gm.user_id
-WHERE gm.group_id = $1;
+SELECT u.id, p.name FROM users u
+	JOIN profiles p ON u.id = p.id
+	JOIN group_members gm ON u.id = gm.user_id
+	WHERE gm.group_id = $1;
 
 -- name: ListUserGroups :many
 WITH user_groups AS (

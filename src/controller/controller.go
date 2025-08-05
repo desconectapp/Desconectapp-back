@@ -132,7 +132,7 @@ func (c *Controller) CreateProfile(ctx *gin.Context) {
 		return
 	}
 
-	profileData.ID = int32(userId)
+	profileData.UserID = int32(userId)
 
 	id, err := c.service.CreateProfile(profileData)
 	if err != nil {
@@ -188,52 +188,52 @@ func (c *Controller) DeleteUser(ctx *gin.Context) {
 	})
 }
 
-func (c *Controller) UpdateUser(ctx *gin.Context) {
+// func (c *Controller) UpdateUser(ctx *gin.Context) {
+//
+// 	userParams, userPreferences, err := getParams(ctx)
+//
+// 	if err != nil {
+// 		ctx.Error(gin.Error{
+// 			Err:  err,
+// 			Type: gin.ErrorTypePublic})
+// 		return
+// 	}
+//
+// 	id, err := c.service.UpdateUser(userParams, userPreferences)
+// 	if err != nil {
+// 		ctx.Error(gin.Error{
+// 			Err:  err,
+// 			Type: gin.ErrorTypePublic})
+// 		return
+// 	}
+// 	ctx.JSON(http.StatusOK, gin.H{
+// 		"updated": id,
+// 	})
+// }
 
-	userParams, userPreferences, err := getParams(ctx)
-
-	if err != nil {
-		ctx.Error(gin.Error{
-			Err:  err,
-			Type: gin.ErrorTypePublic})
-		return
-	}
-
-	id, err := c.service.UpdateUser(userParams, userPreferences)
-	if err != nil {
-		ctx.Error(gin.Error{
-			Err:  err,
-			Type: gin.ErrorTypePublic})
-		return
-	}
-	ctx.JSON(http.StatusOK, gin.H{
-		"updated": id,
-	})
-}
-
-func getParams(ctx *gin.Context) (repository.UpdateUserParams, repository.BatchAddPreferencesParams, error) {
-	var userInfo UserUpdateInfo
-	var userParams repository.UpdateUserParams
-	var preferenceParams repository.BatchAddPreferencesParams
-
-	userId := ctx.Param("userId")
-	stringId, err := strconv.Atoi(userId)
-	if err != nil {
-		return userParams, preferenceParams, err
-	}
-
-	if err = ctx.ShouldBind(&userInfo); err != nil {
-		return userParams, preferenceParams, err
-	}
-	userParams.ID = int32(stringId)
-	userParams.Age = userInfo.Age
-	userParams.City = userInfo.City
-	userParams.CurrentSituation = userInfo.CurrentSituation
-	userParams.Email = userInfo.Email
-	userParams.Name = userInfo.Name
-
-	preferenceParams.UserID = int32(stringId)
-	preferenceParams.ActivityIds = userInfo.ActivityIDs
-
-	return userParams, preferenceParams, nil
-}
+// func getParams(ctx *gin.Context) (repository.UpdateUserParams, repository.BatchAddPreferencesParams, error) {
+// 	var userInfo UserUpdateInfo
+// 	var userParams repository.UpdateUserParams
+// 	var preferenceParams repository.BatchAddPreferencesParams
+//
+// 	userId := ctx.Param("userId")
+// 	stringId, err := strconv.Atoi(userId)
+// 	if err != nil {
+// 		return userParams, preferenceParams, err
+// 	}
+//
+// 	if err = ctx.ShouldBind(&userInfo); err != nil {
+// 		return userParams, preferenceParams, err
+// 	}
+// 	userParams.ID = int32(stringId)
+// 	userParams.Age = userInfo.Age
+// 	userParams.City = userInfo.City
+// 	userParams.CurrentSituation = userInfo.CurrentSituation
+// 	userParams.Email = userInfo.Email
+// 	userParams.Name = userInfo.Name
+//
+// 	preferenceParams.UserID = int32(stringId)
+// 	preferenceParams.ActivityIds = userInfo.ActivityIDs
+//
+// 	return userParams, preferenceParams, nil
+// }

@@ -204,7 +204,6 @@ func (s *AuthService) Signup(name, email, password string) (*Session, error) {
 	}
 
 	user, err := s.queries.CreateUser(s.ctx, repository.CreateUserParams{
-		Name:     name,
 		Email:    email,
 		Password: string(hashedPassword),
 	})

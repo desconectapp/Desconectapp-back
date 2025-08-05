@@ -10,19 +10,19 @@ import (
 )
 
 const createProfile = `-- name: CreateProfile :one
-UPDATE users
+UPDATE profiles
   SET name = $2,
   age = $3,
   city = $4,
   current_situation = $5,
   gender = $6,
   profile_complete = true
-WHERE id = $1
-RETURNING id
+WHERE user_id = $1
+RETURNING user_id
 `
 
 type CreateProfileParams struct {
-	ID               int32  `json:"id"`
+	UserID           int32  `json:"user_id"`
 	Name             string `json:"name"`
 	Age              int32  `json:"age"`
 	City             string `json:"city"`
@@ -32,48 +32,36 @@ type CreateProfileParams struct {
 
 func (q *Queries) CreateProfile(ctx context.Context, arg CreateProfileParams) (int32, error) {
 	row := q.db.QueryRow(ctx, createProfile,
-		arg.ID,
+		arg.UserID,
 		arg.Name,
 		arg.Age,
 		arg.City,
 		arg.CurrentSituation,
 		arg.Gender,
 	)
-	var id int32
-	err := row.Scan(&id)
-	return id, err
+	var user_id int32
+	err := row.Scan(&user_id)
+	return user_id, err
 }
 
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (
-  name, email, password
+  email, password
 ) VALUES (
-  $1, $2, $3
+  $1, $2
 )
-RETURNING id, name, email, password, created_at, age, city, current_situation, gender, profile_complete
+RETURNING id, email, password
 `
 
 type CreateUserParams struct {
-	Name     string `json:"name"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
-	row := q.db.QueryRow(ctx, createUser, arg.Name, arg.Email, arg.Password)
+	row := q.db.QueryRow(ctx, createUser, arg.Email, arg.Password)
 	var i User
-	err := row.Scan(
-		&i.ID,
-		&i.Name,
-		&i.Email,
-		&i.Password,
-		&i.CreatedAt,
-		&i.Age,
-		&i.City,
-		&i.CurrentSituation,
-		&i.Gender,
-		&i.ProfileComplete,
-	)
+	err := row.Scan(&i.ID, &i.Email, &i.Password)
 	return i, err
 }
 
@@ -90,31 +78,19 @@ func (q *Queries) DeleteUser(ctx context.Context, id int32) (int32, error) {
 }
 
 const getUser = `-- name: GetUser :one
-SELECT id, name, email, password, created_at, age, city, current_situation, gender, profile_complete FROM users
+SELECT id, email, password FROM users
 WHERE id = $1 LIMIT 1
 `
 
 func (q *Queries) GetUser(ctx context.Context, id int32) (User, error) {
 	row := q.db.QueryRow(ctx, getUser, id)
 	var i User
-	err := row.Scan(
-		&i.ID,
-		&i.Name,
-		&i.Email,
-		&i.Password,
-		&i.CreatedAt,
-		&i.Age,
-		&i.City,
-		&i.CurrentSituation,
-		&i.Gender,
-		&i.ProfileComplete,
-	)
+	err := row.Scan(&i.ID, &i.Email, &i.Password)
 	return i, err
 }
 
 const listUsers = `-- name: ListUsers :many
-SELECT id, name, email, password, created_at, age, city, current_situation, gender, profile_complete FROM users
-ORDER BY name
+SELECT id, email, password FROM users
 LIMIT $1 OFFSET $2
 `
 
@@ -132,18 +108,7 @@ func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]User, e
 	items := []User{}
 	for rows.Next() {
 		var i User
-		if err := rows.Scan(
-			&i.ID,
-			&i.Name,
-			&i.Email,
-			&i.Password,
-			&i.CreatedAt,
-			&i.Age,
-			&i.City,
-			&i.CurrentSituation,
-			&i.Gender,
-			&i.ProfileComplete,
-		); err != nil {
+		if err := rows.Scan(&i.ID, &i.Email, &i.Password); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -156,34 +121,18 @@ func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]User, e
 
 const updateUser = `-- name: UpdateUser :one
 UPDATE users
-  set name = $2,
-  email = $3,
-  age = $4,
-  city = $5,
-  current_situation = $6,
-  profile_complete = true
+  SET email = $2
 WHERE id = $1
 RETURNING id
 `
 
 type UpdateUserParams struct {
-	ID               int32  `json:"id"`
-	Name             string `json:"name"`
-	Email            string `json:"email"`
-	Age              int32  `json:"age"`
-	City             string `json:"city"`
-	CurrentSituation string `json:"current_situation"`
+	ID    int32  `json:"id"`
+	Email string `json:"email"`
 }
 
 func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (int32, error) {
-	row := q.db.QueryRow(ctx, updateUser,
-		arg.ID,
-		arg.Name,
-		arg.Email,
-		arg.Age,
-		arg.City,
-		arg.CurrentSituation,
-	)
+	row := q.db.QueryRow(ctx, updateUser, arg.ID, arg.Email)
 	var id int32
 	err := row.Scan(&id)
 	return id, err
