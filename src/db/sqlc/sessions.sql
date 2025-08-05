@@ -34,4 +34,4 @@ WHERE refresh_token = $1;
 
 -- name: GetUserByEmail :one
 SELECT * FROM users
-WHERE email = $1 LIMIT 1; 
+WHERE email = $1 LIMIT 1;
