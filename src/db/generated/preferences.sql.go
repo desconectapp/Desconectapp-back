@@ -28,6 +28,13 @@ func (q *Queries) AddPreference(ctx context.Context, arg AddPreferenceParams) er
 }
 
 const batchAddPreferences = `-- name: BatchAddPreferences :exec
+WITH deleted AS (
+  DELETE FROM users_preference
+  WHERE user_id = $1
+    AND activity_id NOT IN (
+      SELECT unnest($2::int[])
+    )
+)
 INSERT INTO users_preference (user_id, activity_id)
 SELECT $1, id
 FROM activities

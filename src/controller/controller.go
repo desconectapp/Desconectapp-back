@@ -69,6 +69,44 @@ func (c *Controller) CreateUser(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, user)
 }
 
+func (c *Controller) AddUserPreferences(ctx *gin.Context) {
+	var preferences []int32
+	if err := ctx.ShouldBindJSON(&preferences); err != nil {
+		ctx.Error(gin.Error{
+			Err:  err,
+			Type: gin.ErrorTypePublic})
+		return
+	}
+
+	if len(preferences) == 0 || len(preferences) > 50 {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+			"error": "preferences must contain between 1 and 50 activity IDs",
+		})
+		return
+	}
+
+	userId, err := strconv.Atoi(ctx.Param("userId"))
+	if err != nil {
+		ctx.Error(gin.Error{
+			Err:  errors.New("userId is required and must be an integer"),
+			Type: gin.ErrorTypePublic,
+		})
+		return
+	}
+
+	err = c.service.AddPreferences(int32(userId), preferences)
+	if err != nil {
+		ctx.Error(gin.Error{
+			Err:  err,
+			Type: gin.ErrorTypePublic})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"result": "preferences added successfully",
+	})
+}
+
 func (c *Controller) CreateProfile(ctx *gin.Context) {
 	var profileData repository.CreateProfileParams
 	if err := ctx.ShouldBind(&profileData); err != nil {

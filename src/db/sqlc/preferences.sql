@@ -17,6 +17,13 @@ DELETE FROM users_preference
 WHERE user_id = $1 AND activity_id = $2;
 
 -- name: BatchAddPreferences :exec
+WITH deleted AS (
+  DELETE FROM users_preference
+  WHERE user_id = sqlc.arg(user_id)
+    AND activity_id NOT IN (
+      SELECT unnest(sqlc.arg(activity_ids)::int[])
+    )
+)
 INSERT INTO users_preference (user_id, activity_id)
 SELECT sqlc.arg(user_id), id
 FROM activities
