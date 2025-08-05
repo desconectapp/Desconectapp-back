@@ -194,7 +194,7 @@ func (s *AuthService) Signup(name, email, password string) (*Session, error) {
 	if err == nil {
 		return nil, errors.New("user with this email already exists")
 	}
-	if err != nil && err != pgx.ErrNoRows {
+	if err != pgx.ErrNoRows {
 		return nil, err
 	}
 
