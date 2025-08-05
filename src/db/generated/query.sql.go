@@ -122,21 +122,28 @@ func (q *Queries) BatchAddUsersToPartialMatch(ctx context.Context, arg BatchAddU
 const createActivityRequest = `-- name: CreateActivityRequest :one
 INSERT INTO activity_requests (
   user_id, activity_id, description,
-  day_of_week, 
-  participants_needed
+  week_hours, participants_needed,
+  maximum_participants, latitude, longitude,
+  search_radius
 ) VALUES (
   $1, $2, $3,
-  $4, $5
+  $4, $5,
+  $6, $7, $8,
+  $9
 )
-RETURNING id, user_id, activity_id, description, day_of_week, participants_needed, created_at, expires_at
+RETURNING id, user_id, activity_id, description, week_hours, participants_needed, maximum_participants, latitude, longitude, search_radius, created_at, expires_at
 `
 
 type CreateActivityRequestParams struct {
-	UserID             *int32    `json:"user_id"`
-	ActivityID         *int32    `json:"activity_id"`
-	Description        *string   `json:"description"`
-	DayOfWeek          DayOption `json:"day_of_week"`
-	ParticipantsNeeded *int32    `json:"participants_needed"`
+	UserID              *int32   `json:"user_id"`
+	ActivityID          *int32   `json:"activity_id"`
+	Description         *string  `json:"description"`
+	WeekHours           []int32  `json:"week_hours"`
+	ParticipantsNeeded  *int32   `json:"participants_needed"`
+	MaximumParticipants *int32   `json:"maximum_participants"`
+	Latitude            *float64 `json:"latitude"`
+	Longitude           *float64 `json:"longitude"`
+	SearchRadius        *int32   `json:"search_radius"`
 }
 
 func (q *Queries) CreateActivityRequest(ctx context.Context, arg CreateActivityRequestParams) (ActivityRequest, error) {
@@ -144,8 +151,12 @@ func (q *Queries) CreateActivityRequest(ctx context.Context, arg CreateActivityR
 		arg.UserID,
 		arg.ActivityID,
 		arg.Description,
-		arg.DayOfWeek,
+		arg.WeekHours,
 		arg.ParticipantsNeeded,
+		arg.MaximumParticipants,
+		arg.Latitude,
+		arg.Longitude,
+		arg.SearchRadius,
 	)
 	var i ActivityRequest
 	err := row.Scan(
@@ -153,8 +164,12 @@ func (q *Queries) CreateActivityRequest(ctx context.Context, arg CreateActivityR
 		&i.UserID,
 		&i.ActivityID,
 		&i.Description,
-		&i.DayOfWeek,
+		&i.WeekHours,
 		&i.ParticipantsNeeded,
+		&i.MaximumParticipants,
+		&i.Latitude,
+		&i.Longitude,
+		&i.SearchRadius,
 		&i.CreatedAt,
 		&i.ExpiresAt,
 	)
@@ -191,37 +206,55 @@ func (q *Queries) CreateGroup(ctx context.Context, arg CreateGroupParams) (int32
 
 const createPartialMatch = `-- name: CreatePartialMatch :one
 INSERT INTO partial_matches (
-  activity_id, description, day_of_week, members_count, participants_needed
+  activity_id, description, week_hours,
+  participants_needed, maximum_participants,
+  latitude, longitude, members_count,
+  search_radius
 ) VALUES (
-  $1, $2, $3, $4, $5
+  $1, $2, $3,
+  $4, $5,
+  $6, $7, $8,
+  $9
 )
-RETURNING id, activity_id, description, day_of_week, members_count, participants_needed, created_at, expires_at
+RETURNING id, activity_id, description, week_hours, participants_needed, maximum_participants, latitude, longitude, search_radius, members_count, created_at, expires_at
 `
 
 type CreatePartialMatchParams struct {
-	ActivityID         *int32    `json:"activity_id"`
-	Description        *string   `json:"description"`
-	DayOfWeek          DayOption `json:"day_of_week"`
-	MembersCount       *int32    `json:"members_count"`
-	ParticipantsNeeded *int32    `json:"participants_needed"`
+	ActivityID          *int32   `json:"activity_id"`
+	Description         *string  `json:"description"`
+	WeekHours           []int32  `json:"week_hours"`
+	ParticipantsNeeded  *int32   `json:"participants_needed"`
+	MaximumParticipants *int32   `json:"maximum_participants"`
+	Latitude            *float64 `json:"latitude"`
+	Longitude           *float64 `json:"longitude"`
+	MembersCount        *int32   `json:"members_count"`
+	SearchRadius        *int32   `json:"search_radius"`
 }
 
 func (q *Queries) CreatePartialMatch(ctx context.Context, arg CreatePartialMatchParams) (PartialMatch, error) {
 	row := q.db.QueryRow(ctx, createPartialMatch,
 		arg.ActivityID,
 		arg.Description,
-		arg.DayOfWeek,
-		arg.MembersCount,
+		arg.WeekHours,
 		arg.ParticipantsNeeded,
+		arg.MaximumParticipants,
+		arg.Latitude,
+		arg.Longitude,
+		arg.MembersCount,
+		arg.SearchRadius,
 	)
 	var i PartialMatch
 	err := row.Scan(
 		&i.ID,
 		&i.ActivityID,
 		&i.Description,
-		&i.DayOfWeek,
-		&i.MembersCount,
+		&i.WeekHours,
 		&i.ParticipantsNeeded,
+		&i.MaximumParticipants,
+		&i.Latitude,
+		&i.Longitude,
+		&i.SearchRadius,
+		&i.MembersCount,
 		&i.CreatedAt,
 		&i.ExpiresAt,
 	)
@@ -336,47 +369,6 @@ func (q *Queries) DeleteUser(ctx context.Context, id int32) (int32, error) {
 	return id, err
 }
 
-const findPartialMatches = `-- name: FindPartialMatches :many
-SELECT id, activity_id, description, day_of_week, members_count, participants_needed, created_at, expires_at FROM partial_matches
-WHERE activity_id = $1 
-  AND day_of_week = $2
-ORDER BY created_at DESC
-`
-
-type FindPartialMatchesParams struct {
-	ActivityID *int32    `json:"activity_id"`
-	DayOfWeek  DayOption `json:"day_of_week"`
-}
-
-func (q *Queries) FindPartialMatches(ctx context.Context, arg FindPartialMatchesParams) ([]PartialMatch, error) {
-	rows, err := q.db.Query(ctx, findPartialMatches, arg.ActivityID, arg.DayOfWeek)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []PartialMatch{}
-	for rows.Next() {
-		var i PartialMatch
-		if err := rows.Scan(
-			&i.ID,
-			&i.ActivityID,
-			&i.Description,
-			&i.DayOfWeek,
-			&i.MembersCount,
-			&i.ParticipantsNeeded,
-			&i.CreatedAt,
-			&i.ExpiresAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const exitGroup = `-- name: ExitGroup :exec
 DELETE FROM group_members
 WHERE group_id = $1 AND user_id = $2
@@ -390,6 +382,45 @@ type ExitGroupParams struct {
 func (q *Queries) ExitGroup(ctx context.Context, arg ExitGroupParams) error {
 	_, err := q.db.Exec(ctx, exitGroup, arg.GroupID, arg.UserID)
 	return err
+}
+
+const findPartialMatches = `-- name: FindPartialMatches :many
+SELECT id, activity_id, description, week_hours, participants_needed, maximum_participants, latitude, longitude, search_radius, members_count, created_at, expires_at FROM partial_matches
+WHERE activity_id = $1
+ORDER BY created_at DESC
+`
+
+func (q *Queries) FindPartialMatches(ctx context.Context, activityID *int32) ([]PartialMatch, error) {
+	rows, err := q.db.Query(ctx, findPartialMatches, activityID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []PartialMatch{}
+	for rows.Next() {
+		var i PartialMatch
+		if err := rows.Scan(
+			&i.ID,
+			&i.ActivityID,
+			&i.Description,
+			&i.WeekHours,
+			&i.ParticipantsNeeded,
+			&i.MaximumParticipants,
+			&i.Latitude,
+			&i.Longitude,
+			&i.SearchRadius,
+			&i.MembersCount,
+			&i.CreatedAt,
+			&i.ExpiresAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getActivities = `-- name: GetActivities :many
@@ -534,7 +565,7 @@ func (q *Queries) GetPartialMatchMembers(ctx context.Context, partialMatchID int
 }
 
 const getPartialMatchesByActivity = `-- name: GetPartialMatchesByActivity :many
-SELECT pm.id, pm.activity_id, pm.description, pm.day_of_week, pm.members_count, pm.participants_needed, pm.created_at, pm.expires_at, COUNT(pmm.user_id) as current_members
+SELECT pm.id, pm.activity_id, pm.description, pm.week_hours, pm.participants_needed, pm.maximum_participants, pm.latitude, pm.longitude, pm.search_radius, pm.members_count, pm.created_at, pm.expires_at, COUNT(pmm.user_id) as current_members
 FROM partial_matches pm
 LEFT JOIN partial_match_members pmm ON pm.id = pmm.partial_match_id
 WHERE ($1::int IS NULL OR pm.activity_id = $1)
@@ -550,15 +581,19 @@ type GetPartialMatchesByActivityParams struct {
 }
 
 type GetPartialMatchesByActivityRow struct {
-	ID                 int32            `json:"id"`
-	ActivityID         *int32           `json:"activity_id"`
-	Description        *string          `json:"description"`
-	DayOfWeek          DayOption        `json:"day_of_week"`
-	MembersCount       *int32           `json:"members_count"`
-	ParticipantsNeeded *int32           `json:"participants_needed"`
-	CreatedAt          pgtype.Timestamp `json:"created_at"`
-	ExpiresAt          pgtype.Timestamp `json:"expires_at"`
-	CurrentMembers     int64            `json:"current_members"`
+	ID                  int32            `json:"id"`
+	ActivityID          *int32           `json:"activity_id"`
+	Description         *string          `json:"description"`
+	WeekHours           []int32          `json:"week_hours"`
+	ParticipantsNeeded  *int32           `json:"participants_needed"`
+	MaximumParticipants *int32           `json:"maximum_participants"`
+	Latitude            *float64         `json:"latitude"`
+	Longitude           *float64         `json:"longitude"`
+	SearchRadius        *int32           `json:"search_radius"`
+	MembersCount        *int32           `json:"members_count"`
+	CreatedAt           pgtype.Timestamp `json:"created_at"`
+	ExpiresAt           pgtype.Timestamp `json:"expires_at"`
+	CurrentMembers      int64            `json:"current_members"`
 }
 
 func (q *Queries) GetPartialMatchesByActivity(ctx context.Context, arg GetPartialMatchesByActivityParams) ([]GetPartialMatchesByActivityRow, error) {
@@ -574,9 +609,13 @@ func (q *Queries) GetPartialMatchesByActivity(ctx context.Context, arg GetPartia
 			&i.ID,
 			&i.ActivityID,
 			&i.Description,
-			&i.DayOfWeek,
-			&i.MembersCount,
+			&i.WeekHours,
 			&i.ParticipantsNeeded,
+			&i.MaximumParticipants,
+			&i.Latitude,
+			&i.Longitude,
+			&i.SearchRadius,
+			&i.MembersCount,
 			&i.CreatedAt,
 			&i.ExpiresAt,
 			&i.CurrentMembers,
@@ -652,7 +691,7 @@ func (q *Queries) GetUserPreferences(ctx context.Context, arg GetUserPreferences
 }
 
 const listActivityRequests = `-- name: ListActivityRequests :many
-SELECT id, user_id, activity_id, description, day_of_week, participants_needed, created_at, expires_at FROM activity_requests
+SELECT id, user_id, activity_id, description, week_hours, participants_needed, maximum_participants, latitude, longitude, search_radius, created_at, expires_at FROM activity_requests
 ORDER BY created_at DESC
 LIMIT $1 OFFSET $2
 `
@@ -676,8 +715,12 @@ func (q *Queries) ListActivityRequests(ctx context.Context, arg ListActivityRequ
 			&i.UserID,
 			&i.ActivityID,
 			&i.Description,
-			&i.DayOfWeek,
+			&i.WeekHours,
 			&i.ParticipantsNeeded,
+			&i.MaximumParticipants,
+			&i.Latitude,
+			&i.Longitude,
+			&i.SearchRadius,
 			&i.CreatedAt,
 			&i.ExpiresAt,
 		); err != nil {

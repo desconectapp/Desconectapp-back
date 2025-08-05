@@ -34,11 +34,14 @@ RETURNING id;
 -- name: CreateActivityRequest :one
 INSERT INTO activity_requests (
   user_id, activity_id, description,
-  day_of_week, 
-  participants_needed
+  week_hours, participants_needed,
+  maximum_participants, latitude, longitude,
+  search_radius
 ) VALUES (
   $1, $2, $3,
-  $4, $5
+  $4, $5,
+  $6, $7, $8,
+  $9
 )
 RETURNING *;
 
@@ -176,16 +179,21 @@ WHERE group_id = $1 AND user_id = $2;
 
 -- name: CreatePartialMatch :one
 INSERT INTO partial_matches (
-  activity_id, description, day_of_week, members_count, participants_needed
+  activity_id, description, week_hours,
+  participants_needed, maximum_participants,
+  latitude, longitude, members_count,
+  search_radius
 ) VALUES (
-  $1, $2, $3, $4, $5
+  $1, $2, $3,
+  $4, $5,
+  $6, $7, $8,
+  $9
 )
 RETURNING *;
 
 -- name: FindPartialMatches :many
 SELECT * FROM partial_matches
-WHERE activity_id = $1 
-  AND day_of_week = $2
+WHERE activity_id = $1
 ORDER BY created_at DESC;
 
 -- name: AddUserToPartialMatch :exec

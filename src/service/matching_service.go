@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	repository "gin/db/generated"
+	"math"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -24,15 +25,12 @@ func NewMatchingService(conn *pgx.Conn) *MatchingService {
 }
 
 func (s *MatchingService) FindMatches(request repository.ActivityRequest) error {
-	matches, err := s.queries.FindPartialMatches(s.ctx, repository.FindPartialMatchesParams{
-		ActivityID: request.ActivityID,
-		DayOfWeek:  request.DayOfWeek,
-	})
+	matches, err := s.queries.FindPartialMatches(s.ctx, request.ActivityID)
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("DEBUG: Found %d matches for ActivityID=%v, DayOfWeek=%v\n", len(matches), request.ActivityID, request.DayOfWeek)
+	fmt.Printf("DEBUG: Found %d matches for ActivityID=%v, WeekHours=%v\n", len(matches), request.ActivityID, request.WeekHours)
 
 	for _, match := range matches {
 		fmt.Printf("DEBUG: Checking match ID=%d\n", match.ID)
@@ -44,7 +42,7 @@ func (s *MatchingService) FindMatches(request repository.ActivityRequest) error 
 			}
 
 			fmt.Printf("DEBUG: Current members count: %d, participants needed: %d\n", len(members), *match.ParticipantsNeeded)
-			if len(members)+1 >= int(*match.ParticipantsNeeded) {
+			if len(members)+1 >= int(*match.ParticipantsNeeded) && len(members)+1 >= int(*request.ParticipantsNeeded) {
 				fmt.Printf("DEBUG: Creating group (enough members)\n")
 
 				s.createGroup(request, match, members)
@@ -66,6 +64,7 @@ func (s *MatchingService) FindMatches(request repository.ActivityRequest) error 
 }
 
 func isMatchCompatible(request repository.ActivityRequest, match repository.PartialMatch) bool {
+	// Check if activity IDs match
 	reqActivityID := int32(0)
 	if request.ActivityID != nil {
 		reqActivityID = *request.ActivityID
@@ -76,14 +75,27 @@ func isMatchCompatible(request repository.ActivityRequest, match repository.Part
 	}
 
 	fmt.Printf("DEBUG COMPATIBILITY: Request ActivityID=%d, Match ActivityID=%d\n", reqActivityID, matchActivityID)
-	fmt.Printf("DEBUG COMPATIBILITY: Request DayOfWeek=%v, Match DayOfWeek=%v\n", request.DayOfWeek, match.DayOfWeek)
 
 	if reqActivityID != matchActivityID {
 		fmt.Printf("DEBUG COMPATIBILITY: ActivityID mismatch!\n")
 		return false
 	}
-	if request.DayOfWeek != match.DayOfWeek {
-		fmt.Printf("DEBUG COMPATIBILITY: DayOfWeek mismatch!\n")
+
+	// Check if they share at least one hour of the week
+	if !hasSharedWeekHours(request.WeekHours, match.WeekHours) {
+		fmt.Printf("DEBUG COMPATIBILITY: No shared week hours!\n")
+		return false
+	}
+
+	// Check location compatibility (each location should be within the other's radius)
+	if !areLocationsCompatible(request, match) {
+		fmt.Printf("DEBUG COMPATIBILITY: Locations not compatible!\n")
+		return false
+	}
+
+	// Check participant count compatibility
+	if !areParticipantCountsCompatible(request, match) {
+		fmt.Printf("DEBUG COMPATIBILITY: Participant counts not compatible!\n")
 		return false
 	}
 
@@ -92,18 +104,76 @@ func isMatchCompatible(request repository.ActivityRequest, match repository.Part
 }
 
 func (s *MatchingService) createCombinedPartialMatch(request repository.ActivityRequest, match repository.PartialMatch) error {
-	newMatch, err := s.queries.CreatePartialMatch(s.ctx, repository.CreatePartialMatchParams{
-		ActivityID:         match.ActivityID,
-		Description:        match.Description,
-		DayOfWeek:          match.DayOfWeek,
-		ParticipantsNeeded: match.ParticipantsNeeded,
-		MembersCount:       func() *int32 { v := *match.MembersCount + 1; return &v }(),
-	})
+	// Calculate intersection of week hours
+	intersectionWeekHours := getWeekHoursIntersection(request.WeekHours, match.WeekHours)
+
+	// Calculate midpoint coordinates
+	var midLat, midLon *float64
+	if request.Latitude != nil && request.Longitude != nil && match.Latitude != nil && match.Longitude != nil {
+		lat, lon := calculateMidpoint(*request.Latitude, *request.Longitude, *match.Latitude, *match.Longitude)
+		midLat = &lat
+		midLon = &lon
+	}
+
+	// Calculate average search radius
+	var avgSearchRadius *int32
+	if request.SearchRadius != nil && match.SearchRadius != nil {
+		avg := (*request.SearchRadius + *match.SearchRadius) / 2
+		avgSearchRadius = &avg
+	}
+
+	// Get highest minimum participants (participants needed)
+	var highestMinParticipants *int32
+	reqMin := int32(1)
+	if request.ParticipantsNeeded != nil {
+		reqMin = *request.ParticipantsNeeded
+	}
+	matchMin := int32(1)
+	if match.ParticipantsNeeded != nil {
+		matchMin = *match.ParticipantsNeeded
+	}
+	if reqMin > matchMin {
+		highestMinParticipants = &reqMin
+	} else {
+		highestMinParticipants = &matchMin
+	}
+
+	// Get lowest maximum participants
+	var lowestMaxParticipants *int32
+	reqMax := int32(10)
+	if request.MaximumParticipants != nil {
+		reqMax = *request.MaximumParticipants
+	}
+	matchMax := int32(10)
+	if match.MaximumParticipants != nil {
+		matchMax = *match.MaximumParticipants
+	}
+	if reqMax < matchMax {
+		lowestMaxParticipants = &reqMax
+	} else {
+		lowestMaxParticipants = &matchMax
+	}
+
+	// Get current members to calculate new members count
+	members, err := s.queries.GetPartialMatchMembers(s.ctx, match.ID)
 	if err != nil {
 		return err
 	}
 
-	members, err := s.queries.GetPartialMatchMembers(s.ctx, match.ID)
+	// Calculate new members count (existing members + 1 for the new user)
+	newMembersCount := int32(len(members) + 1)
+
+	newMatch, err := s.queries.CreatePartialMatch(s.ctx, repository.CreatePartialMatchParams{
+		ActivityID:          match.ActivityID,
+		Description:         match.Description,
+		WeekHours:           intersectionWeekHours,
+		ParticipantsNeeded:  highestMinParticipants,
+		MaximumParticipants: lowestMaxParticipants,
+		MembersCount:        &newMembersCount,
+		Latitude:            midLat,
+		Longitude:           midLon,
+		SearchRadius:        avgSearchRadius,
+	})
 	if err != nil {
 		return err
 	}
@@ -187,11 +257,15 @@ func (s *MatchingService) createGroup(request repository.ActivityRequest, match 
 
 func (s *MatchingService) createUnconditionalPartialMatch(request repository.ActivityRequest) error {
 	newMatch, err := s.queries.CreatePartialMatch(s.ctx, repository.CreatePartialMatchParams{
-		ActivityID:         request.ActivityID,
-		Description:        request.Description,
-		DayOfWeek:          request.DayOfWeek,
-		MembersCount:       &[]int32{1}[0],
-		ParticipantsNeeded: request.ParticipantsNeeded,
+		ActivityID:          request.ActivityID,
+		Description:         request.Description,
+		WeekHours:           request.WeekHours,
+		ParticipantsNeeded:  request.ParticipantsNeeded,
+		MaximumParticipants: request.MaximumParticipants,
+		MembersCount:        &[]int32{1}[0],
+		Latitude:            request.Latitude,
+		Longitude:           request.Longitude,
+		SearchRadius:        request.SearchRadius,
 	})
 	if err != nil {
 		return err
@@ -208,4 +282,106 @@ func (s *MatchingService) createUnconditionalPartialMatch(request repository.Act
 	}
 
 	return nil
+}
+
+// hasSharedWeekHours checks if two week hour arrays share at least one common hour
+func hasSharedWeekHours(hours1, hours2 []int32) bool {
+	hourSet := make(map[int32]bool)
+	for _, hour := range hours1 {
+		hourSet[hour] = true
+	}
+
+	for _, hour := range hours2 {
+		if hourSet[hour] {
+			return true
+		}
+	}
+
+	return false
+}
+
+// calculateDistance calculates the distance between two points using Haversine formula
+func calculateDistance(lat1, lon1, lat2, lon2 float64) float64 {
+	const earthRadius = 6371 // Earth's radius in kilometers
+
+	lat1Rad := lat1 * math.Pi / 180
+	lon1Rad := lon1 * math.Pi / 180
+	lat2Rad := lat2 * math.Pi / 180
+	lon2Rad := lon2 * math.Pi / 180
+
+	deltaLat := lat2Rad - lat1Rad
+	deltaLon := lon2Rad - lon1Rad
+
+	a := math.Sin(deltaLat/2)*math.Sin(deltaLat/2) +
+		math.Cos(lat1Rad)*math.Cos(lat2Rad)*
+			math.Sin(deltaLon/2)*math.Sin(deltaLon/2)
+
+	c := 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
+
+	return earthRadius * c
+}
+
+// areLocationsCompatible checks if each location is within the other's search radius
+func areLocationsCompatible(request repository.ActivityRequest, match repository.PartialMatch) bool {
+	if request.Latitude == nil || request.Longitude == nil || request.SearchRadius == nil ||
+		match.Latitude == nil || match.Longitude == nil || match.SearchRadius == nil {
+		return false
+	}
+
+	distance := calculateDistance(*request.Latitude, *request.Longitude, *match.Latitude, *match.Longitude)
+
+	requestInMatchRadius := distance <= float64(*match.SearchRadius)
+
+	matchInRequestRadius := distance <= float64(*request.SearchRadius)
+
+	return requestInMatchRadius && matchInRequestRadius
+}
+
+func areParticipantCountsCompatible(request repository.ActivityRequest, match repository.PartialMatch) bool {
+	reqMinParticipants := int32(1)
+	if request.ParticipantsNeeded != nil {
+		reqMinParticipants = *request.ParticipantsNeeded
+	}
+
+	reqMaxParticipants := int32(10)
+	if request.MaximumParticipants != nil {
+		reqMaxParticipants = *request.MaximumParticipants
+	}
+
+	matchMinParticipants := int32(1)
+	if match.ParticipantsNeeded != nil {
+		matchMinParticipants = *match.ParticipantsNeeded
+	}
+
+	matchMaxParticipants := int32(10)
+	if match.MaximumParticipants != nil {
+		matchMaxParticipants = *match.MaximumParticipants
+	}
+
+	return reqMaxParticipants >= matchMinParticipants && matchMaxParticipants >= reqMinParticipants
+}
+
+func getWeekHoursIntersection(hours1, hours2 []int32) []int32 {
+	hourSet := make(map[int32]bool)
+	for _, hour := range hours1 {
+		hourSet[hour] = true
+	}
+
+	var intersection []int32
+	addedHours := make(map[int32]bool)
+
+	for _, hour := range hours2 {
+		if hourSet[hour] && !addedHours[hour] {
+			intersection = append(intersection, hour)
+			addedHours[hour] = true
+		}
+	}
+
+	return intersection
+}
+
+func calculateMidpoint(lat1, lon1, lat2, lon2 float64) (float64, float64) {
+	midLat := (lat1 + lat2) / 2
+	midLon := (lon1 + lon2) / 2
+	return midLat, midLon
 }

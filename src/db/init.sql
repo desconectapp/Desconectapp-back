@@ -36,13 +36,6 @@ CREATE TABLE users_preference (
   PRIMARY KEY (user_id, activity_id)
 );
 
-DROP TYPE IF EXISTS day_option;
-
-CREATE TYPE day_option AS ENUM (
-  'EVERYDAY', 'WEEKDAYS', 'WEEKEND',
-  'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'
-);
-
 
 DROP TABLE IF EXISTS activity_requests;
 
@@ -51,11 +44,12 @@ CREATE TABLE activity_requests (
   user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
   activity_id INTEGER REFERENCES activities(id) ON DELETE CASCADE,
   description TEXT,
-
-  day_of_week day_option NOT NULL DEFAULT 'EVERYDAY',
-
+  week_hours INTEGER[],
   participants_needed INTEGER DEFAULT 3,
-
+  maximum_participants INTEGER DEFAULT 10,
+  latitude DOUBLE PRECISION,
+  longitude DOUBLE PRECISION,
+  search_radius INTEGER DEFAULT 10,
   created_at TIMESTAMP DEFAULT NOW(),
   expires_at TIMESTAMP DEFAULT (NOW() + INTERVAL '7 days')
 );
@@ -77,9 +71,13 @@ CREATE TABLE partial_matches (
     id SERIAL PRIMARY KEY,
     activity_id INTEGER REFERENCES activities(id) ON DELETE CASCADE,
     description TEXT,
-    day_of_week day_option NOT NULL DEFAULT 'EVERYDAY',
-    members_count INTEGER DEFAULT 1,
+    week_hours INTEGER[],
     participants_needed INTEGER DEFAULT 3,
+    maximum_participants INTEGER DEFAULT 10,
+    latitude DOUBLE PRECISION,
+    longitude DOUBLE PRECISION,
+    search_radius INTEGER DEFAULT 10,
+    members_count INTEGER DEFAULT 0,
     created_at TIMESTAMP DEFAULT NOW(),
     expires_at TIMESTAMP DEFAULT (NOW() + INTERVAL '7 days')
 );
@@ -118,10 +116,6 @@ WITH (FORMAT csv, HEADER true);
 
 COPY users(name, email, password, age, city, current_situation, profile_complete)
 FROM '/users.csv'
-WITH (FORMAT csv, HEADER true);
-
-COPY activity_requests(user_id, activity_id, description, day_of_week, participants_needed)
-FROM '/activity_requests.csv'
 WITH (FORMAT csv, HEADER true);
 
 COPY users_preference(user_id, activity_id)
