@@ -20,6 +20,7 @@ type AuthService struct {
 }
 
 type Session struct {
+	Id 				 int32
 	Token            string
 	RefreshToken     string
 	ExpiresAt        time.Time
@@ -98,6 +99,7 @@ func (s *AuthService) Login(email, password string) (*Session, error) {
 	}
 
 	return &Session{
+		Id:				user.ID,
 		Token:            accessTokenString,
 		RefreshToken:     refreshTokenString,
 		ExpiresAt:        expiresAt,
@@ -151,6 +153,7 @@ func (s *AuthService) RefreshToken(refreshToken string) (*Session, error) {
 		}
 
 		return &Session{
+			Id:				session.UserID,
 			Token:            newAccessTokenString,
 			RefreshToken:     refreshToken,
 			ExpiresAt:        expiresAt,
@@ -194,7 +197,7 @@ func (s *AuthService) Signup(name, email, password string) (*Session, error) {
 	if err == nil {
 		return nil, errors.New("user with this email already exists")
 	}
-	if err != nil && err != pgx.ErrNoRows {
+	if err != pgx.ErrNoRows {
 		return nil, err
 	}
 
@@ -258,6 +261,7 @@ func (s *AuthService) Signup(name, email, password string) (*Session, error) {
 	}
 
 	return &Session{
+		Id:				user.ID,
 		Token:            accessTokenString,
 		RefreshToken:     refreshTokenString,
 		ExpiresAt:        expiresAt,

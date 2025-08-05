@@ -146,6 +146,34 @@ SELECT u.id, u.name FROM users u
 JOIN group_members gm ON u.id = gm.user_id
 WHERE gm.group_id = $1;
 
+-- name: ListUserGroups :many
+WITH user_groups AS (
+  SELECT g.*
+  FROM groups g
+  JOIN group_members gm ON g.id = gm.group_id
+  WHERE gm.user_id = $3
+  ORDER BY g.created_at DESC
+  LIMIT $1 OFFSET $2
+)
+SELECT 
+  g.id,
+  g.name,
+  g.description,
+  g.created_at,
+  g.location,
+  a.name AS activity,
+  a.icon,
+  COUNT(gm_all.user_id) AS members_count
+FROM user_groups g
+JOIN activities a ON g.activity_id = a.id
+LEFT JOIN group_members gm_all ON g.id = gm_all.group_id
+GROUP BY g.id, g.name, g.description, g.created_at, g.location, a.name, a.icon
+ORDER BY g.created_at DESC;
+
+-- name: ExitGroup :exec
+DELETE FROM group_members
+WHERE group_id = $1 AND user_id = $2;
+
 -- name: CreatePartialMatch :one
 INSERT INTO partial_matches (
   activity_id, description, day_of_week, members_count, participants_needed

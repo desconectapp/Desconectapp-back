@@ -111,7 +111,9 @@ func (router *Router) SetupRoutes() {
 	{
 		groups.GET("/:groupId", router.groupsController.GetGroup)
 		groups.GET("", router.groupsController.ListGroups)
+		groups.GET("user/:userId", router.groupsController.ListUserGroups)
 		groups.POST("", router.groupsController.CreateGroup)
 		groups.DELETE("/:groupId", router.groupsController.DeleteGroup)
+		groups.DELETE("/user/:userId/group/:groupId", router.groupsController.ExitGroup)
 	}
 }
