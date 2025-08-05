@@ -37,6 +37,14 @@ func (s *Service) CreateUser(userParams repository.CreateUserParams) (repository
 	return user, nil
 }
 
+func (s *Service) CreateProfile(profile repository.CreateProfileParams) (int32, error) {
+	id, err := s.queries.CreateProfile(s.ctx, profile)
+	if err != nil {
+		return 0, err
+	}
+	return id, nil
+}
+
 func (s *Service) GetUser(userId int32) (repository.User, error) {
 	user, err := s.queries.GetUser(s. ctx, userId)
 	if err != nil {

@@ -83,6 +83,7 @@ func (router *Router) SetupRoutes() {
 	{
 		users.GET("", router.controller.ListUsers)
 		users.POST("", router.controller.CreateUser)
+		users.POST("/:userId/profile", router.controller.CreateProfile)
 		users.DELETE("/:userId", router.controller.DeleteUser)
 		users.GET("/:userId", router.controller.GetUser)
 		users.PUT("/:userId", router.controller.UpdateUser)

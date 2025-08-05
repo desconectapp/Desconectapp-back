@@ -9,13 +9,48 @@ import (
 	"context"
 )
 
+const createProfile = `-- name: CreateProfile :one
+UPDATE users
+  SET name = $2,
+  age = $3,
+  city = $4,
+  current_situation = $5,
+  gender = $6,
+  profile_complete = true
+WHERE id = $1
+RETURNING id
+`
+
+type CreateProfileParams struct {
+	ID               int32  `json:"id"`
+	Name             string `json:"name"`
+	Age              int32  `json:"age"`
+	City             string `json:"city"`
+	CurrentSituation string `json:"current_situation"`
+	Gender           string `json:"gender"`
+}
+
+func (q *Queries) CreateProfile(ctx context.Context, arg CreateProfileParams) (int32, error) {
+	row := q.db.QueryRow(ctx, createProfile,
+		arg.ID,
+		arg.Name,
+		arg.Age,
+		arg.City,
+		arg.CurrentSituation,
+		arg.Gender,
+	)
+	var id int32
+	err := row.Scan(&id)
+	return id, err
+}
+
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (
   name, email, password
 ) VALUES (
   $1, $2, $3
 )
-RETURNING id, name, email, password, created_at, age, city, current_situation, profile_complete
+RETURNING id, name, email, password, created_at, age, city, current_situation, gender, profile_complete
 `
 
 type CreateUserParams struct {
@@ -36,6 +71,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.Age,
 		&i.City,
 		&i.CurrentSituation,
+		&i.Gender,
 		&i.ProfileComplete,
 	)
 	return i, err
@@ -54,7 +90,7 @@ func (q *Queries) DeleteUser(ctx context.Context, id int32) (int32, error) {
 }
 
 const getUser = `-- name: GetUser :one
-SELECT id, name, email, password, created_at, age, city, current_situation, profile_complete FROM users
+SELECT id, name, email, password, created_at, age, city, current_situation, gender, profile_complete FROM users
 WHERE id = $1 LIMIT 1
 `
 
@@ -70,13 +106,14 @@ func (q *Queries) GetUser(ctx context.Context, id int32) (User, error) {
 		&i.Age,
 		&i.City,
 		&i.CurrentSituation,
+		&i.Gender,
 		&i.ProfileComplete,
 	)
 	return i, err
 }
 
 const listUsers = `-- name: ListUsers :many
-SELECT id, name, email, password, created_at, age, city, current_situation, profile_complete FROM users
+SELECT id, name, email, password, created_at, age, city, current_situation, gender, profile_complete FROM users
 ORDER BY name
 LIMIT $1 OFFSET $2
 `
@@ -104,6 +141,7 @@ func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]User, e
 			&i.Age,
 			&i.City,
 			&i.CurrentSituation,
+			&i.Gender,
 			&i.ProfileComplete,
 		); err != nil {
 			return nil, err

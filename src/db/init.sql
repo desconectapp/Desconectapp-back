@@ -9,6 +9,7 @@ CREATE TABLE users (
   age INTEGER NOT NULL DEFAULT 18,
   city TEXT NOT NULL DEFAULT 'Buenos Aires',
   current_situation TEXT NOT NULL DEFAULT 'OTHER', 
+  gender TEXT NOT NULL DEFAULT 'OTHER',
   profile_complete BOOLEAN NOT NULL DEFAULT false
 );
 

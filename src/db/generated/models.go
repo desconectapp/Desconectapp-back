@@ -161,6 +161,7 @@ type User struct {
 	Age              int32            `json:"age"`
 	City             string           `json:"city"`
 	CurrentSituation string           `json:"current_situation"`
+	Gender           string           `json:"gender"`
 	ProfileComplete  bool             `json:"profile_complete"`
 }
 

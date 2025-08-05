@@ -116,7 +116,7 @@ func (q *Queries) GetSessionByToken(ctx context.Context, token string) (Session,
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, name, email, password, created_at, age, city, current_situation, profile_complete FROM users
+SELECT id, name, email, password, created_at, age, city, current_situation, gender, profile_complete FROM users
 WHERE email = $1 LIMIT 1
 `
 
@@ -132,6 +132,7 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.Age,
 		&i.City,
 		&i.CurrentSituation,
+		&i.Gender,
 		&i.ProfileComplete,
 	)
 	return i, err

@@ -26,6 +26,17 @@ UPDATE users
 WHERE id = $1
 RETURNING id;
 
+-- name: CreateProfile :one
+UPDATE users
+  SET name = $2,
+  age = $3,
+  city = $4,
+  current_situation = $5,
+  gender = $6,
+  profile_complete = true
+WHERE id = $1
+RETURNING id;
+
 -- name: DeleteUser :one
 DELETE FROM users
 WHERE id = $1
