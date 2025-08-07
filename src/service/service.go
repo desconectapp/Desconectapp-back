@@ -1,14 +1,14 @@
 package service
 
 import (
-	repository "gin/db/generated"
 	"context"
+	repository "gin/db/generated"
 	"github.com/jackc/pgx/v5"
 )
 
 type Service struct {
 	queries *repository.Queries
-	ctx    context.Context
+	ctx     context.Context
 }
 
 func NewService(conn *pgx.Conn) *Service {
@@ -17,7 +17,7 @@ func NewService(conn *pgx.Conn) *Service {
 
 	return &Service{
 		queries: queries,
-		ctx:    ctx,
+		ctx:     ctx,
 	}
 }
 
@@ -29,7 +29,7 @@ func (s *Service) ListUsers(params repository.ListUsersParams) ([]repository.Use
 	return users, nil
 }
 
-func (s *Service) CreateUser(userParams repository.CreateUserParams) (repository.User, error) {	
+func (s *Service) CreateUser(userParams repository.CreateUserParams) (repository.User, error) {
 	user, err := s.queries.CreateUser(s.ctx, userParams)
 	if err != nil {
 		return repository.User{}, err
@@ -37,8 +37,16 @@ func (s *Service) CreateUser(userParams repository.CreateUserParams) (repository
 	return user, nil
 }
 
+func (s *Service) CreateProfile(profile repository.CreateProfileParams) (int32, error) {
+	id, err := s.queries.CreateProfile(s.ctx, profile)
+	if err != nil {
+		return 0, err
+	}
+	return id, nil
+}
+
 func (s *Service) GetUser(userId int32) (repository.User, error) {
-	user, err := s.queries.GetUser(s. ctx, userId)
+	user, err := s.queries.GetUser(s.ctx, userId)
 	if err != nil {
 		return repository.User{}, err
 	}
@@ -63,4 +71,13 @@ func (s *Service) UpdateUser(userParams repository.UpdateUserParams, userPrefere
 		return -1, err
 	}
 	return id, nil
+}
+
+func (s *Service) AddPreferences(userId int32, preferences []int32) error {
+	var userPreferences repository.BatchAddPreferencesParams
+
+	userPreferences.UserID = userId
+	userPreferences.ActivityIds = preferences
+
+	return s.queries.BatchAddPreferences(s.ctx, userPreferences)
 }

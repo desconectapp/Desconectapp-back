@@ -2,13 +2,20 @@ DROP TABLE IF EXISTS users CASCADE;
 
 CREATE TABLE users (
   id SERIAL PRIMARY KEY,
-  name TEXT NOT NULL,
   email TEXT UNIQUE NOT NULL,
-  password TEXT NOT NULL,
+  password TEXT NOT NULL
+);
+
+DROP TABLE IF EXISTS profiles CASCADE;
+
+CREATE TABLE profiles (
+  user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
   created_at TIMESTAMP DEFAULT now(),
   age INTEGER NOT NULL DEFAULT 18,
   city TEXT NOT NULL DEFAULT 'Buenos Aires',
   current_situation TEXT NOT NULL DEFAULT 'OTHER', 
+  gender TEXT NOT NULL DEFAULT 'OTHER',
   profile_complete BOOLEAN NOT NULL DEFAULT false
 );
 
@@ -97,8 +104,12 @@ COPY activities(name, icon, category)
 FROM '/activities.csv'
 WITH (FORMAT csv, HEADER true);
 
-COPY users(name, email, password, age, city, current_situation, profile_complete)
+COPY users(email, password)
 FROM '/users.csv'
+WITH (FORMAT csv, HEADER true);
+
+COPY profiles(user_id, name, age, city, current_situation, profile_complete)
+FROM '/profiles.csv'
 WITH (FORMAT csv, HEADER true);
 
 COPY activity_requests(user_id, activity_id, description, day_of_week, participants_needed)

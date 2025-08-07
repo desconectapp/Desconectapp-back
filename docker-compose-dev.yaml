@@ -26,6 +26,7 @@ services:
       - ./src/db/files/users.csv:/users.csv
       - ./src/db/files/activity_requests.csv:/activity_requests.csv
       - ./src/db/files/users_preference.csv:/users_preference.csv
+      - ./src/db/files/profiles.csv:/profiles.csv
 
   pgadmin:
     image: dpage/pgadmin4:7.5

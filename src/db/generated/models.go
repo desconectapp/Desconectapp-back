@@ -141,6 +141,17 @@ type GroupMember struct {
 	UserID  int32 `json:"user_id"`
 }
 
+type Profile struct {
+	UserID           int32            `json:"user_id"`
+	Name             string           `json:"name"`
+	CreatedAt        pgtype.Timestamp `json:"created_at"`
+	Age              int32            `json:"age"`
+	City             string           `json:"city"`
+	CurrentSituation string           `json:"current_situation"`
+	Gender           string           `json:"gender"`
+	ProfileComplete  bool             `json:"profile_complete"`
+}
+
 type Session struct {
 	ID               int32              `json:"id"`
 	UserID           int32              `json:"user_id"`
@@ -153,15 +164,9 @@ type Session struct {
 }
 
 type User struct {
-	ID               int32            `json:"id"`
-	Name             string           `json:"name"`
-	Email            string           `json:"email"`
-	Password         string           `json:"password"`
-	CreatedAt        pgtype.Timestamp `json:"created_at"`
-	Age              int32            `json:"age"`
-	City             string           `json:"city"`
-	CurrentSituation string           `json:"current_situation"`
-	ProfileComplete  bool             `json:"profile_complete"`
+	ID       int32  `json:"id"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 type UsersPreference struct {
