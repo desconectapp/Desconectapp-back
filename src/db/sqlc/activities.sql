@@ -21,4 +21,3 @@ LIMIT $1 OFFSET $2;
 SELECT * FROM activities
 ORDER BY category, id DESC
 LIMIT $1 OFFSET $2;
-

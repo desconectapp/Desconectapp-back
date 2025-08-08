@@ -56,7 +56,7 @@ INSERT INTO group_members (
   $1, $2
 );
 
--- name: BatchAddUserToGroup :exec
+-- name: BatchAddUse
 INSERT INTO group_members (user_id,group_id)
 SELECT  id, sqlc.arg(group_id)
 FROM users
@@ -96,3 +96,4 @@ ORDER BY g.created_at DESC;
 -- name: ExitGroup :exec
 DELETE FROM group_members
 WHERE group_id = $1 AND user_id = $2;
+
