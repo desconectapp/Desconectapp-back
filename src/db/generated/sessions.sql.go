@@ -116,24 +116,14 @@ func (q *Queries) GetSessionByToken(ctx context.Context, token string) (Session,
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, name, email, password, created_at, age, city, current_situation, profile_complete FROM users
+SELECT id, email, password FROM users
 WHERE email = $1 LIMIT 1
 `
 
 func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
 	row := q.db.QueryRow(ctx, getUserByEmail, email)
 	var i User
-	err := row.Scan(
-		&i.ID,
-		&i.Name,
-		&i.Email,
-		&i.Password,
-		&i.CreatedAt,
-		&i.Age,
-		&i.City,
-		&i.CurrentSituation,
-		&i.ProfileComplete,
-	)
+	err := row.Scan(&i.ID, &i.Email, &i.Password)
 	return i, err
 }
 
