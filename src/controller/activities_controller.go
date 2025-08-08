@@ -5,12 +5,63 @@ import (
 	"gin/service"
 	"net/http"
 
-
 	"log"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
 )
+
+// TimeSlot represents a time range with start and end hours
+type TimeSlot struct {
+	Start int `json:"start"`
+	End   int `json:"end"`
+}
+
+// Schedules represents the weekly schedule structure
+type Schedules map[string][]TimeSlot
+
+// CreateActivityRequestInput represents the input structure for creating activity requests
+type CreateActivityRequestInput struct {
+	UserID             *int32    `json:"user_id"`
+	ActivityID         *int32    `json:"activity_id"`
+	Description        *string   `json:"description"`
+	Longitude          *float64  `json:"longitude"`
+	Latitude           *float64  `json:"latitude"`
+	SearchRadius       *int32    `json:"search_radius"`
+	MaxParticipants    *int32    `json:"max_participants"`
+	ParticipantsNeeded *int32    `json:"participants_needed"`
+	Schedules          Schedules `json:"schedules"`
+}
+
+// parseSchedulesToWeekHours converts the schedules JSON to week_hours array
+// Monday starts at 0, Tuesday at 24, Wednesday at 48, etc.
+// For each day, hours are added as: day_offset + hour
+func parseSchedulesToWeekHours(schedules Schedules) []int32 {
+	dayOffsets := map[string]int32{
+		"monday":    0,
+		"tuesday":   24,
+		"wednesday": 48,
+		"thursday":  72,
+		"friday":    96,
+		"saturday":  120,
+		"sunday":    144,
+	}
+
+	var weekHours []int32
+
+	for day, timeSlots := range schedules {
+		if offset, exists := dayOffsets[day]; exists {
+			for _, slot := range timeSlots {
+				// Add all hours in the time slot range
+				for hour := slot.Start; hour < slot.End; hour++ {
+					weekHours = append(weekHours, offset+int32(hour))
+				}
+			}
+		}
+	}
+
+	return weekHours
+}
 
 type ActivitiesController struct {
 	service *service.ActivitiesRequestService
@@ -43,12 +94,28 @@ func (c *ActivitiesController) ListActivitiesRequests(ctx *gin.Context) {
 }
 
 func (c *ActivitiesController) CreateActivityRequest(ctx *gin.Context) {
-	var activityParams repository.CreateActivityRequestParams
-	if err := ctx.ShouldBind(&activityParams); err != nil {
+	var input CreateActivityRequestInput
+	if err := ctx.ShouldBind(&input); err != nil {
 		ctx.Error(gin.Error{
 			Err:  err,
 			Type: gin.ErrorTypePublic})
 		return
+	}
+
+	// Parse schedules to week_hours
+	weekHours := parseSchedulesToWeekHours(input.Schedules)
+
+	// Create the repository params
+	activityParams := repository.CreateActivityRequestParams{
+		UserID:              input.UserID,
+		ActivityID:          input.ActivityID,
+		Description:         input.Description,
+		WeekHours:           weekHours,
+		ParticipantsNeeded:  input.ParticipantsNeeded,
+		MaximumParticipants: input.MaxParticipants,
+		Latitude:            input.Latitude,
+		Longitude:           input.Longitude,
+		SearchRadius:        input.SearchRadius,
 	}
 
 	activity, err := c.service.CreateActivityRequest(activityParams)

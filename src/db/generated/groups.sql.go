@@ -32,6 +32,7 @@ func (q *Queries) AddUserToGroup(ctx context.Context, arg AddUserToGroupParams) 
 const batchAddUserToGroup = `-- name: BatchAddUserToGroup :exec
 INSERT INTO group_members (user_id, group_id)
 SELECT id, $1
+
 FROM users
 WHERE id = ANY($2::int[])
 ON CONFLICT DO NOTHING

@@ -58,56 +58,6 @@ func (ns NullCategories) Value() (driver.Value, error) {
 	return string(ns.Categories), nil
 }
 
-type DayOption string
-
-const (
-	DayOptionEVERYDAY  DayOption = "EVERYDAY"
-	DayOptionWEEKDAYS  DayOption = "WEEKDAYS"
-	DayOptionWEEKEND   DayOption = "WEEKEND"
-	DayOptionMONDAY    DayOption = "MONDAY"
-	DayOptionTUESDAY   DayOption = "TUESDAY"
-	DayOptionWEDNESDAY DayOption = "WEDNESDAY"
-	DayOptionTHURSDAY  DayOption = "THURSDAY"
-	DayOptionFRIDAY    DayOption = "FRIDAY"
-	DayOptionSATURDAY  DayOption = "SATURDAY"
-	DayOptionSUNDAY    DayOption = "SUNDAY"
-)
-
-func (e *DayOption) Scan(src interface{}) error {
-	switch s := src.(type) {
-	case []byte:
-		*e = DayOption(s)
-	case string:
-		*e = DayOption(s)
-	default:
-		return fmt.Errorf("unsupported scan type for DayOption: %T", src)
-	}
-	return nil
-}
-
-type NullDayOption struct {
-	DayOption DayOption `json:"day_option"`
-	Valid     bool      `json:"valid"` // Valid is true if DayOption is not NULL
-}
-
-// Scan implements the Scanner interface.
-func (ns *NullDayOption) Scan(value interface{}) error {
-	if value == nil {
-		ns.DayOption, ns.Valid = "", false
-		return nil
-	}
-	ns.Valid = true
-	return ns.DayOption.Scan(value)
-}
-
-// Value implements the driver Valuer interface.
-func (ns NullDayOption) Value() (driver.Value, error) {
-	if !ns.Valid {
-		return nil, nil
-	}
-	return string(ns.DayOption), nil
-}
-
 type Activity struct {
 	ID        int32              `json:"id"`
 	Name      string             `json:"name"`
@@ -117,14 +67,18 @@ type Activity struct {
 }
 
 type ActivityRequest struct {
-	ID                 int32            `json:"id"`
-	UserID             *int32           `json:"user_id"`
-	ActivityID         *int32           `json:"activity_id"`
-	Description        *string          `json:"description"`
-	DayOfWeek          DayOption        `json:"day_of_week"`
-	ParticipantsNeeded *int32           `json:"participants_needed"`
-	CreatedAt          pgtype.Timestamp `json:"created_at"`
-	ExpiresAt          pgtype.Timestamp `json:"expires_at"`
+	ID                  int32            `json:"id"`
+	UserID              *int32           `json:"user_id"`
+	ActivityID          *int32           `json:"activity_id"`
+	Description         *string          `json:"description"`
+	WeekHours           []int32          `json:"week_hours"`
+	ParticipantsNeeded  *int32           `json:"participants_needed"`
+	MaximumParticipants *int32           `json:"maximum_participants"`
+	Latitude            *float64         `json:"latitude"`
+	Longitude           *float64         `json:"longitude"`
+	SearchRadius        *int32           `json:"search_radius"`
+	CreatedAt           pgtype.Timestamp `json:"created_at"`
+	ExpiresAt           pgtype.Timestamp `json:"expires_at"`
 }
 
 type Group struct {
@@ -139,6 +93,26 @@ type Group struct {
 type GroupMember struct {
 	GroupID int32 `json:"group_id"`
 	UserID  int32 `json:"user_id"`
+}
+
+type PartialMatch struct {
+	ID                  int32            `json:"id"`
+	ActivityID          *int32           `json:"activity_id"`
+	Description         *string          `json:"description"`
+	WeekHours           []int32          `json:"week_hours"`
+	ParticipantsNeeded  *int32           `json:"participants_needed"`
+	MaximumParticipants *int32           `json:"maximum_participants"`
+	Latitude            *float64         `json:"latitude"`
+	Longitude           *float64         `json:"longitude"`
+	SearchRadius        *int32           `json:"search_radius"`
+	MembersCount        *int32           `json:"members_count"`
+	CreatedAt           pgtype.Timestamp `json:"created_at"`
+	ExpiresAt           pgtype.Timestamp `json:"expires_at"`
+}
+
+type PartialMatchMember struct {
+	PartialMatchID int32 `json:"partial_match_id"`
+	UserID         int32 `json:"user_id"`
 }
 
 type Profile struct {

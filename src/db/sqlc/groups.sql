@@ -56,9 +56,9 @@ INSERT INTO group_members (
   $1, $2
 );
 
--- name: BatchAddUserToGroup :exec
-INSERT INTO group_members (user_id, group_id)
-SELECT id, sqlc.arg(group_id)
+-- name: BatchAddUse
+INSERT INTO group_members (user_id,group_id)
+SELECT  id, sqlc.arg(group_id)
 FROM users
 WHERE id = ANY(sqlc.arg(user_ids)::int[])
 ON CONFLICT DO NOTHING;
@@ -96,3 +96,4 @@ ORDER BY g.created_at DESC;
 -- name: ExitGroup :exec
 DELETE FROM group_members
 WHERE group_id = $1 AND user_id = $2;
+

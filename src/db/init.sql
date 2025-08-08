@@ -43,13 +43,6 @@ CREATE TABLE users_preference (
   PRIMARY KEY (user_id, activity_id)
 );
 
-DROP TYPE IF EXISTS day_option;
-
-CREATE TYPE day_option AS ENUM (
-  'EVERYDAY', 'WEEKDAYS', 'WEEKEND',
-  'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'
-);
-
 
 DROP TABLE IF EXISTS activity_requests;
 
@@ -58,11 +51,12 @@ CREATE TABLE activity_requests (
   user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
   activity_id INTEGER REFERENCES activities(id) ON DELETE CASCADE,
   description TEXT,
-
-  day_of_week day_option NOT NULL DEFAULT 'EVERYDAY',
-
+  week_hours INTEGER[],
   participants_needed INTEGER DEFAULT 3,
-
+  maximum_participants INTEGER DEFAULT 10,
+  latitude DOUBLE PRECISION,
+  longitude DOUBLE PRECISION,
+  search_radius INTEGER DEFAULT 10,
   created_at TIMESTAMP DEFAULT NOW(),
   expires_at TIMESTAMP DEFAULT (NOW() + INTERVAL '7 days')
 );
@@ -76,6 +70,29 @@ CREATE TABLE sessions (
     refresh_expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+DROP TABLE IF EXISTS group_members;
+DROP TABLE IF EXISTS groups;
+
+CREATE TABLE partial_matches (
+    id SERIAL PRIMARY KEY,
+    activity_id INTEGER REFERENCES activities(id) ON DELETE CASCADE,
+    description TEXT,
+    week_hours INTEGER[],
+    participants_needed INTEGER DEFAULT 3,
+    maximum_participants INTEGER DEFAULT 10,
+    latitude DOUBLE PRECISION,
+    longitude DOUBLE PRECISION,
+    search_radius INTEGER DEFAULT 10,
+    members_count INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT NOW(),
+    expires_at TIMESTAMP DEFAULT (NOW() + INTERVAL '7 days')
+);
+
+CREATE TABLE partial_match_members (
+    partial_match_id INTEGER REFERENCES partial_matches(id) ON DELETE CASCADE,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    PRIMARY KEY (partial_match_id, user_id)
 );
 
 DROP TABLE IF EXISTS group_members;
@@ -110,10 +127,6 @@ WITH (FORMAT csv, HEADER true);
 
 COPY profiles(user_id, name, age, city, current_situation, profile_complete)
 FROM '/profiles.csv'
-WITH (FORMAT csv, HEADER true);
-
-COPY activity_requests(user_id, activity_id, description, day_of_week, participants_needed)
-FROM '/activity_requests.csv'
 WITH (FORMAT csv, HEADER true);
 
 COPY users_preference(user_id, activity_id)
