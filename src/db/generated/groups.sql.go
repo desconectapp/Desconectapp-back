@@ -30,8 +30,8 @@ func (q *Queries) AddUserToGroup(ctx context.Context, arg AddUserToGroupParams) 
 }
 
 const batchAddUserToGroup = `-- name: BatchAddUserToGroup :exec
-INSERT INTO group_members (group_id, user_id)
-SELECT $1, id
+INSERT INTO group_members (user_id,group_id)
+SELECT  id, $1
 FROM users
 WHERE id = ANY($2::int[])
 ON CONFLICT DO NOTHING
@@ -146,7 +146,7 @@ func (q *Queries) GetGroup(ctx context.Context, id int32) (GetGroupRow, error) {
 
 const getGroupMembers = `-- name: GetGroupMembers :many
 SELECT u.id, p.name FROM users u
-	JOIN profiles p ON u.id = p.user_id
+	JOIN profiles p ON u.id = p.id
 	JOIN group_members gm ON u.id = gm.user_id
 	WHERE gm.group_id = $1
 `

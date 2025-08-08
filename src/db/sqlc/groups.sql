@@ -57,15 +57,15 @@ INSERT INTO group_members (
 );
 
 -- name: BatchAddUserToGroup :exec
-INSERT INTO group_members (group_id, user_id)
-SELECT sqlc.arg(group_id), id
+INSERT INTO group_members (user_id,group_id)
+SELECT  id, sqlc.arg(group_id)
 FROM users
 WHERE id = ANY(sqlc.arg(user_ids)::int[])
 ON CONFLICT DO NOTHING;
 
 -- name: GetGroupMembers :many
 SELECT u.id, p.name FROM users u
-	JOIN profiles p ON u.id = p.user_id
+	JOIN profiles p ON u.id = p.id
 	JOIN group_members gm ON u.id = gm.user_id
 	WHERE gm.group_id = $1;
 
