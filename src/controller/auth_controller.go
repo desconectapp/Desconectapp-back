@@ -22,6 +22,7 @@ type RefreshRequest struct {
 }
 
 type AuthResponse struct {
+	UserId			int32		`json:"user_id"`
 	Token            string    `json:"token"`
 	RefreshToken     string    `json:"refresh_token"`
 	ExpiresAt        time.Time `json:"expires_at"`
@@ -56,6 +57,7 @@ func (c *AuthController) Login(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, AuthResponse{
+		UserId: 		session.UserId,
 		Token:            session.Token,
 		RefreshToken:     session.RefreshToken,
 		ExpiresAt:        session.ExpiresAt,
@@ -84,6 +86,7 @@ func (c *AuthController) Refresh(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, AuthResponse{
+		UserId: 		session.UserId,
 		Token:            session.Token,
 		RefreshToken:     session.RefreshToken,
 		ExpiresAt:        session.ExpiresAt,
@@ -172,6 +175,7 @@ func (c *AuthController) Signup(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusCreated, AuthResponse{
+		UserId: 		session.UserId,
 		Token:            session.Token,
 		RefreshToken:     session.RefreshToken,
 		ExpiresAt:        session.ExpiresAt,

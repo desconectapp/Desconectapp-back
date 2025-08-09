@@ -20,7 +20,7 @@ type AuthService struct {
 }
 
 type Session struct {
-	Id 				 int32
+	UserId 				 int32
 	Token            string
 	RefreshToken     string
 	ExpiresAt        time.Time
@@ -99,7 +99,7 @@ func (s *AuthService) Login(email, password string) (*Session, error) {
 	}
 
 	return &Session{
-		Id:				user.ID,
+		UserId:				user.ID,
 		Token:            accessTokenString,
 		RefreshToken:     refreshTokenString,
 		ExpiresAt:        expiresAt,
@@ -153,7 +153,7 @@ func (s *AuthService) RefreshToken(refreshToken string) (*Session, error) {
 		}
 
 		return &Session{
-			Id:				session.UserID,
+			UserId:				session.ID,
 			Token:            newAccessTokenString,
 			RefreshToken:     refreshToken,
 			ExpiresAt:        expiresAt,
@@ -260,7 +260,7 @@ func (s *AuthService) Signup(name, email, password string) (*Session, error) {
 	}
 
 	return &Session{
-		Id:				user.ID,
+		UserId:				user.ID,
 		Token:            accessTokenString,
 		RefreshToken:     refreshTokenString,
 		ExpiresAt:        expiresAt,

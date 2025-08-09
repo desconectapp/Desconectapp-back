@@ -4,7 +4,6 @@ import (
 	repository "gin/db/generated"
 	"log"
 	"net/http"
-	"strconv"
 
 	"gin/service"
 
@@ -34,18 +33,8 @@ func (c *PreferencesController) GetUserPreferences(ctx *gin.Context) {
 
 	log.Printf("Limit %d", preferencesParams.Limit)
 
-	userStr := ctx.Param("userId")
-
-	userId, err := strconv.Atoi(userStr)
-	
-	if err != nil {
-		ctx.Error(gin.Error{
-			Err:  err,
-			Type: gin.ErrorTypePublic})
-		return
-	}
-
-	preferencesParams.UserID = int32(userId)
+	userToken, _ := ctx.Get("userID")
+	preferencesParams.UserID = userToken.(int32)
 
 	preferences, err := c.service.GetUserPreferences(preferencesParams)
 	if err != nil {
@@ -69,19 +58,10 @@ func (c *PreferencesController) AddPreference(ctx *gin.Context) {
 		return
 	}
 
-	userStr := ctx.Param("userId")
-	userId, err := strconv.Atoi(userStr)
+	userToken, _ := ctx.Get("userID")
+	addPreferenceParams.UserID = userToken.(int32)
 
-	if err != nil {
-		ctx.Error(gin.Error{
-			Err:  err,
-			Type: gin.ErrorTypePublic})
-		return
-	}
-
-	addPreferenceParams.UserID = int32(userId)
-
-	err = c.service.AddPreference(addPreferenceParams)
+	err := c.service.AddPreference(addPreferenceParams)
 
 	if err != nil {
 		ctx.Error(gin.Error{
@@ -104,19 +84,10 @@ func (c *PreferencesController) DeletePreference(ctx *gin.Context) {
 		return
 	}
 
-	userStr := ctx.Param("userId")
-	userId, err := strconv.Atoi(userStr)
+	userToken, _ := ctx.Get("userID")
+	deletePreferenceParams.UserID = userToken.(int32)
 
-	if err != nil {
-		ctx.Error(gin.Error{
-			Err:  err,
-			Type: gin.ErrorTypePublic})
-		return
-	}
-
-	deletePreferenceParams.UserID = int32(userId)
-
-	err = c.service.DeletePreference(deletePreferenceParams)
+	err := c.service.DeletePreference(deletePreferenceParams)
 
 	if err != nil {
 		ctx.Error(gin.Error{
