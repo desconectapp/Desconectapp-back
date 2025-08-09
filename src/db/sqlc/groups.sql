@@ -56,9 +56,9 @@ INSERT INTO group_members (
   $1, $2
 );
 
--- name: BatchAddUse
-INSERT INTO group_members (user_id,group_id)
-SELECT  id, sqlc.arg(group_id)
+-- name: BatchAddUserToGroup :exec
+INSERT INTO group_members (user_id, group_id)
+SELECT id, sqlc.arg(group_id)
 FROM users
 WHERE id = ANY(sqlc.arg(user_ids)::int[])
 ON CONFLICT DO NOTHING;

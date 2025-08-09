@@ -60,7 +60,6 @@ func (q *Queries) CreateActivityRequest(ctx context.Context, arg CreateActivityR
 		&i.Latitude,
 		&i.Longitude,
 		&i.SearchRadius,
-
 		&i.CreatedAt,
 		&i.ExpiresAt,
 	)
@@ -135,7 +134,6 @@ func (q *Queries) ListActivityRequests(ctx context.Context, arg ListActivityRequ
 			&i.Latitude,
 			&i.Longitude,
 			&i.SearchRadius,
-
 			&i.CreatedAt,
 			&i.ExpiresAt,
 		); err != nil {
