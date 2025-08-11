@@ -6,7 +6,6 @@ sql:
       - "./db/sqlc/preferences.sql"
       - "./db/sqlc/groups.sql"
       - "./db/sqlc/activities.sql"
-      - "./db/sqlc/sessions.sql"
       - "./db/sqlc/partial_match.sql"
     schema: "./db/init.sql"
     gen:

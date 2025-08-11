@@ -126,17 +126,6 @@ type Profile struct {
 	ProfileComplete  bool             `json:"profile_complete"`
 }
 
-type Session struct {
-	ID               int32              `json:"id"`
-	UserID           int32              `json:"user_id"`
-	Token            string             `json:"token"`
-	RefreshToken     string             `json:"refresh_token"`
-	ExpiresAt        pgtype.Timestamptz `json:"expires_at"`
-	RefreshExpiresAt pgtype.Timestamptz `json:"refresh_expires_at"`
-	CreatedAt        pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt        pgtype.Timestamptz `json:"updated_at"`
-}
-
 type User struct {
 	ID       int32  `json:"id"`
 	Email    string `json:"email"`

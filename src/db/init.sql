@@ -120,5 +120,3 @@ WITH (FORMAT csv, HEADER true);
 COPY users_preference(user_id, activity_id)
 FROM '/users_preference.csv'
 WITH (FORMAT csv, HEADER true);
-
-$$ LANGUAGE plpgsql;

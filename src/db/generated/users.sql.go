@@ -89,6 +89,18 @@ func (q *Queries) GetUser(ctx context.Context, id int32) (User, error) {
 	return i, err
 }
 
+const getUserByEmail = `-- name: GetUserByEmail :one
+SELECT id, email, password FROM users
+WHERE email = $1 LIMIT 1
+`
+
+func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
+	row := q.db.QueryRow(ctx, getUserByEmail, email)
+	var i User
+	err := row.Scan(&i.ID, &i.Email, &i.Password)
+	return i, err
+}
+
 const listUsers = `-- name: ListUsers :many
 SELECT id, email, password FROM users
 LIMIT $1 OFFSET $2

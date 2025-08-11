@@ -118,7 +118,8 @@ func (s *AuthService) ValidateSession(tokenString string) (int32, error) {
 }
 
 func (s *AuthService) Logout(tokenString string) error {
-	return s.queries.DeleteSessionByToken(s.ctx, tokenString)
+	// return s.queries.DeleteSessionByToken(s.ctx, tokenString)
+	return nil
 }
 
 func (s *AuthService) Signup(name, email, password string) (*Session, error) {
