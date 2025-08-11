@@ -23,8 +23,8 @@ type Session struct {
 	UserId 				 int32
 	Token            string
 	RefreshToken     string
-	ExpiresAt        time.Time
-	RefreshExpiresAt time.Time
+	// ExpiresAt        time.Time
+	// RefreshExpiresAt time.Time
 }
 
 func NewAuthService(conn *pgx.Conn) *AuthService {
@@ -75,35 +75,12 @@ func (s *AuthService) Login(email, password string) (*Session, error) {
 		return nil, err
 	}
 
-	expiresAt := time.Now().Add(1 * time.Hour)
-	refreshExpiresAt := time.Now().Add(7 * 24 * time.Hour)
-
-	pgExpiresAt := pgtype.Timestamptz{
-		Time:  expiresAt,
-		Valid: true,
-	}
-	pgRefreshExpiresAt := pgtype.Timestamptz{
-		Time:  refreshExpiresAt,
-		Valid: true,
-	}
-
-	_, err = s.queries.CreateSession(s.ctx, repository.CreateSessionParams{
-		UserID:           user.ID,
-		Token:            accessTokenString,
-		RefreshToken:     refreshTokenString,
-		ExpiresAt:        pgExpiresAt,
-		RefreshExpiresAt: pgRefreshExpiresAt,
-	})
-	if err != nil {
-		return nil, err
-	}
-
 	return &Session{
 		UserId:				user.ID,
 		Token:            accessTokenString,
 		RefreshToken:     refreshTokenString,
-		ExpiresAt:        expiresAt,
-		RefreshExpiresAt: refreshExpiresAt,
+		// ExpiresAt:        expiresAt,
+		// RefreshExpiresAt: refreshExpiresAt,
 	}, nil
 }
 
@@ -156,8 +133,8 @@ func (s *AuthService) RefreshToken(refreshToken string) (*Session, error) {
 			UserId:				session.ID,
 			Token:            newAccessTokenString,
 			RefreshToken:     refreshToken,
-			ExpiresAt:        expiresAt,
-			RefreshExpiresAt: session.RefreshExpiresAt.Time,
+			// ExpiresAt:        expiresAt,
+			// RefreshExpiresAt: session.RefreshExpiresAt.Time,
 		}, nil
 	}
 
@@ -173,14 +150,10 @@ func (s *AuthService) ValidateSession(tokenString string) (int32, error) {
 	}
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		session, err := s.queries.GetSessionByToken(s.ctx, tokenString)
-		if err != nil {
-			return 0, err
-		}
-
-		if !session.ExpiresAt.Valid || session.ExpiresAt.Time.Before(time.Now()) {
-			return 0, errors.New("session expired")
-		}
+		exp := int64(claims["exp"].(float64))
+			if time.Now().Unix() > exp {
+				return 0, errors.New("invalid token")
+			}
 
 		return int32(claims["sub"].(float64)), nil
 	}
@@ -263,7 +236,7 @@ func (s *AuthService) Signup(name, email, password string) (*Session, error) {
 		UserId:				user.ID,
 		Token:            accessTokenString,
 		RefreshToken:     refreshTokenString,
-		ExpiresAt:        expiresAt,
-		RefreshExpiresAt: refreshExpiresAt,
+		// ExpiresAt:        expiresAt,
+		// RefreshExpiresAt: refreshExpiresAt,
 	}, nil
 }

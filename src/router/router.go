@@ -99,12 +99,12 @@ func (router *Router) SetupRoutes() {
 	}
 
 	preferences := router.r.Group("/preferences")
-	// preferences.Use(router.authController.AuthMiddleware())
+	preferences.Use(router.authController.AuthMiddleware())
 
 	{
-		preferences.GET("/:userId", router.preferencesController.GetUserPreferences)
-		preferences.POST("/:userId", router.preferencesController.AddPreference)
-		preferences.DELETE("/:userId", router.preferencesController.DeletePreference)
+		preferences.GET("", router.preferencesController.GetUserPreferences)
+		preferences.POST("", router.preferencesController.AddPreference)
+		preferences.DELETE("", router.preferencesController.DeletePreference)
 	}
 
 	groups := router.r.Group("/groups")
@@ -113,9 +113,9 @@ func (router *Router) SetupRoutes() {
 	{
 		groups.GET("/:groupId", router.groupsController.GetGroup)
 		groups.GET("", router.groupsController.ListGroups)
-		groups.GET("user/:userId", router.groupsController.ListUserGroups)
+		groups.GET("/user", router.groupsController.ListUserGroups)
 		groups.POST("", router.groupsController.CreateGroup)
 		groups.DELETE("/:groupId", router.groupsController.DeleteGroup)
-		groups.DELETE("/user/:userId/group/:groupId", router.groupsController.ExitGroup)
+		groups.DELETE("/user-from-group/:groupId", router.groupsController.ExitGroup)
 	}
 }

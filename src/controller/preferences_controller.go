@@ -31,10 +31,11 @@ func (c *PreferencesController) GetUserPreferences(ctx *gin.Context) {
 	preferencesParams.Limit = int32(limit)
 	preferencesParams.Offset = int32(offset)
 
-	log.Printf("Limit %d", preferencesParams.Limit)
-
+	
 	userToken, _ := ctx.Get("userID")
 	preferencesParams.UserID = userToken.(int32)
+	
+	log.Printf("Limit %d", userToken)
 
 	preferences, err := c.service.GetUserPreferences(preferencesParams)
 	if err != nil {
@@ -70,7 +71,9 @@ func (c *PreferencesController) AddPreference(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{})
+	// -> devuelvo nueva lista? o solo la que agregue? 
+
+	ctx.JSON(http.StatusOK, addPreferenceParams.ActivityID)
 	
 }
 
@@ -96,5 +99,5 @@ func (c *PreferencesController) DeletePreference(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{})
+	ctx.JSON(http.StatusOK, deletePreferenceParams.ActivityID)
 }

@@ -3,7 +3,7 @@ package controller
 import (
 	"gin/service"
 	"net/http"
-	"time"
+	// "time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -25,8 +25,8 @@ type AuthResponse struct {
 	UserId			int32		`json:"user_id"`
 	Token            string    `json:"token"`
 	RefreshToken     string    `json:"refresh_token"`
-	ExpiresAt        time.Time `json:"expires_at"`
-	RefreshExpiresAt time.Time `json:"refresh_expires_at"`
+	// ExpiresAt        time.Time `json:"expires_at"`
+	// RefreshExpiresAt time.Time `json:"refresh_expires_at"`
 }
 
 func NewAuthController(authService *service.AuthService) *AuthController {
@@ -35,7 +35,6 @@ func NewAuthController(authService *service.AuthService) *AuthController {
 	}
 }
 
-// Login handles user authentication and returns a JWT token
 func (c *AuthController) Login(ctx *gin.Context) {
 	var loginReq LoginRequest
 	if err := ctx.ShouldBind(&loginReq); err != nil {
@@ -46,7 +45,6 @@ func (c *AuthController) Login(ctx *gin.Context) {
 		return
 	}
 
-	// Authenticate user and get session
 	session, err := c.authService.Login(loginReq.Email, loginReq.Password)
 	if err != nil {
 		ctx.Error(gin.Error{
@@ -60,12 +58,11 @@ func (c *AuthController) Login(ctx *gin.Context) {
 		UserId: 		session.UserId,
 		Token:            session.Token,
 		RefreshToken:     session.RefreshToken,
-		ExpiresAt:        session.ExpiresAt,
-		RefreshExpiresAt: session.RefreshExpiresAt,
+		// ExpiresAt:        session.ExpiresAt,
+		// RefreshExpiresAt: session.RefreshExpiresAt,
 	})
 }
 
-// Refresh handles refreshing the JWT token
 func (c *AuthController) Refresh(ctx *gin.Context) {
 	var refreshReq RefreshRequest
 	if err := ctx.ShouldBind(&refreshReq); err != nil {
@@ -89,12 +86,11 @@ func (c *AuthController) Refresh(ctx *gin.Context) {
 		UserId: 		session.UserId,
 		Token:            session.Token,
 		RefreshToken:     session.RefreshToken,
-		ExpiresAt:        session.ExpiresAt,
-		RefreshExpiresAt: session.RefreshExpiresAt,
+		// ExpiresAt:        session.ExpiresAt,
+		// RefreshExpiresAt: session.RefreshExpiresAt,
 	})
 }
 
-// Logout handles user logout by invalidating the current session
 func (c *AuthController) Logout(ctx *gin.Context) {
 	token := ctx.GetHeader("Authorization")
 	if token == "" {
@@ -102,7 +98,6 @@ func (c *AuthController) Logout(ctx *gin.Context) {
 		return
 	}
 
-	// Remove "Bearer " prefix if present
 	if len(token) > 7 && token[:7] == "Bearer " {
 		token = token[7:]
 	}
@@ -119,7 +114,6 @@ func (c *AuthController) Logout(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "Successfully logged out"})
 }
 
-// AuthMiddleware is a middleware to protect routes that require authentication
 func (c *AuthController) AuthMiddleware() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		token := ctx.GetHeader("Authorization")
@@ -129,12 +123,10 @@ func (c *AuthController) AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// Remove "Bearer " prefix if present
 		if len(token) > 7 && token[:7] == "Bearer " {
 			token = token[7:]
 		}
 
-		// Validate session
 		userID, err := c.authService.ValidateSession(token)
 		if err != nil {
 			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
@@ -142,7 +134,6 @@ func (c *AuthController) AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// Set user ID in context for use in handlers
 		ctx.Set("userID", userID)
 		ctx.Next()
 	}
@@ -178,7 +169,7 @@ func (c *AuthController) Signup(ctx *gin.Context) {
 		UserId: 		session.UserId,
 		Token:            session.Token,
 		RefreshToken:     session.RefreshToken,
-		ExpiresAt:        session.ExpiresAt,
-		RefreshExpiresAt: session.RefreshExpiresAt,
+		// ExpiresAt:        session.ExpiresAt,
+		// RefreshExpiresAt: session.RefreshExpiresAt,
 	})
 }

@@ -57,16 +57,8 @@ func (c *GroupsController) ListUserGroups(ctx *gin.Context) {
 	groupParams.Limit = int32(limit)
 	groupParams.Offset = int32(offset)
 
-	stringId := ctx.Param("userId")
-	userId, err := strconv.Atoi(stringId)
-	if err != nil {
-		ctx.Error(gin.Error{
-			Err:  err,
-			Type: gin.ErrorTypePublic,})
-		return
-	}
-
-	groupParams.UserID = int32(userId)
+	userToken, _ := ctx.Get("userID")
+	groupParams.UserID = userToken.(int32)
 
 	groupsList, err := c.service.ListUserGroups(groupParams)
 
@@ -131,14 +123,6 @@ func (c *GroupsController) ExitGroup(ctx *gin.Context) {
 
 	log.Printf("Called")
 	
-	stringId := ctx.Param("userId")
-	userId, err := strconv.Atoi(stringId)
-	if err != nil {
-		ctx.Error(gin.Error{
-			Err:  err,
-			Type: gin.ErrorTypePublic,})
-		return
-	}
 	groupIdStr := ctx.Param("groupId")
 	groupId, err := strconv.Atoi(groupIdStr)
 	if err != nil {
@@ -147,10 +131,10 @@ func (c *GroupsController) ExitGroup(ctx *gin.Context) {
 			Type: gin.ErrorTypePublic,})
 		return
 	}
-
-	
 	exitParams.GroupID = int32(groupId)
-	exitParams.UserID = int32(userId)
+
+	userToken, _ := ctx.Get("userID")
+	exitParams.UserID = userToken.(int32)
 	
 	log.Printf("Group: %d", exitParams.GroupID)
 	log.Printf("User: %d", exitParams.UserID)
