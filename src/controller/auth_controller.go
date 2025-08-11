@@ -3,6 +3,8 @@ package controller
 import (
 	"gin/service"
 	"net/http"
+	"time"
+
 	// "time"
 
 	"github.com/gin-gonic/gin"
@@ -25,8 +27,8 @@ type AuthResponse struct {
 	UserId			int32		`json:"user_id"`
 	Token            string    `json:"token"`
 	RefreshToken     string    `json:"refresh_token"`
-	// ExpiresAt        time.Time `json:"expires_at"`
-	// RefreshExpiresAt time.Time `json:"refresh_expires_at"`
+	ExpiresAt        time.Time `json:"expires_at"`
+	RefreshExpiresAt time.Time `json:"refresh_expires_at"`
 }
 
 func NewAuthController(authService *service.AuthService) *AuthController {
@@ -58,8 +60,8 @@ func (c *AuthController) Login(ctx *gin.Context) {
 		UserId: 		session.UserId,
 		Token:            session.Token,
 		RefreshToken:     session.RefreshToken,
-		// ExpiresAt:        session.ExpiresAt,
-		// RefreshExpiresAt: session.RefreshExpiresAt,
+		ExpiresAt:        session.ExpiresAt,
+		RefreshExpiresAt: session.RefreshExpiresAt,
 	})
 }
 
@@ -86,32 +88,9 @@ func (c *AuthController) Refresh(ctx *gin.Context) {
 		UserId: 		session.UserId,
 		Token:            session.Token,
 		RefreshToken:     session.RefreshToken,
-		// ExpiresAt:        session.ExpiresAt,
-		// RefreshExpiresAt: session.RefreshExpiresAt,
+		ExpiresAt:        session.ExpiresAt,
+		RefreshExpiresAt: session.RefreshExpiresAt,
 	})
-}
-
-func (c *AuthController) Logout(ctx *gin.Context) {
-	token := ctx.GetHeader("Authorization")
-	if token == "" {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "No token provided"})
-		return
-	}
-
-	if len(token) > 7 && token[:7] == "Bearer " {
-		token = token[7:]
-	}
-
-	err := c.authService.Logout(token)
-	if err != nil {
-		ctx.Error(gin.Error{
-			Err:  err,
-			Type: gin.ErrorTypePublic,
-		})
-		return
-	}
-
-	ctx.JSON(http.StatusOK, gin.H{"message": "Successfully logged out"})
 }
 
 func (c *AuthController) AuthMiddleware() gin.HandlerFunc {
@@ -169,7 +148,7 @@ func (c *AuthController) Signup(ctx *gin.Context) {
 		UserId: 		session.UserId,
 		Token:            session.Token,
 		RefreshToken:     session.RefreshToken,
-		// ExpiresAt:        session.ExpiresAt,
-		// RefreshExpiresAt: session.RefreshExpiresAt,
+		ExpiresAt:        session.ExpiresAt,
+		RefreshExpiresAt: session.RefreshExpiresAt,
 	})
 }
