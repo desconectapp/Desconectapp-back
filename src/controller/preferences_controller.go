@@ -71,8 +71,6 @@ func (c *PreferencesController) AddPreference(ctx *gin.Context) {
 		return
 	}
 
-	// -> devuelvo nueva lista? o solo la que agregue? 
-
 	ctx.JSON(http.StatusOK, addPreferenceParams.ActivityID)
 	
 }

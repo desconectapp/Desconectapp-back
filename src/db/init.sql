@@ -61,18 +61,7 @@ CREATE TABLE activity_requests (
   expires_at TIMESTAMP DEFAULT (NOW() + INTERVAL '7 days')
 );
 
-CREATE TABLE sessions (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    token TEXT NOT NULL UNIQUE,
-    refresh_token TEXT NOT NULL UNIQUE,
-    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
-    refresh_expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-DROP TABLE IF EXISTS group_members;
-DROP TABLE IF EXISTS groups;
+DROP TABLE IF EXISTS partial_matches;
 
 CREATE TABLE partial_matches (
     id SERIAL PRIMARY KEY,
@@ -89,13 +78,14 @@ CREATE TABLE partial_matches (
     expires_at TIMESTAMP DEFAULT (NOW() + INTERVAL '7 days')
 );
 
+DROP TABLE IF EXISTS partial_match_members;
+
 CREATE TABLE partial_match_members (
     partial_match_id INTEGER REFERENCES partial_matches(id) ON DELETE CASCADE,
     user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
     PRIMARY KEY (partial_match_id, user_id)
 );
 
-DROP TABLE IF EXISTS group_members;
 DROP TABLE IF EXISTS groups;
 
 CREATE TABLE groups (
@@ -107,15 +97,13 @@ CREATE TABLE groups (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+DROP TABLE IF EXISTS group_members;
+
 CREATE TABLE group_members (
     group_id INTEGER NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     PRIMARY KEY (group_id, user_id)
 );
-
-CREATE INDEX idx_sessions_token ON sessions(token);
-
-CREATE INDEX idx_sessions_user_id ON sessions(user_id);
 
 COPY activities(name, icon, category)
 FROM '/activities.csv'
@@ -133,10 +121,4 @@ COPY users_preference(user_id, activity_id)
 FROM '/users_preference.csv'
 WITH (FORMAT csv, HEADER true);
 
-
-CREATE OR REPLACE FUNCTION cleanup_expired_sessions()
-RETURNS void AS $$
-BEGIN
-    DELETE FROM sessions WHERE expires_at < CURRENT_TIMESTAMP;
-END;
 $$ LANGUAGE plpgsql;

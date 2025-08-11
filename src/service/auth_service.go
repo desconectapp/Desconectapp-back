@@ -9,7 +9,6 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgtype"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -23,8 +22,6 @@ type Session struct {
 	UserId 				 int32
 	Token            string
 	RefreshToken     string
-	// ExpiresAt        time.Time
-	// RefreshExpiresAt time.Time
 }
 
 func NewAuthService(conn *pgx.Conn) *AuthService {
@@ -55,22 +52,8 @@ func (s *AuthService) Login(email, password string) (*Session, error) {
 		return nil, errors.New("invalid credentials")
 	}
 
-	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub": user.ID,
-		"exp": time.Now().Add(1 * time.Hour).Unix(),
-	})
+	accessTokenString, refreshTokenString, err := s.createAccessAndRefreshTokens(user.ID)
 
-	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub": user.ID,
-		"exp": time.Now().Add(7 * 24 * time.Hour).Unix(),
-	})
-
-	accessTokenString, err := accessToken.SignedString(s.jwtKey)
-	if err != nil {
-		return nil, err
-	}
-
-	refreshTokenString, err := refreshToken.SignedString(s.jwtKey)
 	if err != nil {
 		return nil, err
 	}
@@ -79,8 +62,6 @@ func (s *AuthService) Login(email, password string) (*Session, error) {
 		UserId:				user.ID,
 		Token:            accessTokenString,
 		RefreshToken:     refreshTokenString,
-		// ExpiresAt:        expiresAt,
-		// RefreshExpiresAt: refreshExpiresAt,
 	}, nil
 }
 
@@ -93,48 +74,23 @@ func (s *AuthService) RefreshToken(refreshToken string) (*Session, error) {
 	}
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		session, err := s.queries.GetSessionByRefreshToken(s.ctx, refreshToken)
-		if err != nil {
-			return nil, errors.New("invalid refresh token")
-		}
-
-		if !session.RefreshExpiresAt.Valid || session.RefreshExpiresAt.Time.Before(time.Now()) {
-			return nil, errors.New("refresh token expired")
-		}
+		exp := int64(claims["exp"].(float64))
+			if time.Now().Unix() > exp {
+				return nil, errors.New("invalid token")
+			}
 
 		userID := int32(claims["sub"].(float64))
 
-		newAccessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-			"sub": userID,
-			"exp": time.Now().Add(1 * time.Hour).Unix(),
-		})
+		newAccessTokenString, newRefreshToken, err := s.createAccessAndRefreshTokens(userID)
 
-		newAccessTokenString, err := newAccessToken.SignedString(s.jwtKey)
-		if err != nil {
-			return nil, err
-		}
-
-		expiresAt := time.Now().Add(1 * time.Hour)
-		pgExpiresAt := pgtype.Timestamptz{
-			Time:  expiresAt,
-			Valid: true,
-		}
-
-		_, err = s.queries.UpdateSessionToken(s.ctx, repository.UpdateSessionTokenParams{
-			Token:     newAccessTokenString,
-			ExpiresAt: pgExpiresAt,
-			ID:        session.ID,
-		})
 		if err != nil {
 			return nil, err
 		}
 
 		return &Session{
-			UserId:				session.ID,
+			UserId:			  userID,
 			Token:            newAccessTokenString,
-			RefreshToken:     refreshToken,
-			// ExpiresAt:        expiresAt,
-			// RefreshExpiresAt: session.RefreshExpiresAt.Time,
+			RefreshToken:     newRefreshToken,
 		}, nil
 	}
 
@@ -187,47 +143,8 @@ func (s *AuthService) Signup(name, email, password string) (*Session, error) {
 		return nil, err
 	}
 
-	// Generate access token
-	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub": user.ID,
-		"exp": time.Now().Add(1 * time.Hour).Unix(),
-	})
+	accessTokenString, refreshTokenString, err := s.createAccessAndRefreshTokens(user.ID)
 
-	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub": user.ID,
-		"exp": time.Now().Add(7 * 24 * time.Hour).Unix(),
-	})
-
-	accessTokenString, err := accessToken.SignedString(s.jwtKey)
-	if err != nil {
-		return nil, err
-	}
-
-	refreshTokenString, err := refreshToken.SignedString(s.jwtKey)
-	if err != nil {
-		return nil, err
-	}
-
-	expiresAt := time.Now().Add(1 * time.Hour)
-	refreshExpiresAt := time.Now().Add(7 * 24 * time.Hour)
-
-	pgExpiresAt := pgtype.Timestamptz{
-		Time:  expiresAt,
-		Valid: true,
-	}
-	pgRefreshExpiresAt := pgtype.Timestamptz{
-		Time:  refreshExpiresAt,
-		Valid: true,
-	}
-
-	// Create session
-	_, err = s.queries.CreateSession(s.ctx, repository.CreateSessionParams{
-		UserID:           user.ID,
-		Token:            accessTokenString,
-		RefreshToken:     refreshTokenString,
-		ExpiresAt:        pgExpiresAt,
-		RefreshExpiresAt: pgRefreshExpiresAt,
-	})
 	if err != nil {
 		return nil, err
 	}
@@ -236,7 +153,30 @@ func (s *AuthService) Signup(name, email, password string) (*Session, error) {
 		UserId:				user.ID,
 		Token:            accessTokenString,
 		RefreshToken:     refreshTokenString,
-		// ExpiresAt:        expiresAt,
-		// RefreshExpiresAt: refreshExpiresAt,
 	}, nil
+}
+
+func (s *AuthService) createAccessAndRefreshTokens(userID int32) (string, string, error) {
+
+	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"sub": userID,
+		"exp": time.Now().Add(1 * time.Hour).Unix(),
+	})
+
+	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"sub": userID,
+		"exp": time.Now().Add(7 * 24 * time.Hour).Unix(),
+	})
+
+	accessTokenString, err := accessToken.SignedString(s.jwtKey)
+	if err != nil {
+		return "", "", err
+	}
+
+	refreshTokenString, err := refreshToken.SignedString(s.jwtKey)
+	if err != nil {
+		return "", "", err
+	}
+
+	return accessTokenString, refreshTokenString, nil
 }
