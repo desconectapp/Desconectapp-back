@@ -1,10 +1,8 @@
 package controller
 
 import (
-	"errors"
 	"gin/service"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
@@ -90,16 +88,8 @@ func (c *Controller) CreateProfile(ctx *gin.Context) {
 		return
 	}
 
-	userId, err := strconv.Atoi(ctx.Param("userId"))
-	if err != nil {
-		ctx.Error(gin.Error{
-			Err:  errors.New("userId is required and must be an integer"),
-			Type: gin.ErrorTypePublic,
-		})
-		return
-	}
-
-	profileData.UserID = int32(userId)
+	userToken, _ := ctx.Get("userID")
+	profileData.UserID = userToken.(int32)
 
 	id, err := c.service.CreateProfile(profileData)
 	if err != nil {
@@ -114,16 +104,9 @@ func (c *Controller) CreateProfile(ctx *gin.Context) {
 }
 
 func (c *Controller) GetUser(ctx *gin.Context) {
-	userId := ctx.Param("userId")
-	stringId, err := strconv.Atoi(userId)
-	if err != nil {
-		ctx.Error(gin.Error{
-			Err:  err,
-			Type: gin.ErrorTypePublic})
-		return
-	}
+	userToken, _ := ctx.Get("userID")
 
-	user, err := c.service.GetUser(int32(stringId))
+	user, err := c.service.GetUser(userToken.(int32))
 	if err != nil {
 		ctx.Error(gin.Error{
 			Err:  err,
@@ -134,16 +117,9 @@ func (c *Controller) GetUser(ctx *gin.Context) {
 }
 
 func (c *Controller) DeleteUser(ctx *gin.Context) {
-	userId := ctx.Param("userId")
-	stringId, err := strconv.Atoi(userId)
-	if err != nil {
-		ctx.Error(gin.Error{
-			Err:  err,
-			Type: gin.ErrorTypePublic})
-		return
-	}
+	userToken, _ := ctx.Get("userID")
 
-	id, err := c.service.DeleteUser(int32(stringId))
+	id, err := c.service.DeleteUser(userToken.(int32))
 	if err != nil {
 		ctx.Error(gin.Error{
 			Err:  err,
