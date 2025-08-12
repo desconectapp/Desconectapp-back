@@ -9,8 +9,13 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
+type ActivitiesService interface {
+	ListActivities() ([]repository.ActivityRequest, error)
+	CreateActivity(repository.CreateActivityRequestParams) (repository.ActivityRequest, error)
+}
+
 type ActivitiesController struct {
-	service *service.ActivitiesService
+	service ActivitiesService
 }
 
 func NewActivitesController(conn *pgx.Conn) *ActivitiesController {
@@ -18,6 +23,10 @@ func NewActivitesController(conn *pgx.Conn) *ActivitiesController {
 	return &ActivitiesController{
 		service: service,
 	}
+}
+
+func NewActivitiesControllerWithService(service ActivitiesService) *ActivitiesController {
+	return &ActivitiesController{service: service}
 }
 
 func (c *ActivitiesController) ListActivities(ctx *gin.Context) {
