@@ -28,7 +28,6 @@ func (s *PreferenceService) GetUserPreferences(params repository.GetUserPreferen
 	if err != nil {
 		return nil, err
 	}
-
 	return preferences, nil
 }
 

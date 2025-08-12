@@ -72,12 +72,3 @@ func (s *Service) UpdateUser(userParams repository.UpdateUserParams, userPrefere
 	}
 	return id, nil
 }
-
-func (s *Service) AddPreferences(userId int32, preferences []int32) error {
-	var userPreferences repository.BatchAddPreferencesParams
-
-	userPreferences.UserID = userId
-	userPreferences.ActivityIds = preferences
-
-	return s.queries.BatchAddPreferences(s.ctx, userPreferences)
-}

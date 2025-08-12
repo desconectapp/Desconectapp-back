@@ -99,3 +99,39 @@ func (c *PreferencesController) DeletePreference(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, deletePreferenceParams.ActivityID)
 }
+
+func (c *PreferencesController) BatchAddUserPreferences(ctx *gin.Context) {
+	var userPreferences repository.BatchAddPreferencesParams
+
+	if err := ctx.ShouldBindJSON(&userPreferences); err != nil {
+		ctx.Error(gin.Error{
+			Err:  err,
+			Type: gin.ErrorTypePublic})
+		return
+	}
+
+	log.Printf("preferences %v", userPreferences.ActivityIds)
+
+	if len(userPreferences.ActivityIds) == 0 || len(userPreferences.ActivityIds) > 50 {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+			"error": "preferences must contain between 1 and 50 activity IDs",
+		})
+		return
+	}
+
+	userToken, _ := ctx.Get("userID")
+	userPreferences.UserID = userToken.(int32)
+
+	err := c.service.BatchAddPreferences(userPreferences)
+
+	if err != nil {
+		ctx.Error(gin.Error{
+			Err:  err,
+			Type: gin.ErrorTypePublic})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"result": "preferences added successfully",
+	})
+}

@@ -78,17 +78,16 @@ func (router *Router) SetupRoutes() {
 	}
 
 	users := router.r.Group("/users")
-	// users.Use(router.authController.AuthMiddleware())
+	users.Use(router.authController.AuthMiddleware())
 	{
 		users.GET("", router.controller.ListUsers)
 		users.POST("", router.controller.CreateUser)
-		users.POST("/:userId/profile", router.controller.CreateProfile)
-		users.POST("/:userId/preferences", router.controller.AddUserPreferences)
-		users.DELETE("/:userId", router.controller.DeleteUser)
-		users.GET("/:userId", router.controller.GetUser)
+		users.POST("/profile", router.controller.CreateProfile)
+		users.DELETE("", router.controller.DeleteUser)
+		users.GET("/user", router.controller.GetUser)
 		// users.PUT("/:userId", router.controller.UpdateUser)
 	}
-
+	
 	activities := router.r.Group("/activities")
 	// activities.Use(router.authController.AuthMiddleware())
 	{
@@ -96,18 +95,19 @@ func (router *Router) SetupRoutes() {
 		activities.POST("/request", router.activitiesController.CreateActivityRequest)
 		activities.GET("", router.activitiesController.GetActivities)
 	}
-
+	
 	preferences := router.r.Group("/preferences")
 	preferences.Use(router.authController.AuthMiddleware())
-
+	
 	{
 		preferences.GET("", router.preferencesController.GetUserPreferences)
 		preferences.POST("", router.preferencesController.AddPreference)
 		preferences.DELETE("", router.preferencesController.DeletePreference)
+		preferences.POST("/batch", router.preferencesController.BatchAddUserPreferences)
 	}
 
 	groups := router.r.Group("/groups")
-	// preferences.Use(router.authController.AuthMiddleware())
+	preferences.Use(router.authController.AuthMiddleware())
 
 	{
 		groups.GET("/:groupId", router.groupsController.GetGroup)
