@@ -3,7 +3,7 @@ SELECT * FROM profiles
 WHERE user_id = $1 LIMIT 1;
 
 -- name: ListUsers :many
-SELECT * FROM users
+SELECT * FROM profiles
 LIMIT $1 OFFSET $2;
 
 -- name: CreateUser :one
