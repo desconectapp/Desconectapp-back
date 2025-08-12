@@ -21,20 +21,12 @@ func NewService(conn *pgx.Conn) *Service {
 	}
 }
 
-func (s *Service) ListUsers(params repository.ListUsersParams) ([]repository.User, error) {
+func (s *Service) ListUsers(params repository.ListUsersParams) ([]repository.Profile, error) {
 	users, err := s.queries.ListUsers(s.ctx, params)
 	if err != nil {
 		return nil, err
 	}
 	return users, nil
-}
-
-func (s *Service) CreateUser(userParams repository.CreateUserParams) (repository.User, error) {
-	user, err := s.queries.CreateUser(s.ctx, userParams)
-	if err != nil {
-		return repository.User{}, err
-	}
-	return user, nil
 }
 
 func (s *Service) CreateProfile(profile repository.CreateProfileParams) (int32, error) {

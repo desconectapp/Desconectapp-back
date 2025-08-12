@@ -81,15 +81,14 @@ func (router *Router) SetupRoutes() {
 	users.Use(router.authController.AuthMiddleware())
 	{
 		users.GET("", router.controller.ListUsers)
-		users.POST("", router.controller.CreateUser)
 		users.POST("/profile", router.controller.CreateProfile)
 		users.DELETE("", router.controller.DeleteUser)
 		users.GET("/user", router.controller.GetUser)
 		// users.PUT("/:userId", router.controller.UpdateUser)
 	}
-	
+
 	activities := router.r.Group("/activities")
-	// activities.Use(router.authController.AuthMiddleware())
+	activities.Use(router.authController.AuthMiddleware())
 	{
 		activities.GET("/request", router.activitiesController.ListActivitiesRequests)
 		activities.POST("/request", router.activitiesController.CreateActivityRequest)
@@ -107,8 +106,7 @@ func (router *Router) SetupRoutes() {
 	}
 
 	groups := router.r.Group("/groups")
-	preferences.Use(router.authController.AuthMiddleware())
-
+	groups.Use(router.authController.AuthMiddleware())
 	{
 		groups.GET("/:groupId", router.groupsController.GetGroup)
 		groups.GET("", router.groupsController.ListGroups)

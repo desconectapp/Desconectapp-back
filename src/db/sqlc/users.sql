@@ -12,7 +12,7 @@ INSERT INTO users (
 ) VALUES (
   $1, $2
 )
-RETURNING *;
+RETURNING id, email;
 
 -- name: UpdateUser :one
 UPDATE users

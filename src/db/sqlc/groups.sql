@@ -65,7 +65,7 @@ ON CONFLICT DO NOTHING;
 
 -- name: GetGroupMembers :many
 SELECT u.id, p.name FROM users u
-	JOIN profiles p ON u.id = p.id
+	JOIN profiles p ON u.id = p.user_id
 	JOIN group_members gm ON u.id = gm.user_id
 	WHERE gm.group_id = $1;
 

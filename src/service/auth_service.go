@@ -45,14 +45,14 @@ func (s *AuthService) Login(email, password string) (*Session, error) {
 	user, err := s.queries.GetUserByEmail(s.ctx, email)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return nil, errors.New("invalid credentials")
+			return nil, errors.New("invalid email")
 		}
 		return nil, err
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
 	if err != nil {
-		return nil, errors.New("invalid credentials")
+		return nil, errors.New("invalid password")
 	}
 
 	accesExpirationTime, refreshExpirationTime := s.expirations()
@@ -62,8 +62,6 @@ func (s *AuthService) Login(email, password string) (*Session, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	
 
 	return &Session{
 		UserId:				user.ID,

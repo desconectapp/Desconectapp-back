@@ -53,25 +53,6 @@ func (c *Controller) ListUsers(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, users)
 }
 
-func (c *Controller) CreateUser(ctx *gin.Context) {
-	var userParams repository.CreateUserParams
-	if err := ctx.ShouldBind(&userParams); err != nil {
-		ctx.Error(gin.Error{
-			Err:  err,
-			Type: gin.ErrorTypePublic})
-		return
-	}
-
-	user, err := c.service.CreateUser(userParams)
-	if err != nil {
-		ctx.Error(gin.Error{
-			Err:  err,
-			Type: gin.ErrorTypePublic})
-		return
-	}
-	ctx.JSON(http.StatusOK, user)
-}
-
 func (c *Controller) CreateProfile(ctx *gin.Context) {
 	var profileData repository.CreateProfileParams
 	if err := ctx.ShouldBind(&profileData); err != nil {

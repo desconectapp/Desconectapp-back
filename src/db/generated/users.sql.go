@@ -50,7 +50,7 @@ INSERT INTO users (
 ) VALUES (
   $1, $2
 )
-RETURNING id, email, password
+RETURNING id, email
 `
 
 type CreateUserParams struct {
@@ -58,10 +58,15 @@ type CreateUserParams struct {
 	Password string `json:"password"`
 }
 
-func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
+type CreateUserRow struct {
+	ID    int32  `json:"id"`
+	Email string `json:"email"`
+}
+
+func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (CreateUserRow, error) {
 	row := q.db.QueryRow(ctx, createUser, arg.Email, arg.Password)
-	var i User
-	err := row.Scan(&i.ID, &i.Email, &i.Password)
+	var i CreateUserRow
+	err := row.Scan(&i.ID, &i.Email)
 	return i, err
 }
 
@@ -111,7 +116,7 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 }
 
 const listUsers = `-- name: ListUsers :many
-SELECT id, email, password FROM users
+SELECT user_id, name, created_at, age, city, current_situation, gender, profile_complete FROM profiles
 LIMIT $1 OFFSET $2
 `
 
@@ -120,16 +125,25 @@ type ListUsersParams struct {
 	Offset int32 `json:"offset"`
 }
 
-func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]User, error) {
+func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]Profile, error) {
 	rows, err := q.db.Query(ctx, listUsers, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []User{}
+	items := []Profile{}
 	for rows.Next() {
-		var i User
-		if err := rows.Scan(&i.ID, &i.Email, &i.Password); err != nil {
+		var i Profile
+		if err := rows.Scan(
+			&i.UserID,
+			&i.Name,
+			&i.CreatedAt,
+			&i.Age,
+			&i.City,
+			&i.CurrentSituation,
+			&i.Gender,
+			&i.ProfileComplete,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
