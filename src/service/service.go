@@ -45,10 +45,10 @@ func (s *Service) CreateProfile(profile repository.CreateProfileParams) (int32, 
 	return id, nil
 }
 
-func (s *Service) GetUser(userId int32) (repository.User, error) {
+func (s *Service) GetUser(userId int32) (repository.Profile, error) {
 	user, err := s.queries.GetUser(s.ctx, userId)
 	if err != nil {
-		return repository.User{}, err
+		return repository.Profile{}, err
 	}
 	return user, nil
 }
