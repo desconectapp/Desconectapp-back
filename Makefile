@@ -3,6 +3,8 @@ SQLC_CONFIG=src/sqlc.yaml
 COMPOSE_FILE=docker-compose-dev.yaml
 MAIN_SERVICE=app 
 
+TEST_COMPOSE_FILE=docker-compose-test.yaml
+
 dev: sqlc
 	docker compose -f $(COMPOSE_FILE) up -d --build
 
@@ -17,3 +19,6 @@ down:
 
 reset:
 	docker compose -f $(COMPOSE_FILE) down -v
+
+test: sqlc
+	docker compose -f $(TEST_COMPOSE_FILE) up -d --build
