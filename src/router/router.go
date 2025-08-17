@@ -68,7 +68,7 @@ func (router *Router) Run(port string) {
 	router.r.Run(port)
 }
 
-func (router *Router) SetupRoutes() {
+func (router *Router) SetupRoutes() *gin.Engine {
 
 	auth := router.r.Group("/auth")
 	{
@@ -115,4 +115,6 @@ func (router *Router) SetupRoutes() {
 		groups.DELETE("/:groupId", router.groupsController.DeleteGroup)
 		groups.DELETE("/user-from-group/:groupId", router.groupsController.ExitGroup)
 	}
+
+	return router.r
 }

@@ -22,3 +22,6 @@ reset:
 
 test: sqlc
 	docker compose -f $(TEST_COMPOSE_FILE) up -d --build
+
+down_test:
+	docker compose -f $(TEST_COMPOSE_FILE) down -t1

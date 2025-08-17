@@ -55,9 +55,9 @@ func (s *AuthService) Login(email, password string) (*Session, error) {
 		return nil, errors.New("invalid password")
 	}
 
-	accesExpirationTime, refreshExpirationTime := s.expirations()
+	accesExpirationTime, refreshExpirationTime := Expirations()
 
-	accessTokenString, refreshTokenString, err := s.createAccessAndRefreshTokens(user.ID, accesExpirationTime, refreshExpirationTime)
+	accessTokenString, refreshTokenString, err := CreateAccessAndRefreshTokens(user.ID, accesExpirationTime, refreshExpirationTime)
 
 	if err != nil {
 		return nil, err
@@ -89,9 +89,9 @@ func (s *AuthService) RefreshToken(refreshToken string) (*Session, error) {
 
 		userID := int32(claims["sub"].(float64))
 
-		accesExpirationTime, refreshExpirationTime := s.expirations()
+		accesExpirationTime, refreshExpirationTime := Expirations()
 
-		newAccessTokenString, newRefreshToken, err := s.createAccessAndRefreshTokens(userID, accesExpirationTime, refreshExpirationTime)
+		newAccessTokenString, newRefreshToken, err := CreateAccessAndRefreshTokens(userID, accesExpirationTime, refreshExpirationTime)
 
 		if err != nil {
 			return nil, err
@@ -151,9 +151,9 @@ func (s *AuthService) Signup(name, email, password string) (*Session, error) {
 		return nil, err
 	}
 
-	accesExpirationTime, refreshExpirationTime := s.expirations()
+	accesExpirationTime, refreshExpirationTime := Expirations()
 
-	accessTokenString, refreshTokenString, err := s.createAccessAndRefreshTokens(user.ID, accesExpirationTime, refreshExpirationTime)
+	accessTokenString, refreshTokenString, err := CreateAccessAndRefreshTokens(user.ID, accesExpirationTime, refreshExpirationTime)
 
 	if err != nil {
 		return nil, err
@@ -168,37 +168,7 @@ func (s *AuthService) Signup(name, email, password string) (*Session, error) {
 	}, nil
 }
 
-func (s *AuthService) createAccessAndRefreshTokens(userID int32, accesExpirationTime int64, refreshExpirationTime int64) (string, string, error) {
 
-	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub": userID,
-		"exp": accesExpirationTime,
-	})
-
-	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub": userID,
-		"exp": refreshExpirationTime,
-	})
-
-	accessTokenString, err := accessToken.SignedString(s.jwtKey)
-	if err != nil {
-		return "", "", err
-	}
-
-	refreshTokenString, err := refreshToken.SignedString(s.jwtKey)
-	if err != nil {
-		return "", "", err
-	}
-
-	return accessTokenString, refreshTokenString, nil
-}
-
-func (s *AuthService) expirations() (int64, int64) {
-	accesExpirationTime := time.Now().Add(7 * 24 * time.Hour).Unix()
-	refreshExpirationTime := time.Now().Add(7 * 24 * time.Hour).Unix()
-
-	return accesExpirationTime, refreshExpirationTime
-}
 
 func (s *AuthService) expirationsTime(expiresAt int64) time.Time {
 	pgExpiresAt := pgtype.Timestamptz{

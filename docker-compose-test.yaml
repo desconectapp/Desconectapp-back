@@ -2,11 +2,11 @@ services:
   test-db:
     image: postgres:16.4-alpine3.20
     ports:
-      - "5435:5435"
+      - "5435:5432"
     env_file:
       - .env_test
     volumes:
-      - ./database/postgres:/var/lib/postgresql/data
+      - ./database_test/postgres:/var/lib/postgresql/data
       - ./src/db/init.sql:/docker-entrypoint-initdb.d/init.sql
       - ./src/db/files/activities.csv:/activities.csv
       - ./src/db/files/users.csv:/users.csv
@@ -22,11 +22,11 @@ services:
       - "8083:8083"
     volumes:
       - ./src:/app
+    working_dir: /app
     environment:
       PORT: "8080"
     env_file:
       - .env_test
     depends_on:
-      test-db:
-        condition: service_healthy
+      - test-db
     command: go test ./... -v
