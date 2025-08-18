@@ -40,17 +40,27 @@ func (c *Controller) ListUsers(ctx *gin.Context) {
 
 	limit, offset := GetLimmitAndOffset(ctx)
 
-	userParams.Limit = int32(limit)
+	userParams.Limit = int32(limit) + 1
 	userParams.Offset = int32(offset)
 
 	users, err := c.service.ListUsers(userParams)
+
+	hasMore := len(users) == int(userParams.Limit)
+
+	if hasMore {
+		users = users[:len(users)-1]
+	}
+
+	result := PaginatedUsers{Users: users, HasMore: hasMore}
+
 	if err != nil {
 		ctx.Error(gin.Error{
 			Err:  err,
 			Type: gin.ErrorTypePublic})
 		return
 	}
-	ctx.JSON(http.StatusOK, users)
+
+	ctx.JSON(http.StatusOK, result)
 }
 
 func (c *Controller) CreateProfile(ctx *gin.Context) {

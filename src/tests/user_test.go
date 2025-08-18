@@ -1,6 +1,8 @@
 package test
 
 import (
+	"encoding/json"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -9,9 +11,15 @@ import (
 
 	"gin/router"
 	"gin/service"
+	
+	controller "gin/controller"
 )
 
-func TestGetUser(t *testing.T) {
+const (
+	USERS_NUMBER_FILE = 11
+)
+
+func TestGetUserList(t *testing.T) {
 	router := router.NewRouter()
 	r :=  router.SetupRoutes()
 
@@ -19,11 +27,21 @@ func TestGetUser(t *testing.T) {
 
 	assert.Equal(t, err, nil, "Error should be nil")
 
-	req := httptest.NewRequest("GET", "/users", nil)
+	limit := "11"
+	offset := "0"
+
+	req := httptest.NewRequest("GET", "/users?limit="+limit+"&offset="+offset, nil)
 	req.Header.Add("Authorization", "Bearer "+token)
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
-	assert.Equal(t, w.Code, http.StatusOK, "Status code should be 200")
+	var response controller.PaginatedUsers
 
+	err = json.Unmarshal(w.Body.Bytes(), &response)
+	assert.Equal(t, err, nil, "Error should be nil")
+
+	log.Println(response)
+	
+	assert.Equal(t, w.Code, http.StatusOK, "Status code should be 200")
+	assert.Equal(t, USERS_NUMBER_FILE, len(response.Users))
 }

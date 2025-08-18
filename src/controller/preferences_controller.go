@@ -28,16 +28,23 @@ func (c *PreferencesController) GetUserPreferences(ctx *gin.Context) {
 
 	limit, offset := GetLimmitAndOffset(ctx)
 
-	preferencesParams.Limit = int32(limit)
+	preferencesParams.Limit = int32(limit) + 1
 	preferencesParams.Offset = int32(offset)
 
 	
 	userToken, _ := ctx.Get("userID")
 	preferencesParams.UserID = userToken.(int32)
 	
-	log.Printf("Limit %d", userToken)
-
 	preferences, err := c.service.GetUserPreferences(preferencesParams)
+
+	hasMore := len(preferences) == int(preferencesParams.Limit)
+
+	if hasMore {
+		preferences = preferences[:len(preferences)-1]
+	}
+
+	result := PaginatedPreferences{Preferences: preferences, HasMore: hasMore}
+
 	if err != nil {
 		ctx.Error(gin.Error{
 			Err:  err,
@@ -45,7 +52,7 @@ func (c *PreferencesController) GetUserPreferences(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, preferences)
+	ctx.JSON(http.StatusOK, result)
 
 }
 

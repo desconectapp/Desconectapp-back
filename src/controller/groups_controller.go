@@ -35,10 +35,18 @@ func (c *GroupsController) ListGroups(ctx *gin.Context) {
 
 	limit, offset := GetLimmitAndOffset(ctx)
 
-	groupParams.Limit = int32(limit)
+	groupParams.Limit = int32(limit) + 1
 	groupParams.Offset = int32(offset)
 
 	groupsList, err := c.service.ListGroups(groupParams)
+
+	hasMore := len(groupsList) == int(groupParams.Limit)
+
+	if hasMore {
+		groupsList = groupsList[:len(groupsList) - 1]
+	}
+
+	result := PaginatedGroups{Groups: groupsList, HasMore: hasMore}
 
 	if err != nil {
 		ctx.Error(gin.Error{
@@ -46,7 +54,7 @@ func (c *GroupsController) ListGroups(ctx *gin.Context) {
 			Type: gin.ErrorTypePublic})
 		return
 	}
-	ctx.JSON(http.StatusOK, groupsList)
+	ctx.JSON(http.StatusOK, result)
 }
 
 func (c *GroupsController) ListUserGroups(ctx *gin.Context) {
@@ -54,7 +62,7 @@ func (c *GroupsController) ListUserGroups(ctx *gin.Context) {
 
 	limit, offset := GetLimmitAndOffset(ctx)
 
-	groupParams.Limit = int32(limit)
+	groupParams.Limit = int32(limit) + 1
 	groupParams.Offset = int32(offset)
 
 	userToken, _ := ctx.Get("userID")
@@ -62,13 +70,21 @@ func (c *GroupsController) ListUserGroups(ctx *gin.Context) {
 
 	groupsList, err := c.service.ListUserGroups(groupParams)
 
+	hasMore := len(groupsList) == int(groupParams.Limit)
+
+	if hasMore {
+		groupsList = groupsList[:len(groupsList) - 1]
+	}
+
+	result := PaginatedMembers{Members: groupsList, HasMore: hasMore}
+
 	if err != nil {
 		ctx.Error(gin.Error{
 			Err:  err,
 			Type: gin.ErrorTypePublic})
 		return
 	}
-	ctx.JSON(http.StatusOK, groupsList)
+	ctx.JSON(http.StatusOK, result)
 }
 
 func (c *GroupsController) GetGroup(ctx *gin.Context) {
