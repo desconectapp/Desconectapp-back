@@ -110,6 +110,7 @@ func TestDeleteUser(t *testing.T) {
 
 	err = json.Unmarshal(w.Body.Bytes(), &response)
 	assert.Equal(t, err, nil, "Error should be nil")
+
 	
 	assert.Equal(t, w.Code, http.StatusOK, "Status code should be 200")
 	assert.Equal(t, userID, response.DeletedUserID, "The user ids should match")
@@ -121,7 +122,7 @@ func TestGetUser(t *testing.T) {
 	router := router.NewRouter()
 	r :=  router.SetupRoutes()
 
-	userID := int32(5)
+	userID := int32(6)
 
 	token, err := service.NewTestToken(userID)
 
@@ -132,13 +133,13 @@ func TestGetUser(t *testing.T) {
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
-	var user models.Profile
-	err = json.Unmarshal(w.Body.Bytes(), &user)
+	var response models.Profile
 
-	log.Println(user)
-
+	err = json.Unmarshal(w.Body.Bytes(), &response)
 	assert.Equal(t, err, nil, "Error should be nil")
+
+	log.Println(response)
 	
 	assert.Equal(t, w.Code, http.StatusOK, "Status code should be 200")
-	assert.Equal(t, userID, user.UserID, "The user ids should match")
+	assert.Equal(t, userID, response.UserID, "The user ids should match")
 }

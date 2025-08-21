@@ -66,17 +66,17 @@ func ValidateSession(tokenString string) (int32, error) {
 		return jwtKey, nil
 	})
 	if err != nil {
-		return 0, err
+		return -1, err
 	}
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 		exp := int64(claims["exp"].(float64))
 			if time.Now().Unix() > exp {
-				return 0, errors.New("invalid token")
+				return -2, errors.New("invalid token")
 			}
 
 		return int32(claims["sub"].(float64)), nil
 	}
 
-	return 0, errors.New("invalid token")
+	return -3, errors.New("invalid token")
 }
