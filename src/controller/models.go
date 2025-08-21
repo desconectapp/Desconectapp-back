@@ -2,6 +2,7 @@ package controller
 
 import (
 	gen "gin/db/generated"
+	"time"
 )
 
 type PaginatedUsers struct {
@@ -22,4 +23,25 @@ type PaginatedMembers struct {
 type PaginatedPreferences struct {
 	Preferences []gen.GetUserPreferencesRow `json:"preferences"`
 	HasMore bool	`json:"has_more"`
+}
+
+type LoginRequest struct {
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password" binding:"required"`
+}
+
+type RefreshRequest struct {
+	RefreshToken string `json:"refresh_token" binding:"required"`
+}
+
+type AuthResponse struct {
+	UserId			int32		`json:"user_id"`
+	Token            string    `json:"token"`
+	RefreshToken     string    `json:"refresh_token"`
+	ExpiresAt        time.Time `json:"expires_at"`
+	RefreshExpiresAt time.Time `json:"refresh_expires_at"`
+}
+
+type UserDeletedResponse struct {
+	DeletedUserID	int32	`json:"deleted"`
 }

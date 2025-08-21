@@ -1,11 +1,9 @@
 package controller
 
 import (
+	"fmt"
 	"gin/service"
 	"net/http"
-	"time"
-
-	// "time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -14,22 +12,7 @@ type AuthController struct {
 	authService *service.AuthService
 }
 
-type LoginRequest struct {
-	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required"`
-}
 
-type RefreshRequest struct {
-	RefreshToken string `json:"refresh_token" binding:"required"`
-}
-
-type AuthResponse struct {
-	UserId			int32		`json:"user_id"`
-	Token            string    `json:"token"`
-	RefreshToken     string    `json:"refresh_token"`
-	ExpiresAt        time.Time `json:"expires_at"`
-	RefreshExpiresAt time.Time `json:"refresh_expires_at"`
-}
 
 func NewAuthController(authService *service.AuthService) *AuthController {
 	return &AuthController{
@@ -46,6 +29,8 @@ func (c *AuthController) Login(ctx *gin.Context) {
 		})
 		return
 	}
+
+	fmt.Println(loginReq.Email)
 
 	session, err := c.authService.Login(loginReq.Email, loginReq.Password)
 	if err != nil {
@@ -106,7 +91,7 @@ func (c *AuthController) AuthMiddleware() gin.HandlerFunc {
 			token = token[7:]
 		}
 
-		userID, err := c.authService.ValidateSession(token)
+		userID, err := service.ValidateSession(token)
 		if err != nil {
 			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
 			ctx.Abort()
@@ -137,6 +122,7 @@ func (c *AuthController) Signup(ctx *gin.Context) {
 
 	session, err := c.authService.Signup(signupReq.Name, signupReq.Email, signupReq.Password)
 	if err != nil {
+
 		ctx.Error(gin.Error{
 			Err:  err,
 			Type: gin.ErrorTypePublic,

@@ -117,7 +117,6 @@ func (c *Controller) DeleteUser(ctx *gin.Context) {
 			Type: gin.ErrorTypePublic})
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{
-		"deleted": id,
-	})
+	res := UserDeletedResponse{DeletedUserID: id}
+	ctx.JSON(http.StatusOK, res)
 }

@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"os"
 	"time"
 
@@ -56,4 +57,26 @@ func NewTestToken(userID int32) (string, error) {
 	}
 
 	return accessTokenString, nil
+}
+
+func ValidateSession(tokenString string) (int32, error) {
+	jwtKey := []byte(os.Getenv("JWT_SECRET"))
+
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		return jwtKey, nil
+	})
+	if err != nil {
+		return 0, err
+	}
+
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		exp := int64(claims["exp"].(float64))
+			if time.Now().Unix() > exp {
+				return 0, errors.New("invalid token")
+			}
+
+		return int32(claims["sub"].(float64)), nil
+	}
+
+	return 0, errors.New("invalid token")
 }

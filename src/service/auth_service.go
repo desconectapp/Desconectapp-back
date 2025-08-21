@@ -109,31 +109,13 @@ func (s *AuthService) RefreshToken(refreshToken string) (*Session, error) {
 	return nil, errors.New("invalid refresh token")
 }
 
-func (s *AuthService) ValidateSession(tokenString string) (int32, error) {
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		return s.jwtKey, nil
-	})
-	if err != nil {
-		return 0, err
-	}
-
-	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		exp := int64(claims["exp"].(float64))
-			if time.Now().Unix() > exp {
-				return 0, errors.New("invalid token")
-			}
-
-		return int32(claims["sub"].(float64)), nil
-	}
-
-	return 0, errors.New("invalid token")
-}
 
 func (s *AuthService) Signup(name, email, password string) (*Session, error) {
 	_, err := s.queries.GetUserByEmail(s.ctx, email)
 	if err == nil {
 		return nil, errors.New("user with this email already exists")
 	}
+
 	if err != pgx.ErrNoRows {
 		return nil, err
 	}
@@ -147,6 +129,7 @@ func (s *AuthService) Signup(name, email, password string) (*Session, error) {
 		Email:    email,
 		Password: string(hashedPassword),
 	})
+
 	if err != nil {
 		return nil, err
 	}

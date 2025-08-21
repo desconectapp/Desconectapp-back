@@ -21,6 +21,7 @@ reset:
 	docker compose -f $(COMPOSE_FILE) down -v
 
 test: sqlc
+	sudo rm -rf database_test
 	docker compose -f $(TEST_COMPOSE_FILE) up --build --abort-on-container-exit --exit-code-from test
 
 down_test:

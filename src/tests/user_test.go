@@ -2,7 +2,6 @@ package test
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -17,6 +16,7 @@ import (
 )
 
 
+// users.GET("", router.controller.ListUsers)
 func TestGetUserList(t *testing.T) {
 	router := router.NewRouter()
 	r :=  router.SetupRoutes()
@@ -37,8 +37,6 @@ func TestGetUserList(t *testing.T) {
 
 	err = json.Unmarshal(w.Body.Bytes(), &response)
 	assert.Equal(t, err, nil, "Error should be nil")
-
-	log.Println(response)
 	
 	assert.Equal(t, w.Code, http.StatusOK, "Status code should be 200")
 	assert.Equal(t, limit, strconv.Itoa(len(response.Users)))
@@ -87,3 +85,33 @@ func TestGetUserListPagination(t *testing.T) {
 	assert.LessOrEqual(t, limit, strconv.Itoa(len(response.Users)))
 	assert.Equal(t, false, response_2.HasMore)
 }
+
+// users.POST("/profile", router.controller.CreateProfile)
+
+// users.DELETE("", router.controller.DeleteUser)
+
+func TestDeleteUser(t *testing.T) {
+	router := router.NewRouter()
+	r :=  router.SetupRoutes()
+
+	userID := int32(5)
+
+	token, err := service.NewTestToken(userID)
+
+	assert.Equal(t, err, nil, "Error should be nil")
+
+	req := httptest.NewRequest("DELETE", "/users", nil)
+	req.Header.Add("Authorization", "Bearer "+token)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	var response controller.UserDeletedResponse
+
+	err = json.Unmarshal(w.Body.Bytes(), &response)
+	assert.Equal(t, err, nil, "Error should be nil")
+	
+	assert.Equal(t, w.Code, http.StatusOK, "Status code should be 200")
+	assert.Equal(t, userID, response.DeletedUserID, "The user ids should match")
+}
+
+// users.GET("/user", router.controller.GetUser)
