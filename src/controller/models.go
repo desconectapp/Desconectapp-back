@@ -42,6 +42,16 @@ type AuthResponse struct {
 	RefreshExpiresAt time.Time `json:"refresh_expires_at"`
 }
 
+type UserUpdateInfo struct {
+	Name             string  `json:"name"`
+	Email            string  `json:"email"`
+	Age              int32   `json:"age"`
+	City             string  `json:"city"`
+	CurrentSituation string  `json:"current_situation"`
+	ActivityIDs      []int32 `json:"activity_ids"`
+}
+
+
 type UserDeletedResponse struct {
 	DeletedUserID	int32	`json:"deleted"`
 }

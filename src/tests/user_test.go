@@ -2,6 +2,7 @@ package test
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -9,12 +10,12 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	models "gin/db/generated"
 	"gin/router"
 	"gin/service"
 
 	controller "gin/controller"
 )
-
 
 // users.GET("", router.controller.ListUsers)
 func TestGetUserList(t *testing.T) {
@@ -115,3 +116,29 @@ func TestDeleteUser(t *testing.T) {
 }
 
 // users.GET("/user", router.controller.GetUser)
+
+func TestGetUser(t *testing.T) {
+	router := router.NewRouter()
+	r :=  router.SetupRoutes()
+
+	userID := int32(5)
+
+	token, err := service.NewTestToken(userID)
+
+	assert.Equal(t, err, nil, "Error should be nil")
+
+	req := httptest.NewRequest("GET", "/users/user", nil)
+	req.Header.Add("Authorization", "Bearer "+token)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	var user models.Profile
+	err = json.Unmarshal(w.Body.Bytes(), &user)
+
+	log.Println(user)
+
+	assert.Equal(t, err, nil, "Error should be nil")
+	
+	assert.Equal(t, w.Code, http.StatusOK, "Status code should be 200")
+	assert.Equal(t, userID, user.UserID, "The user ids should match")
+}
