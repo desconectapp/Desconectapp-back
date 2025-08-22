@@ -1,6 +1,7 @@
 package test
 
 import (
+	"bytes"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -16,6 +17,8 @@ import (
 
 	controller "gin/controller"
 )
+
+
 
 // users.GET("", router.controller.ListUsers)
 func TestGetUserList(t *testing.T) {
@@ -87,8 +90,6 @@ func TestGetUserListPagination(t *testing.T) {
 	assert.Equal(t, false, response_2.HasMore)
 }
 
-// users.POST("/profile", router.controller.CreateProfile)
-
 // users.DELETE("", router.controller.DeleteUser)
 
 func TestDeleteUser(t *testing.T) {
@@ -142,4 +143,64 @@ func TestGetUser(t *testing.T) {
 	
 	assert.Equal(t, w.Code, http.StatusOK, "Status code should be 200")
 	assert.Equal(t, userID, response.UserID, "The user ids should match")
+}
+
+// users.POST("/profile", router.controller.CreateProfile)
+
+func TestUserProfile(t *testing.T) {
+	router := router.NewRouter()
+	r :=  router.SetupRoutes()
+
+	userID := int32(8)
+	token, err := service.NewTestToken(userID)
+
+	age := int32(24)
+	name := "Martina"
+	city := "Buenos Aires"
+	currentSituation :=  "UNEMPLOYED"
+	gender := "Female"
+
+	body := CreateProfile{
+		Name: name,
+		Age: age,
+		City: city,
+		CurrentSituation: currentSituation,
+		Gender: gender,
+	}
+
+	jsonBody, err := json.Marshal(body)
+
+	req := httptest.NewRequest("POST", "/users/profile", bytes.NewReader(jsonBody))
+	req.Header.Add("content-type", "application/json")
+	req.Header.Add("Authorization", "Bearer "+token)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	var response controller.UserProfileCreatedResponse
+
+	err = json.Unmarshal(w.Body.Bytes(), &response)
+
+	assert.Equal(t, err, nil, "Error should be nil")
+
+	assert.Equal(t, w.Code, http.StatusOK, "Status code should be 200")
+	assert.Equal(t, userID, response.ProfileUserID, "The user ids should match")
+
+	req_2 := httptest.NewRequest("GET", "/users/user", nil)
+	req_2.Header.Add("Authorization", "Bearer "+token)
+	w_2 := httptest.NewRecorder()
+	r.ServeHTTP(w_2, req_2)
+
+	var response_2 models.Profile
+
+	err = json.Unmarshal(w_2.Body.Bytes(), &response_2)
+	assert.Equal(t, err, nil, "Error should be nil")
+
+	
+	assert.Equal(t, w_2.Code, http.StatusOK, "Status code should be 200")
+	assert.Equal(t, userID, response_2.UserID, "The user ids should match")
+	assert.Equal(t, age, response_2.Age, "Age should match")
+	assert.Equal(t, name, response_2.Name, "Name should match")
+	assert.Equal(t, city, response_2.City, "City should match")
+	assert.Equal(t, currentSituation, response_2.CurrentSituation, "Current Situation should match")
+	assert.Equal(t, gender, response_2.Gender, "Gender should match")
 }

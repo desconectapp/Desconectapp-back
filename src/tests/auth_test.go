@@ -17,10 +17,7 @@ import (
 	controller "gin/controller"
 )
 
-type AuthBody struct {
-	Email	string	`json:"email"`
-	Password	string	`json:"password"`
-}
+
 
 // // auth.POST("/signup", router.authController.Signup)
 
