@@ -25,6 +25,7 @@ services:
     working_dir: /app
     environment:
       PORT: "8080"
+      GIN_MODE: test
     env_file:
       - .env_test
     depends_on:

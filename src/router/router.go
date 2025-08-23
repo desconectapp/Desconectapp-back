@@ -69,6 +69,7 @@ func (router *Router) Run(port string) {
 }
 
 func (router *Router) SetupRoutes() *gin.Engine {
+	gin.SetMode(os.Getenv("GIN_MODE"))
 
 	auth := router.r.Group("/auth")
 	{

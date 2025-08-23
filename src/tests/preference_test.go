@@ -3,7 +3,6 @@ package test
 import (
 	"bytes"
 	"encoding/json"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -47,9 +46,7 @@ func TestPostPreference(t *testing.T) {
 	var response controller.ActivityPreferenseRespponse
 
 	err = json.Unmarshal(w.Body.Bytes(), &response)
-	
-	log.Println(response)
-	
+		
 	assert.Equal(t, err, nil, "Error should be nil")
 
 	

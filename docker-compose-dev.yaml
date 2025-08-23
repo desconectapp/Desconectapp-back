@@ -10,6 +10,7 @@ services:
       - ./src:/app
     environment:
       PORT: "8080"
+      GIN_MODE: debug
     env_file:
       - .env
     command: go run main.go
