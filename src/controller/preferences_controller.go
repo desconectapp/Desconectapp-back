@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"errors"
 	repository "gin/db/generated"
 	"log"
 	"net/http"
@@ -66,6 +67,13 @@ func (c *PreferencesController) AddPreference(ctx *gin.Context) {
 		return
 	}
 
+	if addPreferenceParams.ActivityID == 0 {
+		ctx.Error(gin.Error{
+			Err:  errors.New("activity_id cannot be 0"),
+			Type: gin.ErrorTypePublic})
+		return
+	}
+
 	userToken, _ := ctx.Get("userID")
 	addPreferenceParams.UserID = userToken.(int32)
 
@@ -78,7 +86,11 @@ func (c *PreferencesController) AddPreference(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, addPreferenceParams.ActivityID)
+	res := ActivityPreferenseRespponse{
+		ActivityPreferenseID:  addPreferenceParams.ActivityID,
+	}
+
+	ctx.JSON(http.StatusOK, res)
 	
 }
 

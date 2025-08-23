@@ -12,3 +12,7 @@ type CreateProfile struct {
 	CurrentSituation string `json:"current_situation"`
 	Gender           string `json:"gender"`
 }
+
+type AddPreference struct {
+    ActivityID int32 `json:"activity_id"`
+}
