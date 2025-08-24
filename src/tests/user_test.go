@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -17,8 +18,6 @@ import (
 
 	controller "gin/controller"
 )
-
-
 
 // users.GET("", router.controller.ListUsers)
 func TestGetUserList(t *testing.T) {
@@ -96,25 +95,48 @@ func TestDeleteUser(t *testing.T) {
 	router := router.NewRouter()
 	r :=  router.SetupRoutes()
 
-	userID := int32(5)
+	body := AuthBody{
+    	Email:"test_delete@example.com",
+  		Password: "password123",
+    }
 
-	token, err := service.NewTestToken(userID)
+	jsonBody, err := json.Marshal(body)
 
 	assert.Equal(t, err, nil, "Error should be nil")
 
-	req := httptest.NewRequest("DELETE", "/users", nil)
-	req.Header.Add("Authorization", "Bearer "+token)
+	req := httptest.NewRequest("POST", "/auth/signup", bytes.NewReader(jsonBody))
+	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
-	var response controller.UserDeletedResponse
+	var response controller.AuthResponse
 
 	err = json.Unmarshal(w.Body.Bytes(), &response)
 	assert.Equal(t, err, nil, "Error should be nil")
 
+	_, err = service.ValidateSession(response.Token)
+	assert.Equal(t, err, nil, "Error should be nil")
+
+	_, err = service.ValidateSession(response.RefreshToken)
+	assert.Equal(t, err, nil, "Error should be nil")
+
+	assert.Equal(t, w.Code, http.StatusCreated, "Status code should be 201")
+
+	time.Sleep(1 * time.Second)
+
+	req_2 := httptest.NewRequest("DELETE", "/users", nil)
+	req_2.Header.Add("Authorization", "Bearer "+response.Token)
+	w_2 := httptest.NewRecorder()
+	r.ServeHTTP(w_2, req_2)
+
+	var response_2 controller.UserDeletedResponse
+
+	err = json.Unmarshal(w_2.Body.Bytes(), &response_2)
+	assert.Equal(t, err, nil, "Error should be nil")
+
 	
-	assert.Equal(t, w.Code, http.StatusOK, "Status code should be 200")
-	assert.Equal(t, userID, response.DeletedUserID, "The user ids should match")
+	assert.Equal(t, w_2.Code, http.StatusOK, "Status code should be 200")
+	assert.Equal(t, response.UserId, response_2.DeletedUserID, "The user ids should match")
 }
 
 // users.GET("/user", router.controller.GetUser)

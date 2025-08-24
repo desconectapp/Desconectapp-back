@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"errors"
 	"gin/service"
 	"net/http"
 
@@ -88,6 +89,12 @@ func (c *Controller) CreateProfile(ctx *gin.Context) {
 
 func (c *Controller) GetUser(ctx *gin.Context) {
 	userToken, _ := ctx.Get("userID")
+
+	if userToken == 0 {
+		ctx.Error(gin.Error{
+			Err:  errors.New("user id cannot be 0"),
+			Type: gin.ErrorTypePublic})
+	}
 
 	user, err := c.service.GetUser(userToken.(int32))
 	if err != nil {
