@@ -51,7 +51,6 @@ type UserUpdateInfo struct {
 	ActivityIDs      []int32 `json:"activity_ids"`
 }
 
-
 type UserDeletedResponse struct {
 	DeletedUserID	int32	`json:"deleted"`
 }

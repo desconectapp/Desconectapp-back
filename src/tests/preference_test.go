@@ -58,33 +58,65 @@ func TestPostPreference(t *testing.T) {
 
 
 // preferences.GET("", router.preferencesController.GetUserPreferences)
-// func TestGetPreference(t *testing.T) {
+func TestGetPreference(t *testing.T) {
+	router := router.NewRouter()
+	r :=  router.SetupRoutes()
+
+	userID := int32(7)
+
+	token, err := service.NewTestToken(userID)
+	assert.Equal(t, err, nil, "Error should be nil")
+
+	activityId := int32(1)
+
+	addPreference(t, r, activityId, token)
+
+	req := httptest.NewRequest("GET", "/preferences", nil)
+	req.Header.Add("Authorization", "Bearer "+token)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	var response controller.PaginatedPreferences
+
+	err = json.Unmarshal(w.Body.Bytes(), &response)
+		
+	assert.Equal(t, err, nil, "Error should be nil")
+
+	// log.Println(response)
+
+	assert.Equal(t, activityId, response.Preferences[0].ID, "The activity ids should match")
+}
+
+// preferences.DELETE("", router.preferencesController.DeletePreference)
+
+// func TestDeletePreference(t *testing.T) {
 // 	router := router.NewRouter()
 // 	r :=  router.SetupRoutes()
 
-// 	userID := int32(7)
+// 	userID := int32(8)
 
 // 	token, err := service.NewTestToken(userID)
 // 	assert.Equal(t, err, nil, "Error should be nil")
 
-// 	activityId := int32(19)
+// 	activityId := int32(1)
 
 // 	addPreference(t, r, activityId, token)
 
-// 	req := httptest.NewRequest("GET", "/preferences", nil)
+// 	req := httptest.NewRequest("DELETE", "/preferences", nil)
 // 	req.Header.Add("Authorization", "Bearer "+token)
 // 	w := httptest.NewRecorder()
 // 	r.ServeHTTP(w, req)
 
 // 	var response controller.PaginatedPreferences
 
-// 	log.Println(response)
+// 	err = json.Unmarshal(w.Body.Bytes(), &response)
+		
+// 	assert.Equal(t, err, nil, "Error should be nil")
+
+// 	// log.Println(response)
 
 // 	assert.Equal(t, activityId, response.Preferences[0].ID, "The activity ids should match")
 // }
-
-// preferences.DELETE("", router.preferencesController.DeletePreference)
-
 
 
 // preferences.POST("/batch", router.preferencesController.BatchAddUserPreferences)     
