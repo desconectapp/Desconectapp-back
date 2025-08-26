@@ -38,8 +38,6 @@ func addPreference(t *testing.T, r *gin.Engine, activityId int32, token string) 
 	assert.Equal(t, activityId, response.ActivityPreferenseID, "The activity ids should match")
 }
 
-
-
 // preferences.POST("", router.preferencesController.AddPreference)
 
 func TestPostPreference(t *testing.T) {
@@ -127,3 +125,37 @@ func TestDeletePreference(t *testing.T) {
 
 
 // preferences.POST("/batch", router.preferencesController.BatchAddUserPreferences)     
+
+func TestPostbatchPreference(t *testing.T) {
+	router := router.NewRouter()
+	r :=  router.SetupRoutes()
+	
+	userID := int32(6)
+	
+	token, err := service.NewTestToken(userID)
+	assert.Equal(t, err, nil, "Error should be nil")
+	
+	activityIds := []int32{15,23,21,17}
+	
+	body := ActivityBatchStruct{
+		ActivityIDBatch: activityIds,
+	}
+	jsonBody, err := json.Marshal(body)
+
+	req := httptest.NewRequest("POST", "/preferences/batch", bytes.NewReader(jsonBody))
+	req.Header.Add("content-type", "application/json")
+	req.Header.Add("Authorization", "Bearer "+token)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	var response controller.ActivityIdBatchResponse
+
+	err = json.Unmarshal(w.Body.Bytes(), &response)
+		
+	assert.Equal(t, err, nil, "Error should be nil")
+
+	assert.Equal(t, w.Code, http.StatusOK, "Status code should be 200")
+	for i, id := range activityIds {
+		assert.Equal(t, id, response.ActivityIdBatchIDs[i], "The activity ids should match")
+	}
+}

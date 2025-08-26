@@ -3,7 +3,6 @@ package controller
 import (
 	"errors"
 	repository "gin/db/generated"
-	"log"
 	"net/http"
 
 	"gin/service"
@@ -131,8 +130,6 @@ func (c *PreferencesController) BatchAddUserPreferences(ctx *gin.Context) {
 		return
 	}
 
-	log.Printf("preferences %v", userPreferences.ActivityIds)
-
 	if len(userPreferences.ActivityIds) == 0 || len(userPreferences.ActivityIds) > 50 {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
 			"error": "preferences must contain between 1 and 50 activity IDs",
@@ -152,7 +149,9 @@ func (c *PreferencesController) BatchAddUserPreferences(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{
-		"result": "preferences added successfully",
-	})
+	res := ActivityIdBatchResponse{
+		ActivityIdBatchIDs: userPreferences.ActivityIds,
+	}
+
+	ctx.JSON(http.StatusOK, res)
 }

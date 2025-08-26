@@ -62,3 +62,7 @@ type UserProfileCreatedResponse struct {
 type ActivityIdResponse struct {
 	ActivityPreferenseID	int32	`json:"activity"`
 }
+
+type ActivityIdBatchResponse struct {
+	ActivityIdBatchIDs	[]int32	`json:"activities"`
+}

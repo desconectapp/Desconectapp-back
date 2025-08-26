@@ -16,3 +16,7 @@ type CreateProfile struct {
 type ActivityIdStruct struct {
     ActivityID int32 `json:"activity_id"`
 }
+
+type ActivityBatchStruct struct {
+    ActivityIDBatch []int32 `json:"activity_ids"`
+}
