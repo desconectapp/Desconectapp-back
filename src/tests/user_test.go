@@ -169,7 +169,7 @@ func TestGetUser(t *testing.T) {
 
 // users.POST("/profile", router.controller.CreateProfile)
 
-func TestUserProfile(t *testing.T) {
+func TestCreateUserProfile(t *testing.T) {
 	router := router.NewRouter()
 	r :=  router.SetupRoutes()
 

@@ -1,12 +1,12 @@
-user_id,name,age,city,current_situation,profile_complete
-1,juan,33,Buenos Aires,STUDENT,true
-2,juana,23,Buenos Aires,STUDENT,true
-3,sofii,19,Buenos Aires,STUDENT,true
-4,maxi,24,Buenos Aires,STUDENT,true
-5,supre,23,Buenos Aires,STUDENT,true
-6,anita,23,Buenos Aires,STUDENT,true
-7,lucho,26,Buenos Aires,WORKING,true
-8,martu,23,Buenos Aires,WORKING,true
-9,valen,23,Buenos Aires,UNEMPLOYED,true 
-10,marco,23,Buenos Aires, WORKING,true 
-11,pablo,72,Buenos Aires, UNEMPLOYED,true 
+user_id,name,age,city,current_situation,gender,profile_complete
+1,juan,33,Buenos Aires,STUDENT,Male,true
+2,juana,23,Buenos Aires,UNEMPLOYED,Female,true
+3,sofii,19,Buenos Aires,STUDENT,Female,true
+4,maxi,24,Buenos Aires,STUDENT,Male,true
+5,supre,23,Buenos Aires,UNEMPLOYED,Male,true
+6,anita,23,Buenos Aires,STUDENT,Female,true
+7,lucho,26,Buenos Aires,WORKING,Male,true
+8,martu,23,Buenos Aires,UNEMPLOYED,Female,true
+9,valen,23,Buenos Aires,UNEMPLOYED,Male,true 
+10,marco,23,Buenos Aires,WORKING,Male,true 
+11,pablo,72,Buenos Aires,UNEMPLOYED,Male,true 
