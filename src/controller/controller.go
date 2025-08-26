@@ -3,6 +3,7 @@ package controller
 import (
 	"errors"
 	"gin/service"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -74,6 +75,8 @@ func (c *Controller) CreateProfile(ctx *gin.Context) {
 
 	userToken, _ := ctx.Get("userID")
 	profileData.UserID = userToken.(int32)
+
+	log.Printf("ID: %d", profileData.UserID)
 
 	id, err := c.service.CreateProfile(profileData)
 	if err != nil {

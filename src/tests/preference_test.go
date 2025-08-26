@@ -7,36 +7,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 
 	controller "gin/controller"
 	"gin/router"
-	"gin/service"
 )
-
-func addPreference(t *testing.T, r *gin.Engine, activityId int32, token string) {
-	body := ActivityIdStruct{
-		ActivityID: activityId,
-	}
-	jsonBody, err := json.Marshal(body)
-
-	req := httptest.NewRequest("POST", "/preferences", bytes.NewReader(jsonBody))
-	req.Header.Add("content-type", "application/json")
-	req.Header.Add("Authorization", "Bearer "+token)
-	w := httptest.NewRecorder()
-	r.ServeHTTP(w, req)
-
-	var response controller.ActivityIdResponse
-
-	err = json.Unmarshal(w.Body.Bytes(), &response)
-		
-	assert.Equal(t, err, nil, "Error should be nil")
-
-	
-	assert.Equal(t, w.Code, http.StatusOK, "Status code should be 200")
-	assert.Equal(t, activityId, response.ActivityPreferenseID, "The activity ids should match")
-}
 
 // preferences.POST("", router.preferencesController.AddPreference)
 
@@ -44,14 +19,11 @@ func TestPostPreference(t *testing.T) {
 	router := router.NewRouter()
 	r :=  router.SetupRoutes()
 	
-	userID := int32(6)
-	
-	token, err := service.NewTestToken(userID)
-	assert.Equal(t, err, nil, "Error should be nil")
-	
+	_, token := NewUser(t, r, "test_post_preference")
+		
 	activityId := int32(19)
 	
-	addPreference(t, r, activityId, token)
+	AddPreference(t, r, activityId, token)
 }
 
 
@@ -60,14 +32,11 @@ func TestGetPreference(t *testing.T) {
 	router := router.NewRouter()
 	r :=  router.SetupRoutes()
 
-	userID := int32(7)
-
-	token, err := service.NewTestToken(userID)
-	assert.Equal(t, err, nil, "Error should be nil")
+	_, token := NewUser(t, r, "test_get_preference")
 
 	activityId := int32(1)
 
-	addPreference(t, r, activityId, token)
+	AddPreference(t, r, activityId, token)
 
 	req := httptest.NewRequest("GET", "/preferences", nil)
 	req.Header.Add("Authorization", "Bearer "+token)
@@ -76,7 +45,7 @@ func TestGetPreference(t *testing.T) {
 
 	var response controller.PaginatedPreferences
 
-	err = json.Unmarshal(w.Body.Bytes(), &response)
+	err := json.Unmarshal(w.Body.Bytes(), &response)
 		
 	assert.Equal(t, err, nil, "Error should be nil")
 
@@ -91,14 +60,11 @@ func TestDeletePreference(t *testing.T) {
 	router := router.NewRouter()
 	r :=  router.SetupRoutes()
 
-	userID := int32(8)
-
-	token, err := service.NewTestToken(userID)
-	assert.Equal(t, err, nil, "Error should be nil")
+	_, token := NewUser(t, r, "test_delete_preference")
 
 	activityId := int32(1)
 
-	addPreference(t, r, activityId, token)
+	AddPreference(t, r, activityId, token)
 
 	body := ActivityIdStruct{
 		ActivityID: activityId,
@@ -130,10 +96,7 @@ func TestPostbatchPreference(t *testing.T) {
 	router := router.NewRouter()
 	r :=  router.SetupRoutes()
 	
-	userID := int32(6)
-	
-	token, err := service.NewTestToken(userID)
-	assert.Equal(t, err, nil, "Error should be nil")
+	_, token := NewUser(t, r, "test_bstch_preference")
 	
 	activityIds := []int32{15,23,21,17}
 	

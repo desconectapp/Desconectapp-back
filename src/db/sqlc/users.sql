@@ -21,14 +21,18 @@ WHERE id = $1
 RETURNING id;
 
 -- name: CreateProfile :one
-UPDATE profiles
-  SET name = $2,
-  age = $3,
-  city = $4,
-  current_situation = $5,
-  gender = $6,
-  profile_complete = true
-WHERE user_id = $1
+INSERT INTO profiles (
+    user_id, name, age, city, current_situation, gender, profile_complete
+) VALUES (
+    $1, $2, $3, $4, $5, $6, true
+)
+ON CONFLICT (user_id) DO UPDATE
+SET name = EXCLUDED.name,
+    age = EXCLUDED.age,
+    city = EXCLUDED.city,
+    current_situation = EXCLUDED.current_situation,
+    gender = EXCLUDED.gender,
+    profile_complete = true
 RETURNING user_id;
 
 -- name: DeleteUser :one
