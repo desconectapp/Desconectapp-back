@@ -59,6 +59,6 @@ type UserProfileCreatedResponse struct {
 	ProfileUserID	int32	`json:"updated"`
 }
 
-type ActivityPreferenseRespponse struct {
+type ActivityIdResponse struct {
 	ActivityPreferenseID	int32	`json:"activity"`
 }

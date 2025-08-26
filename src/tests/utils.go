@@ -13,6 +13,6 @@ type CreateProfile struct {
 	Gender           string `json:"gender"`
 }
 
-type AddPreference struct {
+type ActivityIdStruct struct {
     ActivityID int32 `json:"activity_id"`
 }

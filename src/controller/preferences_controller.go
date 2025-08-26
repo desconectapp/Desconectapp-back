@@ -86,7 +86,7 @@ func (c *PreferencesController) AddPreference(ctx *gin.Context) {
 		return
 	}
 
-	res := ActivityPreferenseRespponse{
+	res := ActivityIdResponse{
 		ActivityPreferenseID:  addPreferenceParams.ActivityID,
 	}
 
@@ -116,7 +116,9 @@ func (c *PreferencesController) DeletePreference(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, deletePreferenceParams.ActivityID)
+	res := ActivityIdResponse{ActivityPreferenseID: deletePreferenceParams.ActivityID}
+
+	ctx.JSON(http.StatusOK, res)
 }
 
 func (c *PreferencesController) BatchAddUserPreferences(ctx *gin.Context) {
