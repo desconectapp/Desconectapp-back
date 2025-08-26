@@ -29,12 +29,12 @@ func (s *Service) ListUsers(params repository.ListUsersParams) ([]repository.Pro
 	return users, nil
 }
 
-func (s *Service) CreateProfile(profile repository.CreateProfileParams) (int32, error) {
-	id, err := s.queries.CreateProfile(s.ctx, profile)
+func (s *Service) CreateProfile(profile repository.CreateProfileParams) (repository.CreateProfileRow, error) {
+	user, err := s.queries.CreateProfile(s.ctx, profile)
 	if err != nil {
-		return 0, err
+		return repository.CreateProfileRow{}, err
 	}
-	return id, nil
+	return user, nil
 }
 
 func (s *Service) GetUser(userId int32) (repository.Profile, error) {

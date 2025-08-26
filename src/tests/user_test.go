@@ -3,7 +3,6 @@ package test
 import (
 	"bytes"
 	"encoding/json"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -12,7 +11,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	models "gin/db/generated"
 	"gin/router"
 	"gin/service"
 
@@ -131,12 +129,10 @@ func TestGetUser(t *testing.T) {
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
-	var response models.Profile
+	var response controller.Profile
 
 	err = json.Unmarshal(w.Body.Bytes(), &response)
 	assert.Equal(t, err, nil, "Error should be nil")
-
-	log.Println(response)
 	
 	assert.Equal(t, w.Code, http.StatusOK, "Status code should be 200")
 	assert.Equal(t, userID, response.UserID, "The user ids should match")
@@ -172,31 +168,17 @@ func TestCreateUserProfile(t *testing.T) {
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
-	var response controller.UserProfileCreatedResponse
+	var response controller.Profile
 
 	err = json.Unmarshal(w.Body.Bytes(), &response)
 
 	assert.Equal(t, err, nil, "Error should be nil")
 
 	assert.Equal(t, w.Code, http.StatusOK, "Status code should be 200")
-	assert.Equal(t, userID, response.ProfileUserID, "The user ids should match")
-
-	req_2 := httptest.NewRequest("GET", "/users/user", nil)
-	req_2.Header.Add("Authorization", "Bearer "+token)
-	w_2 := httptest.NewRecorder()
-	r.ServeHTTP(w_2, req_2)
-
-	var response_2 models.Profile
-
-	err = json.Unmarshal(w_2.Body.Bytes(), &response_2)
-	assert.Equal(t, err, nil, "Error should be nil")
-
-	
-	assert.Equal(t, w_2.Code, http.StatusOK, "Status code should be 200")
-	assert.Equal(t, userID, response_2.UserID, "The user ids should match")
-	assert.Equal(t, age, response_2.Age, "Age should match")
-	assert.Equal(t, name, response_2.Name, "Name should match")
-	assert.Equal(t, city, response_2.City, "City should match")
-	assert.Equal(t, currentSituation, response_2.CurrentSituation, "Current Situation should match")
-	assert.Equal(t, gender, response_2.Gender, "Gender should match")
+	assert.Equal(t, userID, response.UserID, "The user ids should match")
+	assert.Equal(t, age, response.Age, "Age should match")
+	assert.Equal(t, name, response.Name, "Name should match")
+	assert.Equal(t, city, response.City, "City should match")
+	assert.Equal(t, currentSituation, response.CurrentSituation, "Current Situation should match")
+	assert.Equal(t, gender, response.Gender, "Gender should match")
 }

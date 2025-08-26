@@ -22,7 +22,7 @@ SET name = EXCLUDED.name,
     current_situation = EXCLUDED.current_situation,
     gender = EXCLUDED.gender,
     profile_complete = true
-RETURNING user_id
+RETURNING user_id, name, age, city, current_situation, gender
 `
 
 type CreateProfileParams struct {
@@ -34,7 +34,16 @@ type CreateProfileParams struct {
 	Gender           string `json:"gender"`
 }
 
-func (q *Queries) CreateProfile(ctx context.Context, arg CreateProfileParams) (int32, error) {
+type CreateProfileRow struct {
+	UserID           int32  `json:"user_id"`
+	Name             string `json:"name"`
+	Age              int32  `json:"age"`
+	City             string `json:"city"`
+	CurrentSituation string `json:"current_situation"`
+	Gender           string `json:"gender"`
+}
+
+func (q *Queries) CreateProfile(ctx context.Context, arg CreateProfileParams) (CreateProfileRow, error) {
 	row := q.db.QueryRow(ctx, createProfile,
 		arg.UserID,
 		arg.Name,
@@ -43,9 +52,16 @@ func (q *Queries) CreateProfile(ctx context.Context, arg CreateProfileParams) (i
 		arg.CurrentSituation,
 		arg.Gender,
 	)
-	var user_id int32
-	err := row.Scan(&user_id)
-	return user_id, err
+	var i CreateProfileRow
+	err := row.Scan(
+		&i.UserID,
+		&i.Name,
+		&i.Age,
+		&i.City,
+		&i.CurrentSituation,
+		&i.Gender,
+	)
+	return i, err
 }
 
 const createUser = `-- name: CreateUser :one

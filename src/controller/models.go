@@ -3,6 +3,7 @@ package controller
 import (
 	gen "gin/db/generated"
 	"time"
+	"github.com/jackc/pgx/pgtype"
 )
 
 type PaginatedUsers struct {
@@ -65,4 +66,14 @@ type ActivityIdResponse struct {
 
 type ActivityIdBatchResponse struct {
 	ActivityIdBatchIDs	[]int32	`json:"activities"`
+}
+
+type Profile struct {
+	UserID           int32            `json:"user_id"`
+	Name             string           `json:"name"`
+	CreatedAt        pgtype.Timestamp `json:"created_at"`
+	Age              int32            `json:"age"`
+	City             string           `json:"city"`
+	CurrentSituation string           `json:"current_situation"`
+	Gender           string           `json:"gender"`
 }

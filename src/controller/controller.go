@@ -3,7 +3,6 @@ package controller
 import (
 	"errors"
 	"gin/service"
-	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -76,18 +75,25 @@ func (c *Controller) CreateProfile(ctx *gin.Context) {
 	userToken, _ := ctx.Get("userID")
 	profileData.UserID = userToken.(int32)
 
-	log.Printf("ID: %d", profileData.UserID)
 
-	id, err := c.service.CreateProfile(profileData)
+	user, err := c.service.CreateProfile(profileData)
 	if err != nil {
 		ctx.Error(gin.Error{
 			Err:  err,
 			Type: gin.ErrorTypePublic})
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{
-		"updated": id,
-	})
+
+	res := Profile{
+		UserID: user.UserID,
+		Age: user.Age,
+		Name: user.Name,
+		City: user.City,
+		CurrentSituation: user.CurrentSituation,
+		Gender: user.Gender,
+	}
+
+	ctx.JSON(http.StatusOK, res)
 }
 
 func (c *Controller) GetUser(ctx *gin.Context) {
@@ -106,7 +112,16 @@ func (c *Controller) GetUser(ctx *gin.Context) {
 			Type: gin.ErrorTypePublic})
 		return
 	}
-	ctx.JSON(http.StatusOK, user)
+	res := Profile{
+		UserID: user.UserID,
+		Age: user.Age,
+		Name: user.Name,
+		City: user.City,
+		CurrentSituation: user.CurrentSituation,
+		Gender: user.Gender,
+	}
+
+	ctx.JSON(http.StatusOK, res)
 }
 
 func (c *Controller) DeleteUser(ctx *gin.Context) {

@@ -33,7 +33,7 @@ SET name = EXCLUDED.name,
     current_situation = EXCLUDED.current_situation,
     gender = EXCLUDED.gender,
     profile_complete = true
-RETURNING user_id;
+RETURNING user_id, name, age, city, current_situation, gender;
 
 -- name: DeleteUser :one
 DELETE FROM users
