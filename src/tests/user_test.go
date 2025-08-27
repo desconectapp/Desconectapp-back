@@ -112,6 +112,23 @@ func TestDeleteUser(t *testing.T) {
 	assert.Equal(t, userId, response_2.DeletedUserID, "The user ids should match")
 }
 
+
+func TestDeleteNonExistentUser(t *testing.T) {
+	router := router.NewRouter()
+	r :=  router.SetupRoutes()
+
+	userID := int32(0)
+	token, err := service.NewTestToken(userID)
+	assert.Equal(t, err, nil, "Error should be nil")
+
+	req_2 := httptest.NewRequest("DELETE", "/users", nil)
+	req_2.Header.Add("Authorization", "Bearer "+token)
+	w_2 := httptest.NewRecorder()
+	r.ServeHTTP(w_2, req_2)
+
+	assert.Equal(t, w_2.Code, http.StatusNotFound, "Status code should be 200")
+}
+
 // users.GET("/user", router.controller.GetUser)
 
 func TestGetUser(t *testing.T) {
@@ -142,10 +159,8 @@ func TestGetNonExistentUser(t *testing.T) {
 	router := router.NewRouter()
 	r :=  router.SetupRoutes()
 
-	userID := int32(897)
-
+	userID := int32(0)
 	token, err := service.NewTestToken(userID)
-
 	assert.Equal(t, err, nil, "Error should be nil")
 
 	req := httptest.NewRequest("GET", "/users/user", nil)
@@ -179,6 +194,7 @@ func TestCreateUserProfile(t *testing.T) {
 	}
 
 	jsonBody, err := json.Marshal(body)
+	assert.Equal(t, err, nil, "Error should be nil")
 
 	req := httptest.NewRequest("POST", "/users/profile", bytes.NewReader(jsonBody))
 	req.Header.Add("content-type", "application/json")
@@ -199,4 +215,62 @@ func TestCreateUserProfile(t *testing.T) {
 	assert.Equal(t, city, response.City, "City should match")
 	assert.Equal(t, currentSituation, response.CurrentSituation, "Current Situation should match")
 	assert.Equal(t, gender, response.Gender, "Gender should match")
+}
+
+func TestCreateUserProfileBadBind(t *testing.T) {
+	router := router.NewRouter()
+	r :=  router.SetupRoutes()
+
+	_, token := NewUser(t, r, "invalid_bind")
+
+	body := AuthBody{
+		Email: "invalid@test.com",
+		Password: "lets_fail",
+	}
+
+	jsonBody, err := json.Marshal(body)
+	assert.Equal(t, err, nil, "Error should be nil")
+
+	req := httptest.NewRequest("POST", "/users/profile", bytes.NewReader(jsonBody))
+	req.Header.Add("content-type", "application/json")
+	req.Header.Add("Authorization", "Bearer "+token)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, w.Code, http.StatusBadRequest, "Status code should be 400")
+
+}
+
+func TestCreateUserProfileInvalidAge(t *testing.T) {
+	router := router.NewRouter()
+	r :=  router.SetupRoutes()
+
+	
+	_, token := NewUser(t, r, "invalid_age")
+
+	age := int32(240)
+	name := "Maomao"
+	city := "Japan"
+	currentSituation :=  "WORKING"
+	gender := "Female"
+
+	body := CreateProfile{
+		Name: name,
+		Age: age,
+		City: city,
+		CurrentSituation: currentSituation,
+		Gender: gender,
+	}
+
+	jsonBody, err := json.Marshal(body)
+	assert.Equal(t, err, nil, "Error should be nil")
+
+	req := httptest.NewRequest("POST", "/users/profile", bytes.NewReader(jsonBody))
+	req.Header.Add("content-type", "application/json")
+	req.Header.Add("Authorization", "Bearer "+token)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, w.Code, http.StatusBadRequest, "Status code should be 400")
+
 }

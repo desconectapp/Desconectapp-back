@@ -26,31 +26,6 @@ func TestPostPreference(t *testing.T) {
 	AddPreference(t, r, activityId, token)
 }
 
-func TestPostPreferenceBadBind(t *testing.T) {
-	router := router.NewRouter()
-	r :=  router.SetupRoutes()
-	
-	_, token := NewUser(t, r, "test_post_preference_wrong")
-	
-	activityIds := []int32{15,23,21,17}
-	
-	body := ActivityIdStruct{
-		ActivityID: activityIds[0],
-	}
-	jsonBody, err := json.Marshal(body)
-
-	assert.Equal(t, err, nil, "Error should be nil")
-
-	req := httptest.NewRequest("POST", "/preferences/batch", bytes.NewReader(jsonBody))
-	req.Header.Add("content-type", "application/json")
-	req.Header.Add("Authorization", "Bearer "+token)
-	w := httptest.NewRecorder()
-	r.ServeHTTP(w, req)
-
-	assert.Equal(t, w.Code, http.StatusBadRequest, "Status code should be 400")
-
-}
-
 // preferences.GET("", router.preferencesController.GetUserPreferences)
 func TestGetPreference(t *testing.T) {
 	router := router.NewRouter()
@@ -108,8 +83,6 @@ func TestDeletePreference(t *testing.T) {
 		
 	assert.Equal(t, err, nil, "Error should be nil")
 
-	// log.Println(response)
-
 	assert.Equal(t, activityId, response.ActivityPreferenseID, "The activity ids should match")
 }
 
@@ -147,4 +120,29 @@ func TestPostbatchPreference(t *testing.T) {
 	for i, id := range activityIds {
 		assert.Equal(t, id, response.ActivityIdBatchIDs[i], "The activity ids should match")
 	}
+}
+
+func TestPostBatchPreferenceBadBind(t *testing.T) {
+	router := router.NewRouter()
+	r :=  router.SetupRoutes()
+	
+	_, token := NewUser(t, r, "test_post_batch_preference_wrong")
+	
+	activityIds := []int32{15,23,21,17}
+	
+	body := ActivityIdStruct{
+		ActivityID: activityIds[0],
+	}
+	jsonBody, err := json.Marshal(body)
+
+	assert.Equal(t, err, nil, "Error should be nil")
+
+	req := httptest.NewRequest("POST", "/preferences/batch", bytes.NewReader(jsonBody))
+	req.Header.Add("content-type", "application/json")
+	req.Header.Add("Authorization", "Bearer "+token)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, w.Code, http.StatusBadRequest, "Status code should be 400")
+
 }

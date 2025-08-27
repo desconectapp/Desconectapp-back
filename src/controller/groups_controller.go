@@ -116,13 +116,7 @@ func (c *GroupsController) CreateGroup(ctx *gin.Context) {
 	groupParams, batchParams, err := getGroupParams(ctx)
 
 	if err != nil {
-		ctx.Error(&gin.Error{
-			Err:  err,
-			Type: gin.ErrorTypePublic,
-		}).SetMeta(map[string]any{
-			"status": http.StatusBadRequest,
-		})
-		ctx.Abort()
+		ErrorWithStatus(ctx, "Could not bind", http.StatusBadRequest)
 		return
 	}
 

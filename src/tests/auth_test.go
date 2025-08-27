@@ -25,6 +25,29 @@ func TestSignUp(t *testing.T) {
 	NewUser(t, r, "test")
 }
 
+func TestSignUpEmailAlreadyExists(t *testing.T) {
+	router := router.NewRouter()
+	r :=  router.SetupRoutes()
+
+	NewUser(t, r, "test_exists")
+
+	body := AuthBody{
+    	Email: "test_exists@test.com",
+  		Password: "password123",
+    }
+
+	jsonBody, err := json.Marshal(body)
+	assert.Equal(t, err, nil, "Error should be nil")
+
+	req := httptest.NewRequest("POST", "/auth/signup", bytes.NewReader(jsonBody))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, w.Code, http.StatusConflict, "Status code should be 409")
+}
+
+
 // auth.POST("/login", router.authController.Login)
 
 func TestLogIn(t *testing.T) {

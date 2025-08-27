@@ -60,13 +60,7 @@ func (c *PreferencesController) AddPreference(ctx *gin.Context) {
 	var addPreferenceParams repository.AddPreferenceParams
 
 	if err := ctx.ShouldBind(&addPreferenceParams); err != nil {
-		ctx.Error(&gin.Error{
-			Err:  err,
-			Type: gin.ErrorTypePublic,
-		}).SetMeta(map[string]any{
-			"status": http.StatusBadRequest,
-		})
-		ctx.Abort()
+		ErrorWithStatus(ctx, "Could not bind", http.StatusBadRequest)
 		return
 	}
 
@@ -101,13 +95,7 @@ func (c *PreferencesController) DeletePreference(ctx *gin.Context) {
 	var deletePreferenceParams repository.DeletePreferenceParams
 
 	if err := ctx.ShouldBind(&deletePreferenceParams); err != nil {
-		ctx.Error(&gin.Error{
-			Err:  err,
-			Type: gin.ErrorTypePublic,
-		}).SetMeta(map[string]any{
-			"status": http.StatusBadRequest,
-		})
-		ctx.Abort()
+		ErrorWithStatus(ctx, "Could not bind", http.StatusBadRequest)
 		return
 	}
 
@@ -131,21 +119,13 @@ func (c *PreferencesController) DeletePreference(ctx *gin.Context) {
 func (c *PreferencesController) BatchAddUserPreferences(ctx *gin.Context) {
 	var userPreferences repository.BatchAddPreferencesParams
 
-	if err := ctx.ShouldBindJSON(&userPreferences); err != nil {
-		ctx.Error(&gin.Error{
-			Err:  err,
-			Type: gin.ErrorTypePublic,
-		}).SetMeta(map[string]any{
-			"status": http.StatusBadRequest,
-		})
-		ctx.Abort()
+	if err := ctx.ShouldBind(&userPreferences); err != nil {
+		ErrorWithStatus(ctx, "Could not bind", http.StatusBadRequest)
 		return
 	}
 
-	if len(userPreferences.ActivityIds) == 0 || len(userPreferences.ActivityIds) > 50 {
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"error": "preferences must contain between 1 and 50 activity IDs",
-		})
+	if len(userPreferences.ActivityIds) == 0 || len(userPreferences.ActivityIds) > 54 {
+		ErrorWithStatus(ctx, "Preferences must contain between 1 and 54 activity IDs",http.StatusBadRequest)
 		return
 	}
 
