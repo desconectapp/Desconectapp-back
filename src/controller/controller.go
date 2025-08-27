@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"database/sql"
 	"errors"
 	"gin/service"
 	"net/http"
@@ -59,9 +60,13 @@ func (c *Controller) ListUsers(ctx *gin.Context) {
 func (c *Controller) CreateProfile(ctx *gin.Context) {
 	var profileData repository.CreateProfileParams
 	if err := ctx.ShouldBind(&profileData); err != nil {
-		ctx.Error(gin.Error{
+		ctx.Error(&gin.Error{
 			Err:  err,
-			Type: gin.ErrorTypePublic})
+			Type: gin.ErrorTypePublic,
+		}).SetMeta(map[string]any{
+			"status": http.StatusBadRequest,
+		})
+		ctx.Abort()
 		return
 	}
 
@@ -100,18 +105,36 @@ func (c *Controller) GetUser(ctx *gin.Context) {
 	userToken, _ := ctx.Get("userID")
 
 	if userToken == 0 {
-		ctx.Error(gin.Error{
+		ctx.Error(&gin.Error{
 			Err:  errors.New("user id cannot be 0"),
-			Type: gin.ErrorTypePublic})
+			Type: gin.ErrorTypePublic,
+		}).SetMeta(map[string]any{
+			"status": http.StatusBadRequest,
+		})
+		ctx.Abort()
+		return
 	}
 
 	user, err := c.service.GetUser(userToken.(int32))
-	if err != nil {
-		ctx.Error(gin.Error{
+
+	if errors.Is(err, sql.ErrNoRows) {
+		ctx.Error(&gin.Error{
+			Err:  errors.New("The user does not exist"),
+			Type: gin.ErrorTypePublic,
+		}).SetMeta(map[string]any{
+			"status": http.StatusNotFound,
+		})
+		ctx.Abort()
+		return
+	} else if err != nil {
+		ctx.Error(&gin.Error{
 			Err:  err,
-			Type: gin.ErrorTypePublic})
+			Type: gin.ErrorTypePublic,
+		})
+		ctx.Abort()
 		return
 	}
+
 	res := Profile{
 		UserID: user.UserID,
 		Age: user.Age,

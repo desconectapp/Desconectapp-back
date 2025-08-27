@@ -60,9 +60,13 @@ func (c *PreferencesController) AddPreference(ctx *gin.Context) {
 	var addPreferenceParams repository.AddPreferenceParams
 
 	if err := ctx.ShouldBind(&addPreferenceParams); err != nil {
-		ctx.Error(gin.Error{
+		ctx.Error(&gin.Error{
 			Err:  err,
-			Type: gin.ErrorTypePublic})
+			Type: gin.ErrorTypePublic,
+		}).SetMeta(map[string]any{
+			"status": http.StatusBadRequest,
+		})
+		ctx.Abort()
 		return
 	}
 
@@ -97,9 +101,13 @@ func (c *PreferencesController) DeletePreference(ctx *gin.Context) {
 	var deletePreferenceParams repository.DeletePreferenceParams
 
 	if err := ctx.ShouldBind(&deletePreferenceParams); err != nil {
-		ctx.Error(gin.Error{
+		ctx.Error(&gin.Error{
 			Err:  err,
-			Type: gin.ErrorTypePublic})
+			Type: gin.ErrorTypePublic,
+		}).SetMeta(map[string]any{
+			"status": http.StatusBadRequest,
+		})
+		ctx.Abort()
 		return
 	}
 
@@ -124,9 +132,13 @@ func (c *PreferencesController) BatchAddUserPreferences(ctx *gin.Context) {
 	var userPreferences repository.BatchAddPreferencesParams
 
 	if err := ctx.ShouldBindJSON(&userPreferences); err != nil {
-		ctx.Error(gin.Error{
+		ctx.Error(&gin.Error{
 			Err:  err,
-			Type: gin.ErrorTypePublic})
+			Type: gin.ErrorTypePublic,
+		}).SetMeta(map[string]any{
+			"status": http.StatusBadRequest,
+		})
+		ctx.Abort()
 		return
 	}
 

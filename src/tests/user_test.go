@@ -138,6 +138,24 @@ func TestGetUser(t *testing.T) {
 	assert.Equal(t, userID, response.UserID, "The user ids should match")
 }
 
+func TestGetNonExistentUser(t *testing.T) {
+	router := router.NewRouter()
+	r :=  router.SetupRoutes()
+
+	userID := int32(897)
+
+	token, err := service.NewTestToken(userID)
+
+	assert.Equal(t, err, nil, "Error should be nil")
+
+	req := httptest.NewRequest("GET", "/users/user", nil)
+	req.Header.Add("Authorization", "Bearer "+token)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, w.Code, http.StatusNotFound, "Status code should be 404")
+}
+
 // users.POST("/profile", router.controller.CreateProfile)
 
 func TestCreateUserProfile(t *testing.T) {
