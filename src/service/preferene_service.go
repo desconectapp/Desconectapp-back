@@ -41,8 +41,7 @@ func (s *PreferenceService) AddPreference(params repository.AddPreferenceParams)
 	return err
 }
 
-func (s *PreferenceService) DeletePreference(params repository.DeletePreferenceParams) (error) {
-	err := s.queries.DeletePreference(s.ctx, params)
-
-	return err
+func (s *PreferenceService) DeletePreference(params repository.DeletePreferenceParams) (int32, error) {
+	id, err := s.queries.DeletePreference(s.ctx, params)
+	return id, err
 }

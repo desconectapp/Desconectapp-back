@@ -52,9 +52,10 @@ func (q *Queries) BatchAddPreferences(ctx context.Context, arg BatchAddPreferenc
 	return err
 }
 
-const deletePreference = `-- name: DeletePreference :exec
+const deletePreference = `-- name: DeletePreference :one
 DELETE FROM users_preference
 WHERE user_id = $1 AND activity_id = $2
+RETURNING activity_id
 `
 
 type DeletePreferenceParams struct {
@@ -62,9 +63,11 @@ type DeletePreferenceParams struct {
 	ActivityID int32 `json:"activity_id"`
 }
 
-func (q *Queries) DeletePreference(ctx context.Context, arg DeletePreferenceParams) error {
-	_, err := q.db.Exec(ctx, deletePreference, arg.UserID, arg.ActivityID)
-	return err
+func (q *Queries) DeletePreference(ctx context.Context, arg DeletePreferenceParams) (int32, error) {
+	row := q.db.QueryRow(ctx, deletePreference, arg.UserID, arg.ActivityID)
+	var activity_id int32
+	err := row.Scan(&activity_id)
+	return activity_id, err
 }
 
 const getUserPreferences = `-- name: GetUserPreferences :many

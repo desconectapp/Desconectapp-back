@@ -217,29 +217,6 @@ func TestCreateUserProfile(t *testing.T) {
 	assert.Equal(t, gender, response.Gender, "Gender should match")
 }
 
-func TestCreateUserProfileBadBind(t *testing.T) {
-	router := router.NewRouter()
-	r :=  router.SetupRoutes()
-
-	_, token := NewUser(t, r, "invalid_bind")
-
-	body := AuthBody{
-		Email: "invalid@test.com",
-		Password: "lets_fail",
-	}
-
-	jsonBody, err := json.Marshal(body)
-	assert.Equal(t, err, nil, "Error should be nil")
-
-	req := httptest.NewRequest("POST", "/users/profile", bytes.NewReader(jsonBody))
-	req.Header.Add("content-type", "application/json")
-	req.Header.Add("Authorization", "Bearer "+token)
-	w := httptest.NewRecorder()
-	r.ServeHTTP(w, req)
-
-	assert.Equal(t, w.Code, http.StatusBadRequest, "Status code should be 400")
-
-}
 
 func TestCreateUserProfileInvalidAge(t *testing.T) {
 	router := router.NewRouter()

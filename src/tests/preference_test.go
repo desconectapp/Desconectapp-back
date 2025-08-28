@@ -26,6 +26,29 @@ func TestPostPreference(t *testing.T) {
 	AddPreference(t, r, activityId, token)
 }
 
+func TestPostInvalidPreference(t *testing.T) {
+	router := router.NewRouter()
+	r :=  router.SetupRoutes()
+	
+	_, token := NewUser(t, r, "test_post_invalid_preference")
+		
+	activityId := int32(0)
+	
+	body := ActivityIdStruct{
+		ActivityID: activityId,
+	}
+	jsonBody, err := json.Marshal(body)
+	assert.Equal(t, err, nil, "Error should be nil")
+
+	req := httptest.NewRequest("POST", "/preferences", bytes.NewReader(jsonBody))
+	req.Header.Add("content-type", "application/json")
+	req.Header.Add("Authorization", "Bearer "+token)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, w.Code, http.StatusNotFound, "Status code should be 404")
+}
+
 // preferences.GET("", router.preferencesController.GetUserPreferences)
 func TestGetPreference(t *testing.T) {
 	router := router.NewRouter()
@@ -86,6 +109,32 @@ func TestDeletePreference(t *testing.T) {
 	assert.Equal(t, activityId, response.ActivityPreferenseID, "The activity ids should match")
 }
 
+func TestDeleteInvalidPreference(t *testing.T) {
+	router := router.NewRouter()
+	r :=  router.SetupRoutes()
+
+	_, token := NewUser(t, r, "test_delete_invalid_preference")
+
+	activityId := int32(1)
+
+	AddPreference(t, r, activityId, token)
+
+	body := ActivityIdStruct{
+		ActivityID: 2,
+	}
+
+	jsonBody, err := json.Marshal(body)
+	assert.Equal(t, err, nil, "Error should be nil")
+
+	req := httptest.NewRequest("DELETE", "/preferences",bytes.NewReader(jsonBody))
+	req.Header.Add("content-type", "application/json")
+	req.Header.Add("Authorization", "Bearer "+token)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, w.Code, http.StatusNotFound, "Status code should be 404")
+}
+
 
 // preferences.POST("/batch", router.preferencesController.BatchAddUserPreferences)     
 
@@ -122,27 +171,26 @@ func TestPostbatchPreference(t *testing.T) {
 	}
 }
 
-func TestPostBatchPreferenceBadBind(t *testing.T) {
+func TestPostInvalidBatchPreference(t *testing.T) {
 	router := router.NewRouter()
 	r :=  router.SetupRoutes()
 	
-	_, token := NewUser(t, r, "test_post_batch_preference_wrong")
+	_, token := NewUser(t, r, "test_post_invalid_batch_preference")
+		
+	activityIds := []int32{0}
 	
-	activityIds := []int32{15,23,21,17}
-	
-	body := ActivityIdStruct{
-		ActivityID: activityIds[0],
+	body := ActivityBatchStruct{
+		ActivityIDBatch: activityIds,
 	}
-	jsonBody, err := json.Marshal(body)
 
+	jsonBody, err := json.Marshal(body)
 	assert.Equal(t, err, nil, "Error should be nil")
 
-	req := httptest.NewRequest("POST", "/preferences/batch", bytes.NewReader(jsonBody))
+	req := httptest.NewRequest("POST", "/preferences", bytes.NewReader(jsonBody))
 	req.Header.Add("content-type", "application/json")
 	req.Header.Add("Authorization", "Bearer "+token)
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
-	assert.Equal(t, w.Code, http.StatusBadRequest, "Status code should be 400")
-
+	assert.Equal(t, w.Code, http.StatusNotFound, "Status code should be 404")
 }

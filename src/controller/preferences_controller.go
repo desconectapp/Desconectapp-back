@@ -1,8 +1,10 @@
 package controller
 
 import (
+	"database/sql"
 	"errors"
 	repository "gin/db/generated"
+	"log"
 	"net/http"
 
 	"gin/service"
@@ -36,6 +38,11 @@ func (c *PreferencesController) GetUserPreferences(ctx *gin.Context) {
 	preferencesParams.UserID = userToken.(int32)
 	
 	preferences, err := c.service.GetUserPreferences(preferencesParams)
+	
+	if err != nil {
+		ErrorNoStatus(ctx, err)
+		return
+	}
 
 	hasMore := len(preferences) == int(preferencesParams.Limit)
 
@@ -45,12 +52,6 @@ func (c *PreferencesController) GetUserPreferences(ctx *gin.Context) {
 
 	result := PaginatedPreferences{Preferences: preferences, HasMore: hasMore}
 
-	if err != nil {
-		ctx.Error(gin.Error{
-			Err:  err,
-			Type: gin.ErrorTypePublic})
-		return
-	}
 
 	ctx.JSON(http.StatusOK, result)
 
@@ -64,25 +65,15 @@ func (c *PreferencesController) AddPreference(ctx *gin.Context) {
 		return
 	}
 
-	if addPreferenceParams.ActivityID == 0 {
-		ctx.Error(gin.Error{
-			Err:  errors.New("activity_id cannot be 0"),
-			Type: gin.ErrorTypePublic})
-		return
-	}
-
 	userToken, _ := ctx.Get("userID")
 	addPreferenceParams.UserID = userToken.(int32)
 
 	err := c.service.AddPreference(addPreferenceParams)
 
 	if err != nil {
-		ctx.Error(gin.Error{
-			Err:  err,
-			Type: gin.ErrorTypePublic})
+		ErrorWithStatus(ctx, err.Error(), http.StatusNotFound)
 		return
 	}
-
 	res := ActivityIdResponse{
 		ActivityPreferenseID:  addPreferenceParams.ActivityID,
 	}
@@ -102,16 +93,17 @@ func (c *PreferencesController) DeletePreference(ctx *gin.Context) {
 	userToken, _ := ctx.Get("userID")
 	deletePreferenceParams.UserID = userToken.(int32)
 
-	err := c.service.DeletePreference(deletePreferenceParams)
+	id, err := c.service.DeletePreference(deletePreferenceParams)
 
-	if err != nil {
-		ctx.Error(gin.Error{
-			Err:  err,
-			Type: gin.ErrorTypePublic})
+	if errors.Is(err, sql.ErrNoRows) {
+		ErrorWithStatus(ctx, "Preference not found", http.StatusNotFound)
+		return
+	} else if err != nil {
+		ErrorNoStatus(ctx, err)
 		return
 	}
 
-	res := ActivityIdResponse{ActivityPreferenseID: deletePreferenceParams.ActivityID}
+	res := ActivityIdResponse{ActivityPreferenseID: id}
 
 	ctx.JSON(http.StatusOK, res)
 }
@@ -124,20 +116,15 @@ func (c *PreferencesController) BatchAddUserPreferences(ctx *gin.Context) {
 		return
 	}
 
-	if len(userPreferences.ActivityIds) == 0 || len(userPreferences.ActivityIds) > 54 {
-		ErrorWithStatus(ctx, "Preferences must contain between 1 and 54 activity IDs",http.StatusBadRequest)
-		return
-	}
-
 	userToken, _ := ctx.Get("userID")
 	userPreferences.UserID = userToken.(int32)
 
 	err := c.service.BatchAddPreferences(userPreferences)
 
+	log.Println(err)
+
 	if err != nil {
-		ctx.Error(gin.Error{
-			Err:  err,
-			Type: gin.ErrorTypePublic})
+		ErrorWithStatus(ctx, err.Error(), http.StatusNotFound)
 		return
 	}
 
