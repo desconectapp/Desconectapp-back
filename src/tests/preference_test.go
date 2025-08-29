@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -50,7 +51,7 @@ func TestPostInvalidPreference(t *testing.T) {
 }
 
 // preferences.GET("", router.preferencesController.GetUserPreferences)
-func TestGetPreference(t *testing.T) {
+func TestGetPreferences(t *testing.T) {
 	router := router.NewRouter()
 	r :=  router.SetupRoutes()
 
@@ -60,7 +61,10 @@ func TestGetPreference(t *testing.T) {
 
 	AddPreference(t, r, activityId, token)
 
-	req := httptest.NewRequest("GET", "/preferences", nil)
+	limit := "10"
+	offset := "0"
+
+	req := httptest.NewRequest("GET", "/preferences?limit="+limit+"&offset="+offset, nil)
 	req.Header.Add("Authorization", "Bearer "+token)
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
@@ -71,9 +75,34 @@ func TestGetPreference(t *testing.T) {
 		
 	assert.Equal(t, err, nil, "Error should be nil")
 
-	// log.Println(response)
-
 	assert.Equal(t, activityId, response.Preferences[0].ID, "The activity ids should match")
+	assert.Equal(t, false, response.HasMore)
+	assert.LessOrEqual(t, strconv.Itoa(len(response.Preferences)), limit, "Preference len should be less or equal to limit")
+}
+
+
+func TestGetNoPreference(t *testing.T) {
+	router := router.NewRouter()
+	r :=  router.SetupRoutes()
+
+	_, token := NewUser(t, r, "test_get_no_preference")
+
+	limit := "10"
+	offset := "0"
+
+	req := httptest.NewRequest("GET", "/preferences?limit="+limit+"&offset="+offset, nil)
+	req.Header.Add("Authorization", "Bearer "+token)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	var response controller.PaginatedPreferences
+
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+		
+	assert.Equal(t, err, nil, "Error should be nil")
+	assert.Equal(t, false, response.HasMore)
+	assert.Equal(t, 0, len(response.Preferences), "User should have no preference")
+
 }
 
 // preferences.DELETE("", router.preferencesController.DeletePreference)
