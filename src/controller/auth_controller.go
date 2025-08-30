@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"errors"
 	"fmt"
 	"gin/service"
 	"net/http"
@@ -23,10 +24,7 @@ func NewAuthController(authService *service.AuthService) *AuthController {
 func (c *AuthController) Login(ctx *gin.Context) {
 	var loginReq LoginRequest
 	if err := ctx.ShouldBind(&loginReq); err != nil {
-		ctx.Error(gin.Error{
-			Err:  err,
-			Type: gin.ErrorTypePublic,
-		})
+		ErrorWithStatus(ctx, "Could not bind", http.StatusBadRequest)
 		return
 	}
 
@@ -53,10 +51,7 @@ func (c *AuthController) Login(ctx *gin.Context) {
 func (c *AuthController) Refresh(ctx *gin.Context) {
 	var refreshReq RefreshRequest
 	if err := ctx.ShouldBind(&refreshReq); err != nil {
-		ctx.Error(gin.Error{
-			Err:  err,
-			Type: gin.ErrorTypePublic,
-		})
+		ErrorWithStatus(ctx, "Could not bind", http.StatusBadRequest)
 		return
 	}
 
@@ -112,7 +107,7 @@ type SignupRequest struct {
 func (c *AuthController) Signup(ctx *gin.Context) {
 	var signupReq SignupRequest
 	if err := ctx.ShouldBind(&signupReq); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		ErrorWithStatus(ctx, "Could not bind", http.StatusBadRequest)
 		return
 	}
 
@@ -121,8 +116,15 @@ func (c *AuthController) Signup(ctx *gin.Context) {
 	}
 
 	session, err := c.authService.Signup(signupReq.Name, signupReq.Email, signupReq.Password)
-	if err != nil {
-
+	if errors.Is(err, service.ErrUserExists) {
+    	ctx.Error(&gin.Error{
+			Err:  err,
+			Type: gin.ErrorTypePublic,
+		}).SetMeta(map[string]any{
+			"status": http.StatusConflict,
+		})
+		return
+	} else if err != nil {
 		ctx.Error(gin.Error{
 			Err:  err,
 			Type: gin.ErrorTypePublic,

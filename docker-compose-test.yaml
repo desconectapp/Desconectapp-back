@@ -8,11 +8,11 @@ services:
     volumes:
       - ./database_test/postgres:/var/lib/postgresql/data
       - ./src/db/init.sql:/docker-entrypoint-initdb.d/init.sql
-      - ./src/db/files/activities.csv:/activities.csv
-      - ./src/db/files/users.csv:/users.csv
+      - ./src/db/files/activities_test.csv:/activities.csv
+      - ./src/db/files/users_test.csv:/users.csv
       - ./src/db/files/activity_requests.csv:/activity_requests.csv
-      - ./src/db/files/users_preference.csv:/users_preference.csv
-      - ./src/db/files/profiles.csv:/profiles.csv
+      - ./src/db/files/users_preference_test.csv:/users_preference.csv
+      - ./src/db/files/profiles_test.csv:/profiles.csv
 
   test:
     build:

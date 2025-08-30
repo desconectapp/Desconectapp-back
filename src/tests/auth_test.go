@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-
 	"github.com/stretchr/testify/assert"
 
 	"gin/router"
@@ -17,21 +16,27 @@ import (
 	controller "gin/controller"
 )
 
-
-
 // // auth.POST("/signup", router.authController.Signup)
 
 func TestSignUp(t *testing.T) {
 	router := router.NewRouter()
 	r :=  router.SetupRoutes()
 
+	NewUser(t, r, "test")
+}
+
+func TestSignUpEmailAlreadyExists(t *testing.T) {
+	router := router.NewRouter()
+	r :=  router.SetupRoutes()
+
+	NewUser(t, r, "test_exists")
+
 	body := AuthBody{
-    	Email:"test@example.com",
+    	Email: "test_exists@test.com",
   		Password: "password123",
     }
 
 	jsonBody, err := json.Marshal(body)
-
 	assert.Equal(t, err, nil, "Error should be nil")
 
 	req := httptest.NewRequest("POST", "/auth/signup", bytes.NewReader(jsonBody))
@@ -39,19 +44,9 @@ func TestSignUp(t *testing.T) {
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
-	var response controller.AuthResponse
-
-	err = json.Unmarshal(w.Body.Bytes(), &response)
-	assert.Equal(t, err, nil, "Error should be nil")
-
-	_, err = service.ValidateSession(response.Token)
-	assert.Equal(t, err, nil, "Error should be nil")
-
-	_, err = service.ValidateSession(response.RefreshToken)
-	assert.Equal(t, err, nil, "Error should be nil")
-
-	assert.Equal(t, w.Code, http.StatusCreated, "Status code should be 201")
+	assert.Equal(t, w.Code, http.StatusConflict, "Status code should be 409")
 }
+
 
 // auth.POST("/login", router.authController.Login)
 

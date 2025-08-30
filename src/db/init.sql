@@ -113,7 +113,7 @@ COPY users(email, password)
 FROM '/users.csv'
 WITH (FORMAT csv, HEADER true);
 
-COPY profiles(user_id, name, age, city, current_situation, profile_complete)
+COPY profiles(user_id, name, age, city, current_situation, gender, profile_complete)
 FROM '/profiles.csv'
 WITH (FORMAT csv, HEADER true);
 

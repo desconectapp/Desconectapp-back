@@ -13,6 +13,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+var ErrUserExists = errors.New("user with this email already exists")
+
 type AuthService struct {
 	queries *repository.Queries
 	ctx     context.Context
@@ -113,7 +115,7 @@ func (s *AuthService) RefreshToken(refreshToken string) (*Session, error) {
 func (s *AuthService) Signup(name, email, password string) (*Session, error) {
 	_, err := s.queries.GetUserByEmail(s.ctx, email)
 	if err == nil {
-		return nil, errors.New("user with this email already exists")
+		return nil, ErrUserExists
 	}
 
 	if err != pgx.ErrNoRows {
