@@ -95,7 +95,7 @@ type GroupInfo struct {
     Description string  `json:"description"`
     Location    string  `json:"location"`
     ActivityID  int32   `json:"activity_id"`
-    MembersIds  []int32 `json:"members_ids"`
+    MembersIds  []int32 `json:"user_ids"`
 }
 
 
@@ -105,6 +105,7 @@ func NewGroup(t *testing.T, r *gin.Engine, name string, location string, activit
 		Name: name,
 		Location: location,
 		MembersIds: memberIds,
+		Description: "",
 
 	}
 	jsonBody, err := json.Marshal(body)
@@ -117,5 +118,14 @@ func NewGroup(t *testing.T, r *gin.Engine, name string, location string, activit
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
+	var response controller.NewGroup
+
+	err = json.Unmarshal(w.Body.Bytes(), &response)
+		
+	assert.Equal(t, err, nil, "Error should be nil")
 	assert.Equal(t, w.Code, http.StatusCreated, "Status code should be 201")
+	assert.Equal(t, body.ActivityID, response.ActivityID)
+	assert.Equal(t, body.Name, *response.Name)
+	assert.Equal(t, body.Location, *response.Location)
+	assert.Equal(t, body.MembersIds, response.Members)
 }

@@ -74,7 +74,7 @@ type NewGroup struct {
 	Description *string            `json:"description"`
 	Location    *string            `json:"location"`
 	ActivityID  int32              `json:"activity_id"`
-	Members     interface{}        `json:"members"`
+	Members     []int32        `json:"members"`
 	ActivityName string             `json:"activity_name"`
 	ActivityIcon *string            `json:"activity_icon"`
 }
