@@ -68,6 +68,61 @@ type ActivityBatchStruct struct {
 	ActivityIDBatch []int32 `json:"activity_ids"`
 }
 
+// SendActivityRequest posts an activity request for the given user and activity,
+// asserting a successful response, and returns the created ActivityRequest.
+func SendActivityRequest(t *testing.T, r *gin.Engine, userId int32, activityId int32, participantsNeeded int32) ActivityRequest {
+	int32Ptr := func(i int32) *int32 { return &i }
+	float64Ptr := func(f float64) *float64 { return &f }
+	strPtr := func(s string) *string { return &s }
+
+	body := CreateActivityRequestInput{
+		UserID:             int32Ptr(userId),
+		ActivityID:         int32Ptr(activityId),
+		Description:        strPtr("Looking for a running buddy"),
+		ParticipantsNeeded: int32Ptr(participantsNeeded),
+		MaxParticipants:    int32Ptr(5),
+		Latitude:           float64Ptr(37.7749),
+		Longitude:          float64Ptr(-122.4194),
+		SearchRadius:       int32Ptr(10),
+		Schedules: Schedules{
+			"monday":    {{Start: 9, End: 11}, {Start: 14, End: 16}},
+			"wednesday": {{Start: 10, End: 12}},
+		},
+	}
+
+	jsonBody, err := json.Marshal(body)
+	assert.Equal(t, err, nil, "Error should be nil")
+
+	token, err := service.NewTestToken(userId)
+	assert.Equal(t, err, nil, "Error should be nil")
+
+	req := httptest.NewRequest("POST", "/activities/request", bytes.NewReader(jsonBody))
+	req.Header.Add("content-type", "application/json")
+	req.Header.Add("Authorization", "Bearer "+token)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code, "Status code should be 200")
+	if w.Code != http.StatusOK {
+		t.Fatalf("Unexpected status code: %d, body: %s", w.Code, w.Body.String())
+	}
+
+	var response ActivityRequest
+	err = json.Unmarshal(w.Body.Bytes(), &response)
+	assert.Equal(t, err, nil, "Error should be nil")
+
+	assert.Equal(t, *body.UserID, *response.UserID, "UserID should match")
+	assert.Equal(t, *body.ActivityID, *response.ActivityID, "ActivityID should match")
+	assert.Equal(t, *body.Description, *response.Description, "Description should match")
+	assert.Equal(t, *body.ParticipantsNeeded, *response.ParticipantsNeeded, "Participants Needed should match")
+	assert.Equal(t, *body.MaxParticipants, *response.MaximumParticipants, "Maximum Participants should match")
+	assert.Equal(t, *body.Latitude, *response.Latitude, "Latitude should match")
+	assert.Equal(t, *body.Longitude, *response.Longitude, "Longitude should match")
+	assert.Equal(t, *body.SearchRadius, *response.SearchRadius, "SearchRadius should match")
+
+	return response
+}
+
 func NewUser(t *testing.T, r *gin.Engine, emailStart string) (int32, string) {
 
 	email := emailStart + "@test.com"
