@@ -4,14 +4,12 @@ import (
 	"context"
 	repository "gin/db/generated"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type GroupWithMembers struct {
 	ID          int32             `json:"id"`
 	Name        *string            `json:"name"`
 	Description *string            `json:"description"`
-	CreatedAt   pgtype.Timestamptz `json:"created_at"`
 	Activity    string             `json:"activity"`
 	Icon        *string            `json:"icon"`
 	Location    *string            `json:"location"`
@@ -95,7 +93,6 @@ func addMembers(group repository.GetGroupRow, members []repository.GetGroupMembe
         Name:        group.Name,
         Activity:    group.Activity,
         Description: group.Description,
-        CreatedAt:   group.CreatedAt,
         Location:    group.Location,
         Icon:        group.Icon,
         Members:     members,
