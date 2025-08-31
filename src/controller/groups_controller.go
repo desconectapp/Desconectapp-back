@@ -113,23 +113,33 @@ func (c *GroupsController) GetGroup(ctx *gin.Context) {
 
 func (c *GroupsController) CreateGroup(ctx *gin.Context) {
 
-	groupParams, batchParams, err := getGroupParams(ctx)
+	var groupInfo repository.CreateGroupParams
 
-	if err != nil {
+	if err := ctx.ShouldBind(&groupInfo); err != nil {
 		ErrorWithStatus(ctx, "Could not bind", http.StatusBadRequest)
 		return
 	}
 
-	id, err := c.service.CreateGroup(groupParams, batchParams)
+	log.Println(groupInfo.UserIds)
+
+	group, err := c.service.CreateGroup(groupInfo)
 	if err != nil {
-		ctx.Error(gin.Error{
-			Err:  err,
-			Type: gin.ErrorTypePublic,})
+		ErrorNoStatus(ctx, err)
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{
-		"updated": id,
-	})
+
+	res := NewGroup{
+		ID: group.ID,
+		Name: group.Name,
+		Description: group.Description,
+		Location: group.Location,
+		ActivityID: group.ActivityID,
+		ActivityName: group.ActivityName,
+		ActivityIcon: group.ActivityIcon,
+		Members: group.Members,
+	}
+
+	ctx.JSON(http.StatusCreated, res)
 }
 
 func (c *GroupsController) ExitGroup(ctx *gin.Context) {

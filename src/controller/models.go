@@ -64,6 +64,21 @@ type ActivityIdResponse struct {
 	ActivityPreferenseID	int32	`json:"activity"`
 }
 
+type GroupIdResponse struct {
+	GroupId	int32	`json:"group_id"`
+}
+
+type NewGroup struct {
+	ID          int32              `json:"id"`
+	Name        *string            `json:"name"`
+	Description *string            `json:"description"`
+	Location    *string            `json:"location"`
+	ActivityID  int32              `json:"activity_id"`
+	Members     interface{}        `json:"members"`
+	ActivityName string             `json:"activity_name"`
+	ActivityIcon *string            `json:"activity_icon"`
+}
+
 type ActivityIdBatchResponse struct {
 	ActivityIdBatchIDs	[]int32	`json:"activities"`
 }

@@ -34,18 +34,18 @@ func NewGroupsService(conn *pgx.Conn) *GroupsService {
 	}
 }
 
-func (s *GroupsService) CreateGroup(groupParams repository.CreateGroupParams, groupMembersInfo repository.BatchAddUserToGroupParams) (int32, error) {
-	id, err := s.queries.CreateGroup(s.ctx, groupParams)
+func (s *GroupsService) CreateGroup(groupParams repository.CreateGroupParams) (repository.CreateGroupRow, error) {
+	group, err := s.queries.CreateGroup(s.ctx, groupParams)
 	if err != nil {
-		return -1, err
+		return repository.CreateGroupRow{}, err
 	}
-	groupMembersInfo.GroupID = id
-	err = s.queries.BatchAddUserToGroup(s.ctx, groupMembersInfo)
-	if err != nil {
-		s.queries.DeleteGroup(s.ctx, id)
-		return -1, err
-	}
-	return id, nil
+	// groupMembersInfo.GroupID = id
+	// err = s.queries.BatchAddUserToGroup(s.ctx, groupMembersInfo)
+	// if err != nil {
+	// 	s.queries.DeleteGroup(s.ctx, id)
+	// 	return -1, err
+	// }
+	return group, nil
 }
 
 

@@ -1,10 +1,36 @@
 -- name: CreateGroup :one
-INSERT INTO groups (
-  name, description, location, activity_id
-) VALUES (
-  $1, $2, $3, $4
+WITH inserted_group AS (
+  INSERT INTO groups (name, description, location, activity_id)
+  VALUES ($1, $2, $3, $4)
+  RETURNING *
+), inserted_members AS (
+  INSERT INTO group_members (user_id, group_id)
+  SELECT u.id, g.id
+  FROM users u
+  CROSS JOIN inserted_group g
+  WHERE u.id = ANY(sqlc.arg(user_ids)::int[])
+  ON CONFLICT DO NOTHING
+  RETURNING user_id, group_id
 )
-RETURNING id;
+SELECT 
+  g.id,
+  g.name,
+  g.description,
+  g.location,
+  g.activity_id,
+  g.created_at,
+  CAST(
+    COALESCE(
+      array_agg(m.user_id) FILTER (WHERE m.user_id IS NOT NULL),
+      ARRAY[]::int[]
+    ) AS int[]
+  ) AS members,
+  a.name AS activity_name,
+  a.icon AS activity_icon
+FROM inserted_group g
+LEFT JOIN inserted_members m ON g.id = m.group_id
+JOIN activities a ON g.activity_id = a.id
+GROUP BY g.id, g.name, g.description, g.location, g.activity_id, g.created_at, a.name, a.icon;
 
 -- name: ListGroups :many
 WITH selected_groups AS (

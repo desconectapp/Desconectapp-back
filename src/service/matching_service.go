@@ -206,51 +206,51 @@ func (s *MatchingService) createCombinedPartialMatch(request repository.Activity
 }
 
 func (s *MatchingService) createGroup(request repository.ActivityRequest, match repository.PartialMatch, members []repository.GetPartialMatchMembersRow) error {
-	groupID, err := s.queries.CreateGroup(s.ctx, repository.CreateGroupParams{
-		Name:        match.Description,
-		Description: match.Description,
-		ActivityID:  *match.ActivityID,
-	})
-	if err != nil {
-		return err
-	}
+	// groupID, err := s.queries.CreateGroup(s.ctx, repository.CreateGroupParams{
+	// 	Name:        match.Description,
+	// 	Description: match.Description,
+	// 	ActivityID:  *match.ActivityID,
+	// })
+	// if err != nil {
+	// 	return err
+	// }
 
-	memberIDs := make([]int32, len(members))
-	for i, member := range members {
-		memberIDs[i] = member.ID
-	}
-	if len(memberIDs) > 0 {
-		err = s.queries.BatchAddUserToGroup(s.ctx, repository.BatchAddUserToGroupParams{
-			GroupID: groupID,
-			UserIds: memberIDs,
-		})
-		if err != nil {
-			return err
-		}
-	}
+	// memberIDs := make([]int32, len(members))
+	// for i, member := range members {
+	// 	memberIDs[i] = member.ID
+	// }
+	// if len(memberIDs) > 0 {
+	// 	err = s.queries.BatchAddUserToGroup(s.ctx, repository.BatchAddUserToGroupParams{
+	// 		GroupID: groupID,
+	// 		UserIds: memberIDs,
+	// 	})
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// }
 
-	if request.UserID != nil {
-		err = s.queries.AddUserToGroup(s.ctx, repository.AddUserToGroupParams{
-			GroupID: groupID,
-			UserID:  *request.UserID,
-		})
-		if err != nil {
-			return err
-		}
-	}
+	// if request.UserID != nil {
+	// 	err = s.queries.AddUserToGroup(s.ctx, repository.AddUserToGroupParams{
+	// 		GroupID: groupID,
+	// 		UserID:  *request.UserID,
+	// 	})
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// }
 
-	for _, member := range members {
-		err = s.queries.DeletePartialMatchesByUser(s.ctx, member.ID)
-		if err != nil {
-			return err
-		}
-	}
-	if request.UserID != nil {
-		err = s.queries.DeletePartialMatchesByUser(s.ctx, *request.UserID)
-		if err != nil {
-			return err
-		}
-	}
+	// for _, member := range members {
+	// 	err = s.queries.DeletePartialMatchesByUser(s.ctx, member.ID)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// }
+	// if request.UserID != nil {
+	// 	err = s.queries.DeletePartialMatchesByUser(s.ctx, *request.UserID)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// }
 
 	return nil
 }
