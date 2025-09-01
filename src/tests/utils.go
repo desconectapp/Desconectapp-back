@@ -68,8 +68,6 @@ type ActivityBatchStruct struct {
 	ActivityIDBatch []int32 `json:"activity_ids"`
 }
 
-// SendActivityRequest posts an activity request for the given user and activity,
-// asserting a successful response, and returns the created ActivityRequest.
 func SendActivityRequest(t *testing.T, r *gin.Engine, userId int32, activityId int32, participantsNeeded int32) ActivityRequest {
 	int32Ptr := func(i int32) *int32 { return &i }
 	float64Ptr := func(f float64) *float64 { return &f }

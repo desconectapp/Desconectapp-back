@@ -21,3 +21,11 @@ LIMIT $1 OFFSET $2;
 SELECT * FROM activities
 ORDER BY category, id DESC
 LIMIT $1 OFFSET $2;
+
+-- name: GetActivityRequestByUserAndActivityID :one
+SELECT * FROM activity_requests
+WHERE user_id = $1 AND activity_id = $2;
+
+-- name: DeleteActivityRequest :exec
+DELETE FROM activity_requests
+WHERE id = $1;

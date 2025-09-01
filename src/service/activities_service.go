@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	repository "gin/db/generated"
 
 	"github.com/jackc/pgx/v5"
@@ -34,6 +35,24 @@ func (s *ActivitiesRequestService) ListActivitiesRequests(params repository.List
 }
 
 func (s *ActivitiesRequestService) CreateActivityRequest(params repository.CreateActivityRequestParams) (repository.ActivityRequest, error) {
+
+	existingActivityRequest, err := s.queries.GetActivityRequestByUserAndActivityID(s.ctx, repository.GetActivityRequestByUserAndActivityIDParams{
+		UserID:     params.UserID,
+		ActivityID: params.ActivityID,
+	})
+	if err != nil && err != pgx.ErrNoRows {
+		return repository.ActivityRequest{}, err
+	}
+
+	if existingActivityRequest.ID != 0 {
+		fmt.Printf("Deleting activity request %v", existingActivityRequest)
+		s.queries.DeleteActivityRequest(s.ctx, existingActivityRequest.ID)
+		s.queries.DeletePartialMatchesByUserAndActivityID(s.ctx, repository.DeletePartialMatchesByUserAndActivityIDParams{
+			UserID:     *existingActivityRequest.UserID,
+			ActivityID: existingActivityRequest.ActivityID,
+		})
+	}
+
 	activity, err := s.queries.CreateActivityRequest(s.ctx, params)
 	if err != nil {
 		return repository.ActivityRequest{}, err

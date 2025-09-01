@@ -25,15 +25,25 @@ func NewMatchingService(conn *pgx.Conn) *MatchingService {
 }
 
 func (s *MatchingService) FindMatches(request repository.ActivityRequest) error {
+	activityID := int32(0)
+	if request.ActivityID != nil {
+		activityID = *request.ActivityID
+	}
+	fmt.Printf("DEBUG: Looking for matches with ActivityID=%d\n", activityID)
+
 	matches, err := s.queries.FindPartialMatches(s.ctx, request.ActivityID)
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("DEBUG: Found %d matches for ActivityID=%v, WeekHours=%v\n", len(matches), request.ActivityID, request.WeekHours)
+	fmt.Printf("DEBUG: Found %d matches for ActivityID=%d, WeekHours=%v\n", len(matches), activityID, request.WeekHours)
 
 	for _, match := range matches {
-		fmt.Printf("DEBUG: Checking match ID=%d\n", match.ID)
+		matchActivityID := int32(0)
+		if match.ActivityID != nil {
+			matchActivityID = *match.ActivityID
+		}
+		fmt.Printf("DEBUG: Checking match ID=%d with ActivityID=%d\n", match.ID, matchActivityID)
 		if isMatchCompatible(request, match) {
 			fmt.Printf("DEBUG: Match is compatible\n")
 			members, err := s.queries.GetPartialMatchMembers(s.ctx, match.ID)
