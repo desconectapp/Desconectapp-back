@@ -51,18 +51,49 @@ func (s *EmailValidationService) sendEmail(to string, code string) error {
 		return nil
 	}
 
-	subject := "Verify your email"
+	subject := "Verify your email for Desconectapp"
 	body := fmt.Sprintf(`
-		<html>
-			<body>
-				<h1>Email Verification For Desconectapp</h1>
-				<p>Your verification code is: <strong>%s</strong></p>
-				<p>Please enter this code in the app to verify your email address.</p>
-				<p>Do not share this code with anyone.</p>
-				<p>If you did not request this, please ignore this email.</p>
-			</body>
-		</html>
-	`, code)
+	<html>
+		<body style="margin:0; padding:0; font-family: Arial, sans-serif; background-color:#f4f4f4;">
+			<table width="100%%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f4; padding:40px 0;">
+				<tr>
+					<td align="center">
+						<table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff; border-radius:12px; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.1);">
+							<tr>
+								<td align="center" style="background:#4A90E2; padding:20px;">
+									<img src="https://img.icons8.com/color/96/000000/verified-badge.png" alt="Verify Icon" width="80" style="display:block; margin:0 auto;">
+									<h1 style="color:#ffffff; margin:10px 0 0; font-size:24px;">Email Verification</h1>
+								</td>
+							</tr>
+							<tr>
+								<td style="padding:30px; color:#333333;">
+									<p style="font-size:16px; margin-bottom:20px;">
+										Hello,
+									</p>
+									<p style="font-size:16px; margin-bottom:20px;">
+										Thank you for signing up for <strong>Desconectapp</strong>! To complete your registration, please verify your email address.
+									</p>
+									<div style="text-align:center; margin:30px 0;">
+										<p style="font-size:18px; margin-bottom:10px;">Your verification code:</p>
+										<p style="font-size:28px; font-weight:bold; color:#4A90E2; letter-spacing:2px;">%s</p>
+									</div>
+									<p style="font-size:14px; color:#777777;">
+										⚠️ Do not share this code with anyone. If you did not request this verification, you can safely ignore this email.
+									</p>
+								</td>
+							</tr>
+							<tr>
+								<td align="center" style="background:#f4f4f4; padding:20px; font-size:12px; color:#999999;">
+									<p>&copy; 2025 Desconectapp. All rights reserved.</p>
+								</td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+			</table>
+		</body>
+	</html>
+`, code)
 
 	msg := []byte("From: " + s.smtpEmail + "\r\n" +
 		"To: " + to + "\r\n" +
