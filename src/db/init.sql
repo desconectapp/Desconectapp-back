@@ -3,7 +3,15 @@ DROP TABLE IF EXISTS users CASCADE;
 CREATE TABLE users (
   id SERIAL PRIMARY KEY,
   email TEXT UNIQUE NOT NULL,
-  password TEXT NOT NULL
+  password TEXT NOT NULL,
+  email_validated BOOLEAN NOT NULL DEFAULT false
+);
+
+DROP TABLE IF EXISTS email_verification_codes CASCADE;
+
+CREATE TABLE email_verification_codes (
+	user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+	code char(6)
 );
 
 DROP TABLE IF EXISTS profiles CASCADE;

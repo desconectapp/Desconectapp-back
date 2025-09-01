@@ -11,7 +11,8 @@ import (
 )
 
 type AuthController struct {
-	authService *service.AuthService
+	authService  *service.AuthService
+	emailService *service.EmailValidationService
 }
 
 type LoginRequest struct {
@@ -24,16 +25,17 @@ type RefreshRequest struct {
 }
 
 type AuthResponse struct {
-	UserId			int32		`json:"user_id"`
+	UserId           int32     `json:"user_id"`
 	Token            string    `json:"token"`
 	RefreshToken     string    `json:"refresh_token"`
 	ExpiresAt        time.Time `json:"expires_at"`
 	RefreshExpiresAt time.Time `json:"refresh_expires_at"`
 }
 
-func NewAuthController(authService *service.AuthService) *AuthController {
+func NewAuthController(authService *service.AuthService, emailService *service.EmailValidationService) *AuthController {
 	return &AuthController{
 		authService: authService,
+		emailService: emailService,
 	}
 }
 
@@ -57,7 +59,7 @@ func (c *AuthController) Login(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, AuthResponse{
-		UserId: 		session.UserId,
+		UserId:           session.UserId,
 		Token:            session.Token,
 		RefreshToken:     session.RefreshToken,
 		ExpiresAt:        session.ExpiresAt,
@@ -85,7 +87,7 @@ func (c *AuthController) Refresh(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, AuthResponse{
-		UserId: 		session.UserId,
+		UserId:           session.UserId,
 		Token:            session.Token,
 		RefreshToken:     session.RefreshToken,
 		ExpiresAt:        session.ExpiresAt,
@@ -132,7 +134,7 @@ func (c *AuthController) Signup(ctx *gin.Context) {
 	}
 
 	if signupReq.Name == "" {
-		signupReq.Name = "Test" 
+		signupReq.Name = "Test"
 	}
 
 	session, err := c.authService.Signup(signupReq.Name, signupReq.Email, signupReq.Password)
@@ -145,7 +147,7 @@ func (c *AuthController) Signup(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusCreated, AuthResponse{
-		UserId: 		session.UserId,
+		UserId:           session.UserId,
 		Token:            session.Token,
 		RefreshToken:     session.RefreshToken,
 		ExpiresAt:        session.ExpiresAt,

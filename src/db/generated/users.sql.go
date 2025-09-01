@@ -9,6 +9,22 @@ import (
 	"context"
 )
 
+const createEmailVerificationToken = `-- name: CreateEmailVerificationToken :exec
+INSERT INTO email_verification_codes  (
+	user_id ,code
+) VALUES ($1, $2)
+`
+
+type CreateEmailVerificationTokenParams struct {
+	UserID int32   `json:"user_id"`
+	Code   *string `json:"code"`
+}
+
+func (q *Queries) CreateEmailVerificationToken(ctx context.Context, arg CreateEmailVerificationTokenParams) error {
+	_, err := q.db.Exec(ctx, createEmailVerificationToken, arg.UserID, arg.Code)
+	return err
+}
+
 const createProfile = `-- name: CreateProfile :one
 UPDATE profiles
   SET name = $2,
@@ -104,14 +120,31 @@ func (q *Queries) GetUser(ctx context.Context, userID int32) (Profile, error) {
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, email, password FROM users
+SELECT id, email, password, email_validated FROM users
 WHERE email = $1 LIMIT 1
 `
 
 func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
 	row := q.db.QueryRow(ctx, getUserByEmail, email)
 	var i User
-	err := row.Scan(&i.ID, &i.Email, &i.Password)
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.Password,
+		&i.EmailValidated,
+	)
+	return i, err
+}
+
+const getVerificationCode = `-- name: GetVerificationCode :one
+SELECT user_id, code FROM email_verification_codes
+WHERE user_id = $1
+`
+
+func (q *Queries) GetVerificationCode(ctx context.Context, userID int32) (EmailVerificationCode, error) {
+	row := q.db.QueryRow(ctx, getVerificationCode, userID)
+	var i EmailVerificationCode
+	err := row.Scan(&i.UserID, &i.Code)
 	return i, err
 }
 

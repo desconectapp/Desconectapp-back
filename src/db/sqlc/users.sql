@@ -39,3 +39,12 @@ RETURNING id;
 -- name: GetUserByEmail :one
 SELECT * FROM users
 WHERE email = $1 LIMIT 1;
+
+-- name: CreateEmailVerificationToken :exec
+INSERT INTO email_verification_codes  (
+	user_id ,code
+) VALUES ($1, $2);
+
+-- name: GetVerificationCode :one
+SELECT * FROM email_verification_codes
+WHERE user_id = $1;

@@ -37,7 +37,8 @@ func NewRouter() *Router {
 
 	// Initialize auth service and controller
 	authService := service.NewAuthService(conn)
-	authController := controller.NewAuthController(authService)
+	emailValidation := service.NewEmailValidationService(conn)
+	authController := controller.NewAuthController(authService, emailValidation)
 
 	preferencesController := controller.NewPreferencesController(conn)
 
