@@ -146,7 +146,7 @@ func (c *AuthController) Signup(ctx *gin.Context) {
 		return
 	}
 
-	c.emailService.StartEmailVerification(session.UserId)
+	c.emailService.StartEmailVerification(session.UserId, signupReq.Email)
 
 	ctx.JSON(http.StatusCreated, AuthResponse{
 		UserId:           session.UserId,

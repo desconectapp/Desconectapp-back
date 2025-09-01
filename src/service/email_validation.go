@@ -2,20 +2,22 @@ package service
 
 import (
 	"context"
+	"fmt"
 	repository "gin/db/generated"
 	"log"
+	"net/smtp"
 	"os"
 
 	"github.com/jackc/pgx/v5"
 )
 
 type EmailValidationService struct {
-	smtpHost  string
-	smtpPort  string
-	smtpEmail string
-	smtpPassword  string
-	queries   *repository.Queries
-	ctx       context.Context
+	smtpHost     string
+	smtpPort     string
+	smtpEmail    string
+	smtpPassword string
+	queries      *repository.Queries
+	ctx          context.Context
 }
 
 func NewEmailValidationService(conn *pgx.Conn) *EmailValidationService {
@@ -32,16 +34,48 @@ func NewEmailValidationService(conn *pgx.Conn) *EmailValidationService {
 	}
 
 	return &EmailValidationService{
-		queries: queries,
-		ctx:     ctx,
-		smtpHost: smtpHost,
-		smtpPort: smtpPort,
-		smtpEmail: smtpEmail,
+		queries:      queries,
+		ctx:          ctx,
+		smtpHost:     smtpHost,
+		smtpPort:     smtpPort,
+		smtpEmail:    smtpEmail,
 		smtpPassword: smtpPassword,
 	}
 }
 
-func (s *EmailValidationService) StartEmailVerification(userId int32) error {
+func (s *EmailValidationService) sendEmail(to string, code string) error {
+	if len(s.smtpEmail) == 0 || len(s.smtpPassword) == 0 || len(s.smtpHost) == 0 || len(s.smtpPort) == 0 {
+		log.Println("SMTP configuration is incomplete. Cannot send email.")
+		return nil
+	}
+
+	subject := "Verify your email"
+	body := fmt.Sprintf(`
+		<html>
+			<body>
+				<h1>Email Verification For Desconectapp</h1>
+				<p>Your verification code is: <strong>%s</strong></p>
+				<p>Please enter this code in the app to verify your email address.</p>
+				<p>Do not share this code with anyone.</p>
+				<p>If you did not request this, please ignore this email.</p>
+			</body>
+		</html>
+	`, code)
+
+	msg := []byte("From: " + s.smtpEmail + "\r\n" +
+		"To: " + to + "\r\n" +
+		"Subject: " + subject + "\r\n" +
+		"MIME-Version: 1.0\r\n" +
+		"Content-Type: text/html; charset=\"UTF-8\"\r\n\r\n" +
+		body)
+
+	auth := smtp.PlainAuth("", s.smtpEmail, s.smtpPassword, s.smtpHost)
+
+	host := s.smtpHost + ":" + s.smtpPort
+	return smtp.SendMail(host, auth, s.smtpEmail, []string{to}, msg)
+}
+
+func (s *EmailValidationService) StartEmailVerification(userId int32, email string) error {
 	var args repository.CreateEmailVerificationTokenParams
 
 	code := "ABC123"
@@ -53,6 +87,14 @@ func (s *EmailValidationService) StartEmailVerification(userId int32) error {
 		log.Println("Error creating email verification token:", err)
 		return err
 	}
+
+	err = s.sendEmail(email, code) 
+	if err != nil {
+		log.Println("Error sending verification email:", err)
+		return err
+	}
+
+	log.Println("Verification email sent to", email)
 
 	return nil
 }
