@@ -88,7 +88,7 @@ func (s *EmailValidationService) StartEmailVerification(userId int32, email stri
 		return err
 	}
 
-	err = s.sendEmail(email, code) 
+	err = s.sendEmail(email, code)
 	if err != nil {
 		log.Println("Error sending verification email:", err)
 		return err
@@ -97,4 +97,27 @@ func (s *EmailValidationService) StartEmailVerification(userId int32, email stri
 	log.Println("Verification email sent to", email)
 
 	return nil
+}
+
+func (s *EmailValidationService) ValidateEmailCode(userId int32, codeToValidate string) error {
+	code, err := s.queries.GetVerificationCode(s.ctx, userId)
+	if err != nil {
+		log.Println("Error fetching verification code:", err)
+		return err
+	}
+
+	if *code.Code == "" {
+		return fmt.Errorf("no verification code found for user")
+	}
+
+	if *code.Code == codeToValidate {
+		err = s.queries.VerifyEmail(s.ctx, userId)
+		if err != nil {
+			log.Println("Error verifying email:", err)
+			return err
+		}
+		return nil
+	}
+
+	return fmt.Errorf("invalid verification code")
 }

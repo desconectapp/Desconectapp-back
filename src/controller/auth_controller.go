@@ -2,6 +2,7 @@ package controller
 
 import (
 	"gin/service"
+	"log"
 	"net/http"
 	"time"
 
@@ -34,7 +35,7 @@ type AuthResponse struct {
 
 func NewAuthController(authService *service.AuthService, emailService *service.EmailValidationService) *AuthController {
 	return &AuthController{
-		authService: authService,
+		authService:  authService,
 		emailService: emailService,
 	}
 }
@@ -155,4 +156,37 @@ func (c *AuthController) Signup(ctx *gin.Context) {
 		ExpiresAt:        session.ExpiresAt,
 		RefreshExpiresAt: session.RefreshExpiresAt,
 	})
+}
+
+type ValidateEmail struct {
+	Code   string `json:"code" binding:"required,min=6"`
+	UserID int32  `json:"user_id" binding:"required"`
+}
+
+func (c *AuthController) ValidateEmail(ctx *gin.Context) {
+	var validation ValidateEmail
+	if err := ctx.ShouldBind(&validation); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if validation.UserID == 0 {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "user_id is required"})
+		return
+	}
+	if validation.Code == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "code is required"})
+		return
+	}
+
+	log.Println("Validating email for user ID:", validation.UserID, "with code:", validation.Code)
+
+	err := c.emailService.ValidateEmailCode(validation.UserID, validation.Code)
+	if err != nil {
+		ctx.Error(gin.Error{
+			Err:  err,
+			Type: gin.ErrorTypePublic,
+		})
+		return
+	}
 }

@@ -205,3 +205,18 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (int32, 
 	err := row.Scan(&id)
 	return id, err
 }
+
+const verifyEmail = `-- name: VerifyEmail :exec
+WITH updated AS (
+    UPDATE users
+    SET email_validated = TRUE
+    WHERE id = $1
+)
+DELETE FROM email_verification_codes
+WHERE user_id = $1
+`
+
+func (q *Queries) VerifyEmail(ctx context.Context, userID int32) error {
+	_, err := q.db.Exec(ctx, verifyEmail, userID)
+	return err
+}

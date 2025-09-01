@@ -48,3 +48,12 @@ INSERT INTO email_verification_codes  (
 -- name: GetVerificationCode :one
 SELECT * FROM email_verification_codes
 WHERE user_id = $1;
+
+-- name: VerifyEmail :exec
+WITH updated AS (
+    UPDATE users
+    SET email_validated = TRUE
+    WHERE id = $1
+)
+DELETE FROM email_verification_codes
+WHERE user_id = $1;
