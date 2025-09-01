@@ -40,3 +40,19 @@ func NewEmailValidationService(conn *pgx.Conn) *EmailValidationService {
 		smtpPassword: smtpPassword,
 	}
 }
+
+func (s *EmailValidationService) StartEmailVerification(userId int32) error {
+	var args repository.CreateEmailVerificationTokenParams
+
+	code := "ABC123"
+	args.Code = &code
+	args.UserID = userId
+
+	err := s.queries.CreateEmailVerificationToken(s.ctx, args)
+	if err != nil {
+		log.Println("Error creating email verification token:", err)
+		return err
+	}
+
+	return nil
+}
