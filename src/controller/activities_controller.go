@@ -94,12 +94,54 @@ func (c *ActivitiesController) ListActivitiesRequests(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, activities)
 }
 
+func validateActivityRequest(ctx *gin.Context, activityParams repository.CreateActivityRequestParams) bool {
+	if len(activityParams.WeekHours) == 0 {
+		ErrorWithStatus(ctx, "Schedules cannot be empty", http.StatusBadRequest)
+		return false
+	}
+
+	if activityParams.ParticipantsNeeded == nil || *activityParams.ParticipantsNeeded < 2 {
+		ErrorWithStatus(ctx, "Participants needed must be greater than 1", http.StatusBadRequest)
+		return false
+	}
+
+	if activityParams.MaximumParticipants == nil || *activityParams.MaximumParticipants < 2 {
+		ErrorWithStatus(ctx, "Maximum participants must be greater than 1", http.StatusBadRequest)
+		return false
+	}
+
+	if *activityParams.ParticipantsNeeded > *activityParams.MaximumParticipants {
+		ErrorWithStatus(ctx, "Participants needed must be less than maximum participants", http.StatusBadRequest)
+		return false
+	}
+
+	if activityParams.Latitude == nil || activityParams.Longitude == nil {
+		ErrorWithStatus(ctx, "Latitude and longitude are required", http.StatusBadRequest)
+		return false
+	}
+
+	if *activityParams.Latitude < -90.0 || *activityParams.Latitude > 90.0 {
+		ErrorWithStatus(ctx, "Latitude must be between -90 and 90 degrees", http.StatusBadRequest)
+		return false
+	}
+
+	if *activityParams.Longitude < -180.0 || *activityParams.Longitude > 180.0 {
+		ErrorWithStatus(ctx, "Longitude must be between -180 and 180 degrees", http.StatusBadRequest)
+		return false
+	}
+
+	if activityParams.SearchRadius == nil || *activityParams.SearchRadius < 1 || *activityParams.SearchRadius > 100 {
+		ErrorWithStatus(ctx, "Search radius must be between 1 and 100", http.StatusBadRequest)
+		return false
+	}
+
+	return true
+}
+
 func (c *ActivitiesController) CreateActivityRequest(ctx *gin.Context) {
 	var input CreateActivityRequestInput
 	if err := ctx.ShouldBind(&input); err != nil {
-		ctx.Error(gin.Error{
-			Err:  err,
-			Type: gin.ErrorTypePublic})
+		ErrorWithStatus(ctx, "Could not bind", http.StatusBadRequest)
 		return
 	}
 
@@ -117,6 +159,10 @@ func (c *ActivitiesController) CreateActivityRequest(ctx *gin.Context) {
 		Latitude:            input.Latitude,
 		Longitude:           input.Longitude,
 		SearchRadius:        input.SearchRadius,
+	}
+
+	if !validateActivityRequest(ctx, activityParams) {
+		return
 	}
 
 	activity, err := c.service.CreateActivityRequest(activityParams)

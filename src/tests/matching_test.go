@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestPostActivityRequest(t *testing.T) {
+func TestTwoCompatibleActivityRequestsMatch(t *testing.T) {
 	router := router.NewRouter()
 	r := router.SetupRoutes()
 
@@ -123,6 +123,43 @@ func TestRequestsForDifferentActivitiesDontMatch(t *testing.T) {
 	assert.Equal(t, 0, len(groupsResponse.Members), "There should be no groups")
 }
 
+func TestRequestWithoutSchedulesIsNotCreated(t *testing.T) {
+	router := router.NewRouter()
+	r := router.SetupRoutes()
+	int32Ptr := func(i int32) *int32 { return &i }
+	float64Ptr := func(f float64) *float64 { return &f }
+	strPtr := func(s string) *string { return &s }
+
+	body := CreateActivityRequestInput{
+		UserID:             int32Ptr(12),
+		ActivityID:         int32Ptr(3),
+		Description:        strPtr("Looking for a running buddy"),
+		ParticipantsNeeded: int32Ptr(2),
+		MaxParticipants:    int32Ptr(5),
+		Latitude:           float64Ptr(37.7749),
+		Longitude:          float64Ptr(-122.4194),
+		SearchRadius:       int32Ptr(10),
+		Schedules:          Schedules{},
+	}
+
+	jsonBody, err := json.Marshal(body)
+	assert.Equal(t, err, nil, "Error should be nil")
+
+	token, err := service.NewTestToken(12)
+	assert.Equal(t, err, nil, "Error should be nil")
+
+	req := httptest.NewRequest("POST", "/activities/request", bytes.NewReader(jsonBody))
+	req.Header.Add("content-type", "application/json")
+	req.Header.Add("Authorization", "Bearer "+token)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, 400, w.Code, "Status code should be 400, bad request")
+	if w.Code != 400 {
+		t.Fatalf("Unexpected status code: %d, body: %s", w.Code, w.Body.String())
+	}
+}
+
 func TestRequestsTooFarApartDontMatch(t *testing.T) {
 
 	router := router.NewRouter()
@@ -140,6 +177,10 @@ func TestRequestsTooFarApartDontMatch(t *testing.T) {
 		Latitude:           float64Ptr(37.7749),
 		Longitude:          float64Ptr(-122.4194),
 		SearchRadius:       int32Ptr(10),
+		Schedules: Schedules{
+			"monday":    {{Start: 9, End: 11}, {Start: 14, End: 16}},
+			"wednesday": {{Start: 10, End: 12}},
+		},
 	}
 
 	jsonBody, err := json.Marshal(body)
@@ -168,8 +209,12 @@ func TestRequestsTooFarApartDontMatch(t *testing.T) {
 		ParticipantsNeeded: int32Ptr(2),
 		MaxParticipants:    int32Ptr(5),
 		Latitude:           float64Ptr(89.7749),
-		Longitude:          float64Ptr(-189.4194),
+		Longitude:          float64Ptr(-172.4194),
 		SearchRadius:       int32Ptr(10),
+		Schedules: Schedules{
+			"monday":    {{Start: 9, End: 11}, {Start: 14, End: 16}},
+			"wednesday": {{Start: 10, End: 12}},
+		},
 	}
 
 	jsonBody, err = json.Marshal(body)
