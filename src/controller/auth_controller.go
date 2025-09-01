@@ -4,6 +4,7 @@ import (
 	"gin/service"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 
 	// "time"
@@ -182,6 +183,42 @@ func (c *AuthController) ValidateEmail(ctx *gin.Context) {
 	log.Println("Validating email for user ID:", validation.UserID, "with code:", validation.Code)
 
 	err := c.emailService.ValidateEmailCode(validation.UserID, validation.Code)
+	if err != nil {
+		ctx.Error(gin.Error{
+			Err:  err,
+			Type: gin.ErrorTypePublic,
+		})
+		return
+	}
+}
+
+func (c *AuthController) ResendValidationEmail(ctx *gin.Context) {
+	_userId, exists := ctx.Get("userId")
+
+	var userId int32
+	var ok bool
+
+	if exists {
+		userId, ok = _userId.(int32)
+	} else {
+		qs := ctx.Query("user_id")
+		if qs == "" {
+			qs = ctx.Query("userId")
+		}
+		if qs != "" {
+			if n, err := strconv.ParseInt(qs, 10, 32); err == nil {
+				userId = int32(n)
+				ok = true
+			}
+		}
+	}
+
+	if !ok || userId == 0 {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "user_id is required"})
+		return
+	}
+
+	err := c.emailService.ResendEmail(userId)
 	if err != nil {
 		ctx.Error(gin.Error{
 			Err:  err,

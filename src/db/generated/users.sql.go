@@ -136,6 +136,24 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 	return i, err
 }
 
+const getUserById = `-- name: GetUserById :one
+SELECT id, email, email_validated FROM users
+WHERE id = $1 LIMIT 1
+`
+
+type GetUserByIdRow struct {
+	ID             int32  `json:"id"`
+	Email          string `json:"email"`
+	EmailValidated bool   `json:"email_validated"`
+}
+
+func (q *Queries) GetUserById(ctx context.Context, id int32) (GetUserByIdRow, error) {
+	row := q.db.QueryRow(ctx, getUserById, id)
+	var i GetUserByIdRow
+	err := row.Scan(&i.ID, &i.Email, &i.EmailValidated)
+	return i, err
+}
+
 const getVerificationCode = `-- name: GetVerificationCode :one
 SELECT user_id, code FROM email_verification_codes
 WHERE user_id = $1
@@ -204,6 +222,22 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (int32, 
 	var id int32
 	err := row.Scan(&id)
 	return id, err
+}
+
+const updateVerificationCode = `-- name: UpdateVerificationCode :exec
+UPDATE email_verification_codes
+SET code = $2
+WHERE user_id = $1
+`
+
+type UpdateVerificationCodeParams struct {
+	UserID int32   `json:"user_id"`
+	Code   *string `json:"code"`
+}
+
+func (q *Queries) UpdateVerificationCode(ctx context.Context, arg UpdateVerificationCodeParams) error {
+	_, err := q.db.Exec(ctx, updateVerificationCode, arg.UserID, arg.Code)
+	return err
 }
 
 const verifyEmail = `-- name: VerifyEmail :exec

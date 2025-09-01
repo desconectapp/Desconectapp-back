@@ -9,6 +9,7 @@ import (
 	"math/big"
 	"net/smtp"
 	"os"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -108,7 +109,7 @@ func (s *EmailValidationService) sendEmail(to string, code string) error {
 	return smtp.SendMail(host, auth, s.smtpEmail, []string{to}, msg)
 }
 
-const letters = "abcdefghijklmnopqrstuvwxyz0123456789"
+const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 func RandomCode(n int) (string, error) {
 	result := make([]byte, n)
@@ -160,7 +161,7 @@ func (s *EmailValidationService) ValidateEmailCode(userId int32, codeToValidate 
 		return fmt.Errorf("no verification code found for user")
 	}
 
-	if *code.Code == codeToValidate {
+	if *code.Code == strings.ToUpper(codeToValidate) {
 		err = s.queries.VerifyEmail(s.ctx, userId)
 		if err != nil {
 			log.Println("Error verifying email:", err)
@@ -170,4 +171,38 @@ func (s *EmailValidationService) ValidateEmailCode(userId int32, codeToValidate 
 	}
 
 	return fmt.Errorf("invalid verification code")
+}
+
+
+func (s *EmailValidationService) ResendEmail(userId int32) error {
+	newCode, err := RandomCode(6)
+	if err != nil {
+		return err
+	}
+
+	user, err := s.queries.GetUserById(s.ctx, userId)
+	if err != nil {
+		log.Println("Error fetching user:", err)
+		return err
+	}
+
+	if user.EmailValidated {
+		return fmt.Errorf("email is already verified")
+	}
+
+	var args repository.UpdateVerificationCodeParams
+	args.Code = &newCode
+	args.UserID = userId
+
+	err = s.queries.UpdateVerificationCode(s.ctx, args)
+	if err != nil {
+		log.Println("Error creating email verification token:", err)
+		return err
+	}
+
+	if user.Email == "" {
+		return fmt.Errorf("user does not have a valid email")
+	}
+
+	return s.sendEmail(user.Email, newCode)
 }

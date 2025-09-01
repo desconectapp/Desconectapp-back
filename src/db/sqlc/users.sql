@@ -2,6 +2,10 @@
 SELECT * FROM profiles
 WHERE user_id = $1 LIMIT 1;
 
+-- name: GetUserById :one
+SELECT id, email, email_validated FROM users
+WHERE id = $1 LIMIT 1;
+
 -- name: ListUsers :many
 SELECT * FROM profiles
 LIMIT $1 OFFSET $2;
@@ -56,4 +60,9 @@ WITH updated AS (
     WHERE id = $1
 )
 DELETE FROM email_verification_codes
+WHERE user_id = $1;
+
+-- name: UpdateVerificationCode :exec
+UPDATE email_verification_codes
+SET code = $2
 WHERE user_id = $1;
