@@ -73,3 +73,11 @@ func (s *ActivitiesRequestService) GetActivities(params repository.GetActivities
 
 	return activities, nil
 }
+
+func (s *ActivitiesRequestService) DeleteActivityRequest(requestId int) error {
+	err := s.queries.DeleteActivityRequest(s.ctx, int32(requestId))
+	if err != nil {
+		return err
+	}
+	return nil
+}
