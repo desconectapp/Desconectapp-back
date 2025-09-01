@@ -2,9 +2,11 @@ package service
 
 import (
 	"context"
+	"crypto/rand"
 	"fmt"
 	repository "gin/db/generated"
 	"log"
+	"math/big"
 	"net/smtp"
 	"os"
 
@@ -75,14 +77,31 @@ func (s *EmailValidationService) sendEmail(to string, code string) error {
 	return smtp.SendMail(host, auth, s.smtpEmail, []string{to}, msg)
 }
 
-func (s *EmailValidationService) StartEmailVerification(userId int32, email string) error {
-	var args repository.CreateEmailVerificationTokenParams
+const letters = "abcdefghijklmnopqrstuvwxyz0123456789"
 
-	code := "ABC123"
+func RandomCode(n int) (string, error) {
+	result := make([]byte, n)
+	for i := range result {
+		num, err := rand.Int(rand.Reader, big.NewInt(int64(len(letters))))
+		if err != nil {
+			return "", err
+		}
+		result[i] = letters[num.Int64()]
+	}
+	return string(result), nil
+}
+
+func (s *EmailValidationService) StartEmailVerification(userId int32, email string) error {
+	code, err := RandomCode(6)
+	if err != nil {
+		return err
+	}
+
+	var args repository.CreateEmailVerificationTokenParams
 	args.Code = &code
 	args.UserID = userId
 
-	err := s.queries.CreateEmailVerificationToken(s.ctx, args)
+	err = s.queries.CreateEmailVerificationToken(s.ctx, args)
 	if err != nil {
 		log.Println("Error creating email verification token:", err)
 		return err
