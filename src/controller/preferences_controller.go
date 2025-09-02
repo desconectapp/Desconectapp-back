@@ -1,6 +1,8 @@
 package controller
 
 import (
+	"database/sql"
+	"errors"
 	repository "gin/db/generated"
 	"log"
 	"net/http"
@@ -28,24 +30,30 @@ func (c *PreferencesController) GetUserPreferences(ctx *gin.Context) {
 
 	limit, offset := GetLimmitAndOffset(ctx)
 
-	preferencesParams.Limit = int32(limit)
+	preferencesParams.Limit = int32(limit) + 1
 	preferencesParams.Offset = int32(offset)
 
 	
 	userToken, _ := ctx.Get("userID")
 	preferencesParams.UserID = userToken.(int32)
 	
-	log.Printf("Limit %d", userToken)
-
 	preferences, err := c.service.GetUserPreferences(preferencesParams)
+	
 	if err != nil {
-		ctx.Error(gin.Error{
-			Err:  err,
-			Type: gin.ErrorTypePublic})
+		ErrorNoStatus(ctx, err)
 		return
 	}
 
-	ctx.JSON(http.StatusOK, preferences)
+	hasMore := len(preferences) == int(preferencesParams.Limit)
+
+	if hasMore {
+		preferences = preferences[:len(preferences)-1]
+	}
+
+	result := PaginatedPreferences{Preferences: preferences, HasMore: hasMore}
+
+
+	ctx.JSON(http.StatusOK, result)
 
 }
 
@@ -53,9 +61,7 @@ func (c *PreferencesController) AddPreference(ctx *gin.Context) {
 	var addPreferenceParams repository.AddPreferenceParams
 
 	if err := ctx.ShouldBind(&addPreferenceParams); err != nil {
-		ctx.Error(gin.Error{
-			Err:  err,
-			Type: gin.ErrorTypePublic})
+		ErrorWithStatus(ctx, "Could not bind", http.StatusBadRequest)
 		return
 	}
 
@@ -65,13 +71,14 @@ func (c *PreferencesController) AddPreference(ctx *gin.Context) {
 	err := c.service.AddPreference(addPreferenceParams)
 
 	if err != nil {
-		ctx.Error(gin.Error{
-			Err:  err,
-			Type: gin.ErrorTypePublic})
+		ErrorWithStatus(ctx, err.Error(), http.StatusNotFound)
 		return
 	}
+	res := ActivityIdResponse{
+		ActivityPreferenseID:  addPreferenceParams.ActivityID,
+	}
 
-	ctx.JSON(http.StatusOK, addPreferenceParams.ActivityID)
+	ctx.JSON(http.StatusOK, res)
 	
 }
 
@@ -79,43 +86,33 @@ func (c *PreferencesController) DeletePreference(ctx *gin.Context) {
 	var deletePreferenceParams repository.DeletePreferenceParams
 
 	if err := ctx.ShouldBind(&deletePreferenceParams); err != nil {
-		ctx.Error(gin.Error{
-			Err:  err,
-			Type: gin.ErrorTypePublic})
+		ErrorWithStatus(ctx, "Could not bind", http.StatusBadRequest)
 		return
 	}
 
 	userToken, _ := ctx.Get("userID")
 	deletePreferenceParams.UserID = userToken.(int32)
 
-	err := c.service.DeletePreference(deletePreferenceParams)
+	id, err := c.service.DeletePreference(deletePreferenceParams)
 
-	if err != nil {
-		ctx.Error(gin.Error{
-			Err:  err,
-			Type: gin.ErrorTypePublic})
+	if errors.Is(err, sql.ErrNoRows) {
+		ErrorWithStatus(ctx, "Preference not found", http.StatusNotFound)
+		return
+	} else if err != nil {
+		ErrorNoStatus(ctx, err)
 		return
 	}
 
-	ctx.JSON(http.StatusOK, deletePreferenceParams.ActivityID)
+	res := ActivityIdResponse{ActivityPreferenseID: id}
+
+	ctx.JSON(http.StatusOK, res)
 }
 
 func (c *PreferencesController) BatchAddUserPreferences(ctx *gin.Context) {
 	var userPreferences repository.BatchAddPreferencesParams
 
-	if err := ctx.ShouldBindJSON(&userPreferences); err != nil {
-		ctx.Error(gin.Error{
-			Err:  err,
-			Type: gin.ErrorTypePublic})
-		return
-	}
-
-	log.Printf("preferences %v", userPreferences.ActivityIds)
-
-	if len(userPreferences.ActivityIds) == 0 || len(userPreferences.ActivityIds) > 50 {
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"error": "preferences must contain between 1 and 50 activity IDs",
-		})
+	if err := ctx.ShouldBind(&userPreferences); err != nil {
+		ErrorWithStatus(ctx, "Could not bind", http.StatusBadRequest)
 		return
 	}
 
@@ -124,14 +121,16 @@ func (c *PreferencesController) BatchAddUserPreferences(ctx *gin.Context) {
 
 	err := c.service.BatchAddPreferences(userPreferences)
 
+	log.Println(err)
+
 	if err != nil {
-		ctx.Error(gin.Error{
-			Err:  err,
-			Type: gin.ErrorTypePublic})
+		ErrorWithStatus(ctx, err.Error(), http.StatusNotFound)
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{
-		"result": "preferences added successfully",
-	})
+	res := ActivityIdBatchResponse{
+		ActivityIdBatchIDs: userPreferences.ActivityIds,
+	}
+
+	ctx.JSON(http.StatusOK, res)
 }

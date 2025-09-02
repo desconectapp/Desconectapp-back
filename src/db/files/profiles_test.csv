@@ -1,0 +1,12 @@
+user_id,name,age,city,current_situation,gender,profile_complete
+1,juan,33,Buenos Aires,STUDENT,male,true
+2,juana,23,Buenos Aires,UNEMPLOYED,female,true
+3,sofii,19,Buenos Aires,STUDENT,female,true
+4,maxi,24,Buenos Aires,STUDENT,male,true
+5,supre,23,Buenos Aires,UNEMPLOYED,male,true
+6,anita,23,Buenos Aires,STUDENT,female,true
+7,lucho,26,Buenos Aires,WORKING,male,true
+8,martu,23,Buenos Aires,UNEMPLOYED,female,true
+9,valen,23,Buenos Aires,UNEMPLOYED,male,true 
+10,marco,23,Buenos Aires,WORKING,male,true 
+11,pablo,72,Buenos Aires,UNEMPLOYED,male,true 

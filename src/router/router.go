@@ -69,7 +69,8 @@ func (router *Router) Run(port string) {
 	router.r.Run(port)
 }
 
-func (router *Router) SetupRoutes() {
+func (router *Router) SetupRoutes() *gin.Engine {
+	gin.SetMode(os.Getenv("GIN_MODE"))
 
 	auth := router.r.Group("/auth")
 	{
@@ -98,6 +99,7 @@ func (router *Router) SetupRoutes() {
 		activities.GET("/request", router.activitiesController.ListActivitiesRequests)
 		activities.POST("/request", router.activitiesController.CreateActivityRequest)
 		activities.GET("", router.activitiesController.GetActivities)
+		activities.DELETE("/request/:requestId", router.activitiesController.DeleteActivityRequest)
 	}
 	
 	preferences := router.r.Group("/preferences")
@@ -120,4 +122,6 @@ func (router *Router) SetupRoutes() {
 		groups.DELETE("/:groupId", router.groupsController.DeleteGroup)
 		groups.DELETE("/user-from-group/:groupId", router.groupsController.ExitGroup)
 	}
+
+	return router.r
 }

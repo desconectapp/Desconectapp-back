@@ -52,15 +52,11 @@ DELETE FROM partial_matches
 WHERE id = $1
 RETURNING id;
 
--- name: DeletePartialMatchesByActivity :exec
-DELETE FROM partial_matches
-WHERE activity_id = $1;
-
--- name: DeletePartialMatchesByUser :exec
+-- name: DeletePartialMatchesByUserAndActivityID :exec
 DELETE FROM partial_matches
 WHERE id IN (
   SELECT pm.id
   FROM partial_matches pm
   JOIN partial_match_members pmm ON pm.id = pmm.partial_match_id
-  WHERE pmm.user_id = $1
+  WHERE pmm.user_id = $1 AND pm.activity_id = $2
 );

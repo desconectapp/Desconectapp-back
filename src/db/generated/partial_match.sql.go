@@ -116,28 +116,23 @@ func (q *Queries) DeletePartialMatch(ctx context.Context, id int32) (int32, erro
 	return id, err
 }
 
-const deletePartialMatchesByActivity = `-- name: DeletePartialMatchesByActivity :exec
-DELETE FROM partial_matches
-WHERE activity_id = $1
-`
-
-func (q *Queries) DeletePartialMatchesByActivity(ctx context.Context, activityID *int32) error {
-	_, err := q.db.Exec(ctx, deletePartialMatchesByActivity, activityID)
-	return err
-}
-
-const deletePartialMatchesByUser = `-- name: DeletePartialMatchesByUser :exec
+const deletePartialMatchesByUserAndActivityID = `-- name: DeletePartialMatchesByUserAndActivityID :exec
 DELETE FROM partial_matches
 WHERE id IN (
   SELECT pm.id
   FROM partial_matches pm
   JOIN partial_match_members pmm ON pm.id = pmm.partial_match_id
-  WHERE pmm.user_id = $1
+  WHERE pmm.user_id = $1 AND pm.activity_id = $2
 )
 `
 
-func (q *Queries) DeletePartialMatchesByUser(ctx context.Context, userID int32) error {
-	_, err := q.db.Exec(ctx, deletePartialMatchesByUser, userID)
+type DeletePartialMatchesByUserAndActivityIDParams struct {
+	UserID     int32  `json:"user_id"`
+	ActivityID *int32 `json:"activity_id"`
+}
+
+func (q *Queries) DeletePartialMatchesByUserAndActivityID(ctx context.Context, arg DeletePartialMatchesByUserAndActivityIDParams) error {
+	_, err := q.db.Exec(ctx, deletePartialMatchesByUserAndActivityID, arg.UserID, arg.ActivityID)
 	return err
 }
 

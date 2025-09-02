@@ -35,18 +35,24 @@ func (c *GroupsController) ListGroups(ctx *gin.Context) {
 
 	limit, offset := GetLimmitAndOffset(ctx)
 
-	groupParams.Limit = int32(limit)
+	groupParams.Limit = int32(limit) + 1
 	groupParams.Offset = int32(offset)
 
 	groupsList, err := c.service.ListGroups(groupParams)
 
+	hasMore := len(groupsList) == int(groupParams.Limit)
+
+	if hasMore {
+		groupsList = groupsList[:len(groupsList) - 1]
+	}
+
+	result := PaginatedGroups{Groups: groupsList, HasMore: hasMore}
+
 	if err != nil {
-		ctx.Error(gin.Error{
-			Err:  err,
-			Type: gin.ErrorTypePublic})
+		ErrorNoStatus(ctx, err)
 		return
 	}
-	ctx.JSON(http.StatusOK, groupsList)
+	ctx.JSON(http.StatusOK, result)
 }
 
 func (c *GroupsController) ListUserGroups(ctx *gin.Context) {
@@ -54,7 +60,7 @@ func (c *GroupsController) ListUserGroups(ctx *gin.Context) {
 
 	limit, offset := GetLimmitAndOffset(ctx)
 
-	groupParams.Limit = int32(limit)
+	groupParams.Limit = int32(limit) + 1
 	groupParams.Offset = int32(offset)
 
 	userToken, _ := ctx.Get("userID")
@@ -62,13 +68,19 @@ func (c *GroupsController) ListUserGroups(ctx *gin.Context) {
 
 	groupsList, err := c.service.ListUserGroups(groupParams)
 
+	hasMore := len(groupsList) == int(groupParams.Limit)
+
+	if hasMore {
+		groupsList = groupsList[:len(groupsList) - 1]
+	}
+
+	result := PaginatedUserGroup{Groups: groupsList, HasMore: hasMore}
+
 	if err != nil {
-		ctx.Error(gin.Error{
-			Err:  err,
-			Type: gin.ErrorTypePublic})
+		ErrorNoStatus(ctx, err)
 		return
 	}
-	ctx.JSON(http.StatusOK, groupsList)
+	ctx.JSON(http.StatusOK, result)
 }
 
 func (c *GroupsController) GetGroup(ctx *gin.Context) {
@@ -77,18 +89,14 @@ func (c *GroupsController) GetGroup(ctx *gin.Context) {
 	groupId, err := strconv.Atoi(groupStr)
 	
 	if err != nil {
-		ctx.Error(gin.Error{
-			Err:  err,
-			Type: gin.ErrorTypePublic})
+		ErrorNoStatus(ctx, err)
 		return
 	}
 
 	group, err := c.service.GetGroup(int32(groupId))
 
 	if err != nil {
-		ctx.Error(gin.Error{
-			Err:  err,
-			Type: gin.ErrorTypePublic})
+		ErrorNoStatus(ctx, err)
 		return
 	}
 
@@ -97,25 +105,33 @@ func (c *GroupsController) GetGroup(ctx *gin.Context) {
 
 func (c *GroupsController) CreateGroup(ctx *gin.Context) {
 
-	groupParams, batchParams, err := getGroupParams(ctx)
+	var groupInfo repository.CreateGroupParams
 
-	if err != nil {
-		ctx.Error(gin.Error{
-			Err:  err,
-			Type: gin.ErrorTypePublic,})
+	if err := ctx.ShouldBind(&groupInfo); err != nil {
+		ErrorWithStatus(ctx, "Could not bind", http.StatusBadRequest)
 		return
 	}
 
-	id, err := c.service.CreateGroup(groupParams, batchParams)
+	log.Println(groupInfo.UserIds)
+
+	group, err := c.service.CreateGroup(groupInfo)
 	if err != nil {
-		ctx.Error(gin.Error{
-			Err:  err,
-			Type: gin.ErrorTypePublic,})
+		ErrorNoStatus(ctx, err)
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{
-		"updated": id,
-	})
+
+	res := NewGroup{
+		ID: group.ID,
+		Name: group.Name,
+		Description: group.Description,
+		Location: group.Location,
+		ActivityID: group.ActivityID,
+		ActivityName: group.ActivityName,
+		ActivityIcon: group.ActivityIcon,
+		Members: group.Members,
+	}
+
+	ctx.JSON(http.StatusCreated, res)
 }
 
 func (c *GroupsController) ExitGroup(ctx *gin.Context) {
@@ -126,9 +142,7 @@ func (c *GroupsController) ExitGroup(ctx *gin.Context) {
 	groupIdStr := ctx.Param("groupId")
 	groupId, err := strconv.Atoi(groupIdStr)
 	if err != nil {
-		ctx.Error(gin.Error{
-			Err:  err,
-			Type: gin.ErrorTypePublic,})
+		ErrorNoStatus(ctx, err)
 		return
 	}
 	exitParams.GroupID = int32(groupId)
@@ -141,55 +155,29 @@ func (c *GroupsController) ExitGroup(ctx *gin.Context) {
 
 	err = c.service.ExitGroup(exitParams)
 	if err != nil {
-		ctx.Error(gin.Error{
-			Err:  err,
-			Type: gin.ErrorTypePublic,})
+		ErrorNoStatus(ctx, err)
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{
-		"group": groupId,
-	})
+
+	res := GroupIdResponse{GroupId: exitParams.GroupID}
+
+	ctx.JSON(http.StatusOK, res)
 }
 
 func (c *GroupsController) DeleteGroup(ctx *gin.Context) {
 	groupIdStr := ctx.Param("groupId")
 	groupId, err := strconv.Atoi(groupIdStr)
 	if err != nil {
-		ctx.Error(gin.Error{
-			Err:  err,
-			Type: gin.ErrorTypePublic,})
+		ErrorNoStatus(ctx, err)
 		return
 	}
 
 	id, err := c.service.DeleteGroup(int32(groupId))
 	if err != nil {
-		ctx.Error(gin.Error{
-			Err:  err,
-			Type: gin.ErrorTypePublic,})
+		ErrorNoStatus(ctx, err)
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{
-		"deleted": id,
-	})
-}
 
-func getGroupParams(ctx *gin.Context) (repository.CreateGroupParams, repository.BatchAddUserToGroupParams, error) {
-	var groupInfo GroupInfo
-	var groupParams repository.CreateGroupParams
-	var groupBatchParams repository.BatchAddUserToGroupParams
-
-	if err := ctx.ShouldBind(&groupInfo); err != nil {
-		return groupParams, groupBatchParams, err
-	}
-	
-	log.Printf("Members IDa: %v", groupInfo.MembersIds)
-
-	groupParams.ActivityID = groupInfo.ActivityID
-	groupParams.Description = &groupInfo.Description
-	groupParams.Location = &groupInfo.Location
-	groupParams.Name = &groupInfo.Name
-
-	groupBatchParams.UserIds = groupInfo.MembersIds
-	
-	return groupParams, groupBatchParams, nil
+	res := GroupIdResponse{GroupId: id}
+	ctx.JSON(http.StatusOK, res)
 }

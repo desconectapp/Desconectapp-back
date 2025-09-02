@@ -1,6 +1,8 @@
 package controller
 
 import (
+	"database/sql"
+	"errors"
 	"gin/service"
 	"net/http"
 
@@ -26,88 +28,109 @@ func NewController(conn *pgx.Conn) *Controller {
 	}
 }
 
-type UserUpdateInfo struct {
-	Name             string  `json:"name"`
-	Email            string  `json:"email"`
-	Age              int32   `json:"age"`
-	City             string  `json:"city"`
-	CurrentSituation string  `json:"current_situation"`
-	ActivityIDs      []int32 `json:"activity_ids"`
-}
 
 func (c *Controller) ListUsers(ctx *gin.Context) {
 	var userParams repository.ListUsersParams
 
 	limit, offset := GetLimmitAndOffset(ctx)
 
-	userParams.Limit = int32(limit)
+	userParams.Limit = int32(limit) + 1
 	userParams.Offset = int32(offset)
 
 	users, err := c.service.ListUsers(userParams)
+	
 	if err != nil {
-		ctx.Error(gin.Error{
+		ctx.Error(&gin.Error{
 			Err:  err,
-			Type: gin.ErrorTypePublic})
+			Type: gin.ErrorTypePublic,
+		})
+		ctx.Abort()
 		return
 	}
-	ctx.JSON(http.StatusOK, users)
+
+	hasMore := len(users) == int(userParams.Limit)
+
+	if hasMore {
+		users = users[:len(users)-1]
+	}
+
+	result := PaginatedUsers{Users: users, HasMore: hasMore}
+
+	ctx.JSON(http.StatusOK, result)
 }
 
 func (c *Controller) CreateProfile(ctx *gin.Context) {
 	var profileData repository.CreateProfileParams
 	if err := ctx.ShouldBind(&profileData); err != nil {
-		ctx.Error(gin.Error{
-			Err:  err,
-			Type: gin.ErrorTypePublic})
+		ErrorWithStatus(ctx, "Could not bind", http.StatusBadRequest)
 		return
 	}
 
 	if profileData.Age < MIN_AGE || profileData.Age > MAX_AGE {
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"error": "age must be between 15 and 100",
-		})
+		ErrorWithStatus(ctx, "Age must be between 15 and 100",http.StatusBadRequest)
 		return
 	}
 
 	userToken, _ := ctx.Get("userID")
 	profileData.UserID = userToken.(int32)
 
-	id, err := c.service.CreateProfile(profileData)
+
+	user, err := c.service.CreateProfile(profileData)
 	if err != nil {
-		ctx.Error(gin.Error{
-			Err:  err,
-			Type: gin.ErrorTypePublic})
+		ErrorNoStatus(ctx, err)
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{
-		"updated": id,
-	})
+
+	res := Profile{
+		UserID: user.UserID,
+		Age: user.Age,
+		Name: user.Name,
+		City: user.City,
+		CurrentSituation: user.CurrentSituation,
+		Gender: user.Gender,
+	}
+
+	ctx.JSON(http.StatusOK, res)
 }
 
 func (c *Controller) GetUser(ctx *gin.Context) {
 	userToken, _ := ctx.Get("userID")
 
 	user, err := c.service.GetUser(userToken.(int32))
-	if err != nil {
-		ctx.Error(gin.Error{
-			Err:  err,
-			Type: gin.ErrorTypePublic})
+
+	if errors.Is(err, sql.ErrNoRows) {
+		ErrorWithStatus(ctx, "The user does not exist", http.StatusNotFound)
+		return
+	} else if err != nil {
+		ErrorNoStatus(ctx, err)
 		return
 	}
-	ctx.JSON(http.StatusOK, user)
+
+	res := Profile{
+		UserID: user.UserID,
+		Age: user.Age,
+		Name: user.Name,
+		City: user.City,
+		CurrentSituation: user.CurrentSituation,
+		Gender: user.Gender,
+	}
+
+	ctx.JSON(http.StatusOK, res)
 }
 
 func (c *Controller) DeleteUser(ctx *gin.Context) {
 	userToken, _ := ctx.Get("userID")
 
 	id, err := c.service.DeleteUser(userToken.(int32))
-	if err != nil {
-		ctx.Error(gin.Error{
-			Err:  err,
-			Type: gin.ErrorTypePublic})
+
+	if errors.Is(err, sql.ErrNoRows) {
+		ErrorWithStatus(ctx, "The user does not exist", http.StatusNotFound)
+		return
+	} else if err != nil {
+		ErrorNoStatus(ctx, err)
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{
-		"deleted": id,
-	})
+
+	res := UserDeletedResponse{DeletedUserID: id}
+	ctx.JSON(http.StatusOK, res)
 }

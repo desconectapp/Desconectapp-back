@@ -12,9 +12,10 @@ INSERT INTO users_preference (
   $1, $2
 );
 
--- name: DeletePreference :exec 
+-- name: DeletePreference :one 
 DELETE FROM users_preference
-WHERE user_id = $1 AND activity_id = $2;
+WHERE user_id = $1 AND activity_id = $2
+RETURNING activity_id;
 
 -- name: BatchAddPreferences :exec
 WITH deleted AS (

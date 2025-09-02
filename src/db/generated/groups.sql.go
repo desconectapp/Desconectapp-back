@@ -48,12 +48,38 @@ func (q *Queries) BatchAddUserToGroup(ctx context.Context, arg BatchAddUserToGro
 }
 
 const createGroup = `-- name: CreateGroup :one
-INSERT INTO groups (
-  name, description, location, activity_id
-) VALUES (
-  $1, $2, $3, $4
+WITH inserted_group AS (
+  INSERT INTO groups (name, description, location, activity_id)
+  VALUES ($1, $2, $3, $4)
+  RETURNING id, name, description, location, activity_id, created_at
+), inserted_members AS (
+  INSERT INTO group_members (user_id, group_id)
+  SELECT u.id, g.id
+  FROM users u
+  CROSS JOIN inserted_group g
+  WHERE u.id = ANY($5::int[])
+  ON CONFLICT DO NOTHING
+  RETURNING user_id, group_id
 )
-RETURNING id
+SELECT 
+  g.id,
+  g.name,
+  g.description,
+  g.location,
+  g.activity_id,
+  g.created_at,
+  CAST(
+    COALESCE(
+      array_agg(m.user_id) FILTER (WHERE m.user_id IS NOT NULL),
+      ARRAY[]::int[]
+    ) AS int[]
+  ) AS members,
+  a.name AS activity_name,
+  a.icon AS activity_icon
+FROM inserted_group g
+LEFT JOIN inserted_members m ON g.id = m.group_id
+JOIN activities a ON g.activity_id = a.id
+GROUP BY g.id, g.name, g.description, g.location, g.activity_id, g.created_at, a.name, a.icon
 `
 
 type CreateGroupParams struct {
@@ -61,18 +87,42 @@ type CreateGroupParams struct {
 	Description *string `json:"description"`
 	Location    *string `json:"location"`
 	ActivityID  int32   `json:"activity_id"`
+	UserIds     []int32 `json:"user_ids"`
 }
 
-func (q *Queries) CreateGroup(ctx context.Context, arg CreateGroupParams) (int32, error) {
+type CreateGroupRow struct {
+	ID           int32              `json:"id"`
+	Name         *string            `json:"name"`
+	Description  *string            `json:"description"`
+	Location     *string            `json:"location"`
+	ActivityID   int32              `json:"activity_id"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	Members      []int32            `json:"members"`
+	ActivityName string             `json:"activity_name"`
+	ActivityIcon *string            `json:"activity_icon"`
+}
+
+func (q *Queries) CreateGroup(ctx context.Context, arg CreateGroupParams) (CreateGroupRow, error) {
 	row := q.db.QueryRow(ctx, createGroup,
 		arg.Name,
 		arg.Description,
 		arg.Location,
 		arg.ActivityID,
+		arg.UserIds,
 	)
-	var id int32
-	err := row.Scan(&id)
-	return id, err
+	var i CreateGroupRow
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Description,
+		&i.Location,
+		&i.ActivityID,
+		&i.CreatedAt,
+		&i.Members,
+		&i.ActivityName,
+		&i.ActivityIcon,
+	)
+	return i, err
 }
 
 const deleteGroup = `-- name: DeleteGroup :one
