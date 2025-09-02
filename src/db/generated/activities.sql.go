@@ -66,6 +66,16 @@ func (q *Queries) CreateActivityRequest(ctx context.Context, arg CreateActivityR
 	return i, err
 }
 
+const deleteActivityRequest = `-- name: DeleteActivityRequest :exec
+DELETE FROM activity_requests
+WHERE id = $1
+`
+
+func (q *Queries) DeleteActivityRequest(ctx context.Context, id int32) error {
+	_, err := q.db.Exec(ctx, deleteActivityRequest, id)
+	return err
+}
+
 const getActivities = `-- name: GetActivities :many
 SELECT id, name, icon, created_at, category FROM activities
 ORDER BY category, id DESC
@@ -101,6 +111,36 @@ func (q *Queries) GetActivities(ctx context.Context, arg GetActivitiesParams) ([
 		return nil, err
 	}
 	return items, nil
+}
+
+const getActivityRequestByUserAndActivityID = `-- name: GetActivityRequestByUserAndActivityID :one
+SELECT id, user_id, activity_id, description, week_hours, participants_needed, maximum_participants, latitude, longitude, search_radius, created_at, expires_at FROM activity_requests
+WHERE user_id = $1 AND activity_id = $2
+`
+
+type GetActivityRequestByUserAndActivityIDParams struct {
+	UserID     *int32 `json:"user_id"`
+	ActivityID *int32 `json:"activity_id"`
+}
+
+func (q *Queries) GetActivityRequestByUserAndActivityID(ctx context.Context, arg GetActivityRequestByUserAndActivityIDParams) (ActivityRequest, error) {
+	row := q.db.QueryRow(ctx, getActivityRequestByUserAndActivityID, arg.UserID, arg.ActivityID)
+	var i ActivityRequest
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.ActivityID,
+		&i.Description,
+		&i.WeekHours,
+		&i.ParticipantsNeeded,
+		&i.MaximumParticipants,
+		&i.Latitude,
+		&i.Longitude,
+		&i.SearchRadius,
+		&i.CreatedAt,
+		&i.ExpiresAt,
+	)
+	return i, err
 }
 
 const listActivityRequests = `-- name: ListActivityRequests :many

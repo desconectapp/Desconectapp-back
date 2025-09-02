@@ -94,6 +94,7 @@ func (router *Router) SetupRoutes() *gin.Engine {
 		activities.GET("/request", router.activitiesController.ListActivitiesRequests)
 		activities.POST("/request", router.activitiesController.CreateActivityRequest)
 		activities.GET("", router.activitiesController.GetActivities)
+		activities.DELETE("/request/:requestId", router.activitiesController.DeleteActivityRequest)
 	}
 	
 	preferences := router.r.Group("/preferences")
