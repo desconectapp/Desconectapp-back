@@ -4,14 +4,12 @@ import (
 	"context"
 	repository "gin/db/generated"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type GroupWithMembers struct {
 	ID          int32             `json:"id"`
 	Name        *string            `json:"name"`
 	Description *string            `json:"description"`
-	CreatedAt   pgtype.Timestamptz `json:"created_at"`
 	Activity    string             `json:"activity"`
 	Icon        *string            `json:"icon"`
 	Location    *string            `json:"location"`
@@ -34,18 +32,18 @@ func NewGroupsService(conn *pgx.Conn) *GroupsService {
 	}
 }
 
-func (s *GroupsService) CreateGroup(groupParams repository.CreateGroupParams, groupMembersInfo repository.BatchAddUserToGroupParams) (int32, error) {
-	id, err := s.queries.CreateGroup(s.ctx, groupParams)
+func (s *GroupsService) CreateGroup(groupParams repository.CreateGroupParams) (repository.CreateGroupRow, error) {
+	group, err := s.queries.CreateGroup(s.ctx, groupParams)
 	if err != nil {
-		return -1, err
+		return repository.CreateGroupRow{}, err
 	}
-	groupMembersInfo.GroupID = id
-	err = s.queries.BatchAddUserToGroup(s.ctx, groupMembersInfo)
-	if err != nil {
-		s.queries.DeleteGroup(s.ctx, id)
-		return -1, err
-	}
-	return id, nil
+	// groupMembersInfo.GroupID = id
+	// err = s.queries.BatchAddUserToGroup(s.ctx, groupMembersInfo)
+	// if err != nil {
+	// 	s.queries.DeleteGroup(s.ctx, id)
+	// 	return -1, err
+	// }
+	return group, nil
 }
 
 
@@ -95,7 +93,6 @@ func addMembers(group repository.GetGroupRow, members []repository.GetGroupMembe
         Name:        group.Name,
         Activity:    group.Activity,
         Description: group.Description,
-        CreatedAt:   group.CreatedAt,
         Location:    group.Location,
         Icon:        group.Icon,
         Members:     members,

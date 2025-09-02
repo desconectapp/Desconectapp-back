@@ -31,10 +31,10 @@ func TestTwoCompatibleActivityRequestsMatch(t *testing.T) {
 	if w.Code != 200 {
 		t.Fatalf("Unexpected status code: %d, body: %s", w.Code, w.Body.String())
 	}
-	var groupsResponse controller.PaginatedMembers
+	var groupsResponse controller.PaginatedGroups
 	err = json.Unmarshal(w.Body.Bytes(), &groupsResponse)
 	assert.Nil(t, err, "Error unmarshaling response")
-	assert.GreaterOrEqual(t, 1, len(groupsResponse.Members), "There should be at least one group")
+	assert.GreaterOrEqual(t, 1, len(groupsResponse.Groups), "There should be at least one group")
 }
 
 func TestMatchDoesNotDeletePreviousSearch(t *testing.T) {
@@ -57,10 +57,10 @@ func TestMatchDoesNotDeletePreviousSearch(t *testing.T) {
 	if w.Code != 200 {
 		t.Fatalf("Unexpected status code: %d, body: %s", w.Code, w.Body.String())
 	}
-	var groupsResponse controller.PaginatedMembers
+	var groupsResponse controller.PaginatedGroups
 	err = json.Unmarshal(w.Body.Bytes(), &groupsResponse)
 	assert.Nil(t, err, "Error unmarshaling response")
-	assert.GreaterOrEqual(t, 1, len(groupsResponse.Members), "There should be at least one group")
+	assert.GreaterOrEqual(t, 1, len(groupsResponse.Groups), "There should be at least one group")
 
 	SendActivityRequest(t, r, 4, 2, 2)
 
@@ -72,10 +72,10 @@ func TestMatchDoesNotDeletePreviousSearch(t *testing.T) {
 	if w.Code != 200 {
 		t.Fatalf("Unexpected status code: %d, body: %s", w.Code, w.Body.String())
 	}
-	var groupsResponse_2 controller.PaginatedMembers
+	var groupsResponse_2 controller.PaginatedGroups
 	err = json.Unmarshal(w.Body.Bytes(), &groupsResponse_2)
 	assert.Nil(t, err, "Error unmarshaling response")
-	assert.GreaterOrEqual(t, 1, len(groupsResponse_2.Members), "There should be at least one group")
+	assert.GreaterOrEqual(t, 1, len(groupsResponse_2.Groups), "There should be at least one group")
 }
 
 func TestUserCantMatchWithTheSameUser(t *testing.T) {
@@ -94,10 +94,10 @@ func TestUserCantMatchWithTheSameUser(t *testing.T) {
 	if w.Code != 200 {
 		t.Fatalf("Unexpected status code: %d, body: %s", w.Code, w.Body.String())
 	}
-	var groupsResponse controller.PaginatedMembers
+	var groupsResponse controller.PaginatedGroups
 	err = json.Unmarshal(w.Body.Bytes(), &groupsResponse)
 	assert.Nil(t, err, "Error unmarshaling response")
-	assert.Equal(t, 0, len(groupsResponse.Members), "There should be no groups")
+	assert.Equal(t, 0, len(groupsResponse.Groups), "There should be no groups")
 }
 
 func TestCantCreateWithInvalidAmountOfParticipants(t *testing.T) {
@@ -210,10 +210,10 @@ func TestRequestsForDifferentActivitiesDontMatch(t *testing.T) {
 	if w.Code != 200 {
 		t.Fatalf("Unexpected status code: %d, body: %s", w.Code, w.Body.String())
 	}
-	var groupsResponse controller.PaginatedMembers
+	var groupsResponse controller.PaginatedGroups
 	err = json.Unmarshal(w.Body.Bytes(), &groupsResponse)
 	assert.Nil(t, err, "Error unmarshaling response")
-	assert.Equal(t, 0, len(groupsResponse.Members), "There should be no groups")
+	assert.Equal(t, 0, len(groupsResponse.Groups), "There should be no groups")
 }
 
 func TestRequestWithoutSchedulesIsNotCreated(t *testing.T) {
@@ -323,9 +323,9 @@ func TestRequestsTooFarApartDontMatch(t *testing.T) {
 	if w.Code != 200 {
 		t.Fatalf("Unexpected status code: %d, body: %s", w.Code, w.Body.String())
 	}
-	var groupsResponse controller.PaginatedMembers
+	var groupsResponse controller.PaginatedGroups
 	err = json.Unmarshal(w.Body.Bytes(), &groupsResponse)
 	assert.Nil(t, err, "Error unmarshaling response")
-	assert.Equal(t, 0, len(groupsResponse.Members), "There should be no groups")
+	assert.Equal(t, 0, len(groupsResponse.Groups), "There should be no groups")
 
 }

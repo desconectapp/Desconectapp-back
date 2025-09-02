@@ -16,8 +16,8 @@ type PaginatedGroups struct {
 	HasMore	bool	`json:"has_more"`
 }
 
-type PaginatedMembers struct {
-	Members []gen.ListUserGroupsRow `json:"members"`
+type PaginatedUserGroup struct {
+	Groups []gen.ListUserGroupsRow `json:"members"`
 	HasMore bool	`json:"has_more"`
 }
 
@@ -62,6 +62,21 @@ type UserProfileCreatedResponse struct {
 
 type ActivityIdResponse struct {
 	ActivityPreferenseID	int32	`json:"activity"`
+}
+
+type GroupIdResponse struct {
+	GroupId	int32	`json:"group_id"`
+}
+
+type NewGroup struct {
+	ID          int32              `json:"id"`
+	Name        *string            `json:"name"`
+	Description *string            `json:"description"`
+	Location    *string            `json:"location"`
+	ActivityID  int32              `json:"activity_id"`
+	Members     []int32        `json:"members"`
+	ActivityName string             `json:"activity_name"`
+	ActivityIcon *string            `json:"activity_icon"`
 }
 
 type ActivityIdBatchResponse struct {

@@ -130,7 +130,6 @@ func NewUser(t *testing.T, r *gin.Engine, emailStart string) (int32, string) {
 	}
 
 	jsonBody, err := json.Marshal(body)
-
 	assert.Equal(t, err, nil, "Error should be nil")
 
 	req := httptest.NewRequest("POST", "/auth/signup", bytes.NewReader(jsonBody))
@@ -159,6 +158,7 @@ func AddPreference(t *testing.T, r *gin.Engine, activityId int32, token string) 
 		ActivityID: activityId,
 	}
 	jsonBody, err := json.Marshal(body)
+	assert.Equal(t, err, nil, "Error should be nil")
 
 	req := httptest.NewRequest("POST", "/preferences", bytes.NewReader(jsonBody))
 	req.Header.Add("content-type", "application/json")
@@ -174,4 +174,75 @@ func AddPreference(t *testing.T, r *gin.Engine, activityId int32, token string) 
 
 	assert.Equal(t, w.Code, http.StatusOK, "Status code should be 200")
 	assert.Equal(t, activityId, response.ActivityPreferenseID, "The activity ids should match")
+}
+
+type GroupInfo struct {
+    Name        string  `json:"name"`
+    Description string  `json:"description"`
+    Location    string  `json:"location"`
+    ActivityID  int32   `json:"activity_id"`
+    MembersIds  []int32 `json:"user_ids"`
+}
+
+
+func NewGroup(t *testing.T, r *gin.Engine, name string, location string, activityID int32, memberIds []int32, token string) int32 {
+	body := GroupInfo{
+		ActivityID: activityID,
+		Name: name,
+		Location: location,
+		MembersIds: memberIds,
+		Description: "",
+
+	}
+	jsonBody, err := json.Marshal(body)
+	
+	assert.Equal(t, err, nil, "Error should be nil")
+
+	req := httptest.NewRequest("POST", "/groups", bytes.NewReader(jsonBody))
+	req.Header.Add("content-type", "application/json")
+	req.Header.Add("Authorization", "Bearer "+token)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	var response controller.NewGroup
+
+	err = json.Unmarshal(w.Body.Bytes(), &response)
+		
+	assert.Equal(t, err, nil, "Error should be nil")
+	assert.Equal(t, w.Code, http.StatusCreated, "Status code should be 201")
+	assert.Equal(t, body.ActivityID, response.ActivityID)
+	assert.Equal(t, body.Name, *response.Name)
+	assert.Equal(t, body.Location, *response.Location)
+	assert.Equal(t, body.MembersIds, response.Members)
+
+	return response.ID
+}
+
+func NewUserWithProfile(t *testing.T, r *gin.Engine, emailStart string, profile CreateProfile) (int32, string) {
+	userID, token := NewUser(t, r, emailStart)
+
+	jsonBody, err := json.Marshal(profile)
+	assert.Equal(t, err, nil, "Error should be nil")
+
+	req := httptest.NewRequest("POST", "/users/profile", bytes.NewReader(jsonBody))
+	req.Header.Add("content-type", "application/json")
+	req.Header.Add("Authorization", "Bearer "+token)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	var response controller.Profile
+
+	err = json.Unmarshal(w.Body.Bytes(), &response)
+
+	assert.Equal(t, err, nil, "Error should be nil")
+
+	assert.Equal(t, w.Code, http.StatusOK, "Status code should be 200")
+	assert.Equal(t, userID, response.UserID, "The user ids should match")
+	assert.Equal(t, profile.Age, response.Age, "Age should match")
+	assert.Equal(t, profile.Name, response.Name, "Name should match")
+	assert.Equal(t, profile.City, response.City, "City should match")
+	assert.Equal(t, profile.CurrentSituation, response.CurrentSituation, "Current Situation should match")
+	assert.Equal(t, profile.Gender, response.Gender, "Gender should match")
+
+	return userID, token
 }

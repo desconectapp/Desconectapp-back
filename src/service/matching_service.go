@@ -219,7 +219,7 @@ func (s *MatchingService) createGroup(request repository.ActivityRequest, match 
 	}
 	if len(memberIDs) > 0 {
 		err = s.queries.BatchAddUserToGroup(s.ctx, repository.BatchAddUserToGroupParams{
-			GroupID: groupID,
+			GroupID: groupID.ID,
 			UserIds: memberIDs,
 		})
 		if err != nil {
@@ -229,7 +229,7 @@ func (s *MatchingService) createGroup(request repository.ActivityRequest, match 
 
 	if request.UserID != nil {
 		err = s.queries.AddUserToGroup(s.ctx, repository.AddUserToGroupParams{
-			GroupID: groupID,
+			GroupID: groupID.ID,
 			UserID:  *request.UserID,
 		})
 		if err != nil {
