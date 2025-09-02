@@ -4,20 +4,22 @@ import (
 	"errors"
 	"fmt"
 	"gin/service"
+	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
 type AuthController struct {
-	authService *service.AuthService
+	authService  *service.AuthService
+	emailService *service.EmailValidationService
 }
 
-
-
-func NewAuthController(authService *service.AuthService) *AuthController {
+func NewAuthController(authService *service.AuthService, emailService *service.EmailValidationService) *AuthController {
 	return &AuthController{
-		authService: authService,
+		authService:  authService,
+		emailService: emailService,
 	}
 }
 
@@ -40,7 +42,7 @@ func (c *AuthController) Login(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, AuthResponse{
-		UserId: 		session.UserId,
+		UserId:           session.UserId,
 		Token:            session.Token,
 		RefreshToken:     session.RefreshToken,
 		ExpiresAt:        session.ExpiresAt,
@@ -65,7 +67,7 @@ func (c *AuthController) Refresh(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, AuthResponse{
-		UserId: 		session.UserId,
+		UserId:           session.UserId,
 		Token:            session.Token,
 		RefreshToken:     session.RefreshToken,
 		ExpiresAt:        session.ExpiresAt,
@@ -112,7 +114,7 @@ func (c *AuthController) Signup(ctx *gin.Context) {
 	}
 
 	if signupReq.Name == "" {
-		signupReq.Name = "Test" 
+		signupReq.Name = "Test"
 	}
 
 	session, err := c.authService.Signup(signupReq.Name, signupReq.Email, signupReq.Password)
@@ -132,11 +134,128 @@ func (c *AuthController) Signup(ctx *gin.Context) {
 		return
 	}
 
+	c.emailService.StartEmailVerification(session.UserId, signupReq.Email)
+
 	ctx.JSON(http.StatusCreated, AuthResponse{
-		UserId: 		session.UserId,
+		UserId:           session.UserId,
 		Token:            session.Token,
 		RefreshToken:     session.RefreshToken,
 		ExpiresAt:        session.ExpiresAt,
 		RefreshExpiresAt: session.RefreshExpiresAt,
 	})
+}
+
+type ValidateEmail struct {
+	Code   string `json:"code" binding:"required,min=6"`
+	UserID int32  `json:"user_id" binding:"required"`
+}
+
+func (c *AuthController) ValidateEmail(ctx *gin.Context) {
+	var validation ValidateEmail
+	if err := ctx.ShouldBind(&validation); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if validation.UserID == 0 {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "user_id is required"})
+		return
+	}
+	if validation.Code == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "code is required"})
+		return
+	}
+
+	log.Println("Validating email for user ID:", validation.UserID, "with code:", validation.Code)
+
+	err := c.emailService.ValidateEmailCode(validation.UserID, validation.Code)
+	if err != nil {
+		ctx.Error(gin.Error{
+			Err:  err,
+			Type: gin.ErrorTypePublic,
+		})
+		return
+	}
+}
+
+func (c *AuthController) ResendValidationEmail(ctx *gin.Context) {
+	_userId, exists := ctx.Get("userId")
+
+	var userId int32
+	var ok bool
+
+	if exists {
+		userId, ok = _userId.(int32)
+	} else {
+		qs := ctx.Query("user_id")
+		if qs == "" {
+			qs = ctx.Query("userId")
+		}
+		if qs != "" {
+			if n, err := strconv.ParseInt(qs, 10, 32); err == nil {
+				userId = int32(n)
+				ok = true
+			}
+		}
+	}
+
+	if !ok || userId == 0 {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "user_id is required"})
+		return
+	}
+
+	err := c.emailService.ResendEmail(userId)
+	if err != nil {
+		ctx.Error(gin.Error{
+			Err:  err,
+			Type: gin.ErrorTypePublic,
+		})
+		return
+	}
+}
+
+type ForgotPasswordRequest struct {
+	Email string `json:"email" binding:"required,email"`
+}
+
+func (c *AuthController) ForgotPassword(ctx *gin.Context) {
+	var forgotPasswordReq ForgotPasswordRequest
+	if err := ctx.ShouldBind(&forgotPasswordReq); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	userId, err := c.emailService.StartForgotPasswordFlow(forgotPasswordReq.Email)
+	if err != nil {
+		ctx.Error(gin.Error{
+			Err:  err,
+			Type: gin.ErrorTypePublic,
+		})
+		return
+	}
+
+	ctx.JSON(200, userId)
+}
+
+type UpdatePasswordRequest struct {
+	Code        string `json:"code" binding:"required,min=6"`
+	NewPassword string `json:"new_password" binding:"required,min=8"`
+	UserId      int32  `json:"user_id" binding:"required"`
+}
+
+func (c *AuthController) UpdatePassword(ctx *gin.Context) {
+	var forgotPasswordReq UpdatePasswordRequest
+	if err := ctx.ShouldBind(&forgotPasswordReq); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	err := c.emailService.UpdatePassword(forgotPasswordReq.UserId, forgotPasswordReq.NewPassword, forgotPasswordReq.Code)
+	if err != nil {
+		ctx.Error(gin.Error{
+			Err:  err,
+			Type: gin.ErrorTypePublic,
+		})
+		return
+	}
 }

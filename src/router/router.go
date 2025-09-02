@@ -37,7 +37,8 @@ func NewRouter() *Router {
 
 	// Initialize auth service and controller
 	authService := service.NewAuthService(conn)
-	authController := controller.NewAuthController(authService)
+	emailValidation := service.NewEmailValidationService(conn)
+	authController := controller.NewAuthController(authService, emailValidation)
 
 	preferencesController := controller.NewPreferencesController(conn)
 
@@ -76,6 +77,10 @@ func (router *Router) SetupRoutes() *gin.Engine {
 		auth.POST("/login", router.authController.Login)
 		auth.POST("/signup", router.authController.Signup)
 		auth.POST("/refresh", router.authController.Refresh)
+		auth.POST("/email/verify", router.authController.ValidateEmail)
+		auth.POST("/email/resend-verification", router.authController.ResendValidationEmail)
+		auth.POST("/password/forgot", router.authController.ForgotPassword)
+		auth.POST("/password/update", router.authController.UpdatePassword)
 	}
 
 	users := router.r.Group("/users")

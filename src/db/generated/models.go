@@ -81,6 +81,11 @@ type ActivityRequest struct {
 	ExpiresAt           pgtype.Timestamp `json:"expires_at"`
 }
 
+type EmailVerificationCode struct {
+	UserID int32   `json:"user_id"`
+	Code   *string `json:"code"`
+}
+
 type Group struct {
 	ID          int32              `json:"id"`
 	Name        *string            `json:"name"`
@@ -127,9 +132,10 @@ type Profile struct {
 }
 
 type User struct {
-	ID       int32  `json:"id"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	ID             int32  `json:"id"`
+	Email          string `json:"email"`
+	Password       string `json:"password"`
+	EmailValidated bool   `json:"email_validated"`
 }
 
 type UsersPreference struct {
