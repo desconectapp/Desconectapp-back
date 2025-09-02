@@ -227,3 +227,49 @@ func (c *AuthController) ResendValidationEmail(ctx *gin.Context) {
 		return
 	}
 }
+
+type ForgotPasswordRequest struct {
+	Email string `json:"email" binding:"required,email"`
+}
+
+func (c *AuthController) ForgotPassword(ctx *gin.Context) {
+	var forgotPasswordReq ForgotPasswordRequest
+	if err := ctx.ShouldBind(&forgotPasswordReq); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	userId, err := c.emailService.StartForgotPasswordFlow(forgotPasswordReq.Email)
+	if err != nil {
+		ctx.Error(gin.Error{
+			Err:  err,
+			Type: gin.ErrorTypePublic,
+		})
+		return
+	}
+
+	ctx.JSON(200, userId)
+}
+
+type UpdatePasswordRequest struct {
+	Code        string `json:"code" binding:"required,min=6"`
+	NewPassword string `json:"new_password" binding:"required,min=8"`
+	UserId      int32  `json:"user_id" binding:"required"`
+}
+
+func (c *AuthController) UpdatePassword(ctx *gin.Context) {
+	var forgotPasswordReq UpdatePasswordRequest
+	if err := ctx.ShouldBind(&forgotPasswordReq); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	err := c.emailService.UpdatePassword(forgotPasswordReq.UserId, forgotPasswordReq.NewPassword, forgotPasswordReq.Code)
+	if err != nil {
+		ctx.Error(gin.Error{
+			Err:  err,
+			Type: gin.ErrorTypePublic,
+		})
+		return
+	}
+}

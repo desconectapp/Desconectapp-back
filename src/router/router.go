@@ -76,8 +76,10 @@ func (router *Router) SetupRoutes() {
 		auth.POST("/login", router.authController.Login)
 		auth.POST("/signup", router.authController.Signup)
 		auth.POST("/refresh", router.authController.Refresh)
-		auth.POST("/validate-email", router.authController.ValidateEmail)
-		auth.POST("/resend-email", router.authController.ResendValidationEmail)
+		auth.POST("/email/verify", router.authController.ValidateEmail)
+		auth.POST("/email/resend-verification", router.authController.ResendValidationEmail)
+		auth.POST("/password/forgot", router.authController.ForgotPassword)
+		auth.POST("/password/update", router.authController.UpdatePassword)
 	}
 
 	users := router.r.Group("/users")

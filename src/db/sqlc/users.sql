@@ -24,6 +24,7 @@ UPDATE users
 WHERE id = $1
 RETURNING id;
 
+
 -- name: CreateProfile :one
 UPDATE profiles
   SET name = $2,
@@ -65,4 +66,13 @@ WHERE user_id = $1;
 -- name: UpdateVerificationCode :exec
 UPDATE email_verification_codes
 SET code = $2
+WHERE user_id = $1;
+
+-- name: UpdateUserPassword :exec
+WITH updated AS (
+	UPDATE users
+	SET password=$2
+	WHERE id = $1
+) 
+DELETE FROM email_verification_codes
 WHERE user_id = $1;
