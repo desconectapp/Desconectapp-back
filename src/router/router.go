@@ -16,12 +16,13 @@ import (
 )
 
 type Router struct {
-	controller           *controller.Controller
-	activitiesController *controller.ActivitiesController
-	authController       *controller.AuthController
+	controller            *controller.Controller
+	activitiesController  *controller.ActivitiesController
+	authController        *controller.AuthController
 	preferencesController *controller.PreferencesController
-	groupsController		*controller.GroupsController
-	r                    *gin.Engine
+	groupsController      *controller.GroupsController
+	adminController       *controller.AdminUserController
+	r                     *gin.Engine
 }
 
 func NewRouter() *Router {
@@ -43,25 +44,26 @@ func NewRouter() *Router {
 	preferencesController := controller.NewPreferencesController(conn)
 
 	groupsController := controller.NewGroupsController(conn)
+	adminUserController := controller.NewAdminUserController(conn)
 
 	r := gin.Default()
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"*"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
-		ExposeHeaders:    []string{"Content-Length"},
+		ExposeHeaders:    []string{"Content-Length", "X-Total-Count"},
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	}))
 	r.Use(middleware.ErrorHandler())
 	return &Router{
-		controller:           c,
-		activitiesController: activitiesController,
-		authController:       authController,
+		controller:            c,
+		activitiesController:  activitiesController,
+		authController:        authController,
 		preferencesController: preferencesController,
-		groupsController: groupsController,
-		r:                    r,
-
+		groupsController:      groupsController,
+		adminController:       adminUserController,
+		r:                     r,
 	}
 }
 
@@ -101,10 +103,10 @@ func (router *Router) SetupRoutes() *gin.Engine {
 		activities.GET("", router.activitiesController.GetActivities)
 		activities.DELETE("/request/:requestId", router.activitiesController.DeleteActivityRequest)
 	}
-	
+
 	preferences := router.r.Group("/preferences")
 	preferences.Use(router.authController.AuthMiddleware())
-	
+
 	{
 		preferences.GET("", router.preferencesController.GetUserPreferences)
 		preferences.POST("", router.preferencesController.AddPreference)
@@ -121,6 +123,16 @@ func (router *Router) SetupRoutes() *gin.Engine {
 		groups.POST("", router.groupsController.CreateGroup)
 		groups.DELETE("/:groupId", router.groupsController.DeleteGroup)
 		groups.DELETE("/user-from-group/:groupId", router.groupsController.ExitGroup)
+	}
+
+	admin := router.r.Group("/admin/users")
+	// groups.Use(router.authController.AdminMiddleware())
+	{
+		admin.GET("", router.adminController.ListUsers)
+		admin.GET("/:id", router.adminController.GetUser)
+		admin.POST("", router.adminController.CreateUser)
+		admin.PUT("/:id", router.adminController.UpdateUser)
+		admin.DELETE("/:id", router.adminController.DeleteUser)
 	}
 
 	return router.r
