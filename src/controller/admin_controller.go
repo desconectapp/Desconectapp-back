@@ -20,6 +20,16 @@ func NewAdminUserController(conn *pgx.Conn) *AdminUserController {
 	}
 }
 
+func (c *AdminUserController) GetMe(ctx *gin.Context) {
+	ctx.JSON(http.StatusOK, "")
+}
+
+func (c *AdminUserController) LogOut(ctx *gin.Context) {
+	ctx.SetCookie("session", "", -1, "/", "", false, true)
+	ctx.SetCookie("refresh", "", -1, "/", "", false, true)
+	ctx.JSON(http.StatusOK, "")
+}
+
 func (c *AdminUserController) ListUsers(ctx *gin.Context) {
 	limit, _ := strconv.Atoi(ctx.DefaultQuery("_end", "25"))
 	offset, _ := strconv.Atoi(ctx.DefaultQuery("_start", "0"))
@@ -41,13 +51,13 @@ func (c *AdminUserController) ListUsers(ctx *gin.Context) {
 		return
 	}
 
-    total, err := c.service.CountUsers(&email, &name, nil)
-    if err != nil {
-        ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-        return
-    }
+	total, err := c.service.CountUsers(&email, &name, nil)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
 
-    ctx.Header("X-Total-Count", strconv.Itoa(int(total)))
+	ctx.Header("X-Total-Count", strconv.Itoa(int(total)))
 
 	ctx.JSON(http.StatusOK, users)
 }

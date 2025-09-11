@@ -48,12 +48,13 @@ func NewRouter() *Router {
 
 	r := gin.Default()
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"*"},
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
+		AllowOrigins:     []string{"http://localhost:5173"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length", "X-Total-Count"},
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
+		OptionsResponseStatusCode: 200,
 	}))
 	r.Use(middleware.ErrorHandler())
 	return &Router{
@@ -125,14 +126,16 @@ func (router *Router) SetupRoutes() *gin.Engine {
 		groups.DELETE("/user-from-group/:groupId", router.groupsController.ExitGroup)
 	}
 
-	admin := router.r.Group("/admin/users")
+	admin := router.r.Group("/admin")
 	admin.Use(router.authController.AdminMiddleware())
 	{
-		admin.GET("", router.adminController.ListUsers)
-		admin.GET("/:id", router.adminController.GetUser)
-		admin.POST("", router.adminController.CreateUser)
-		admin.PUT("/:id", router.adminController.UpdateUser)
-		admin.DELETE("/:id", router.adminController.DeleteUser)
+		admin.POST("/logout", router.adminController.LogOut)
+		admin.GET("/me", router.adminController.GetMe)
+		admin.GET("/users", router.adminController.ListUsers)
+		admin.GET("/users/:id", router.adminController.GetUser)
+		admin.POST("/users", router.adminController.CreateUser)
+		admin.PUT("/users/:id", router.adminController.UpdateUser)
+		admin.DELETE("/users/:id", router.adminController.DeleteUser)
 	}
 
 	return router.r

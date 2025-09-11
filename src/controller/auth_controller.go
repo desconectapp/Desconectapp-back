@@ -41,6 +41,9 @@ func (c *AuthController) Login(ctx *gin.Context) {
 		return
 	}
 
+	ctx.SetCookie("session", session.Token, int(session.ExpiresAt.Sub(session.ExpiresAt).Seconds()), "/", "", false, true)
+	ctx.SetCookie("refresh", session.RefreshToken, int(session.RefreshExpiresAt.Sub(session.RefreshExpiresAt).Seconds()), "/", "", false, true)
+
 	ctx.JSON(http.StatusOK, AuthResponse{
 		UserId:           session.UserId,
 		Token:            session.Token,
@@ -65,6 +68,9 @@ func (c *AuthController) Refresh(ctx *gin.Context) {
 		})
 		return
 	}
+
+	ctx.SetCookie("session", session.Token, int(session.ExpiresAt.Sub(session.ExpiresAt).Seconds()), "/", "", false, true)
+	ctx.SetCookie("refresh", session.RefreshToken, int(session.RefreshExpiresAt.Sub(session.RefreshExpiresAt).Seconds()), "/", "", false, true)
 
 	ctx.JSON(http.StatusOK, AuthResponse{
 		UserId:           session.UserId,
@@ -104,13 +110,16 @@ func (c *AuthController) AdminMiddleware() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		token := ctx.GetHeader("Authorization")
 		if token == "" {
-			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "No token provided"})
-			ctx.Abort()
-			return
-		}
-
-		if len(token) > 7 && token[:7] == "Bearer " {
-			token = token[7:]
+			cookie, err := ctx.Cookie("session")
+			if err != nil || cookie == "" {
+				ctx.JSON(http.StatusUnauthorized, gin.H{"error": "No token provided"})
+				ctx.Abort()
+			}
+			token = cookie
+		} else {
+			if len(token) > 7 && token[:7] == "Bearer " {
+				token = token[7:]
+			}
 		}
 
 		userID, isAdmin, err := service.ValidateSession(token)
