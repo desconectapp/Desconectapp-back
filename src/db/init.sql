@@ -4,6 +4,7 @@ CREATE TABLE users (
   id SERIAL PRIMARY KEY,
   email TEXT UNIQUE NOT NULL,
   password TEXT NOT NULL,
+  is_admin BOOLEAN NOT NULL DEFAULT false,
   email_validated BOOLEAN NOT NULL DEFAULT false
 );
 
@@ -117,7 +118,7 @@ COPY activities(name, icon, category)
 FROM '/activities.csv'
 WITH (FORMAT csv, HEADER true);
 
-COPY users(email, password)
+COPY users(email, password, is_admin)
 FROM '/users.csv'
 WITH (FORMAT csv, HEADER true);
 

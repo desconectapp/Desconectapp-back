@@ -135,6 +135,7 @@ type User struct {
 	ID             int32  `json:"id"`
 	Email          string `json:"email"`
 	Password       string `json:"password"`
+	IsAdmin        bool   `json:"is_admin"`
 	EmailValidated bool   `json:"email_validated"`
 }
 

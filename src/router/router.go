@@ -126,7 +126,7 @@ func (router *Router) SetupRoutes() *gin.Engine {
 	}
 
 	admin := router.r.Group("/admin/users")
-	// groups.Use(router.authController.AdminMiddleware())
+	admin.Use(router.authController.AdminMiddleware())
 	{
 		admin.GET("", router.adminController.ListUsers)
 		admin.GET("/:id", router.adminController.GetUser)

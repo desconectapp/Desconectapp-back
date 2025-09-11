@@ -8,18 +8,28 @@ import (
 	"github.com/golang-jwt/jwt"
 )
 
-func CreateAccessAndRefreshTokens(userID int32, accesExpirationTime int64, refreshExpirationTime int64) (string, string, error) {
+func CreateAccessAndRefreshTokens(userID int32, is_admin bool, accesExpirationTime int64, refreshExpirationTime int64) (string, string, error) {
 	jwtKey := []byte(os.Getenv("JWT_SECRET"))
-	
-	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+
+	body := jwt.MapClaims{
 		"sub": userID,
 		"exp": accesExpirationTime,
-	})
+	}
+	if is_admin {
+		body["is_admin"] = true
+	}
 
-	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, body)
+
+	body = jwt.MapClaims{
 		"sub": userID,
 		"exp": refreshExpirationTime,
-	})
+	}
+	if is_admin {
+		body["is_admin"] = true
+	}
+
+	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, body)
 
 	accessTokenString, err := accessToken.SignedString(jwtKey)
 	if err != nil {
@@ -45,7 +55,7 @@ func NewTestToken(userID int32) (string, error) {
 	accesExpirationTime := time.Now().Add(7 * 24 * time.Hour).Unix()
 
 	jwtKey := []byte(os.Getenv("JWT_SECRET"))
-	
+
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sub": userID,
 		"exp": accesExpirationTime,
@@ -59,24 +69,27 @@ func NewTestToken(userID int32) (string, error) {
 	return accessTokenString, nil
 }
 
-func ValidateSession(tokenString string) (int32, error) {
+func ValidateSession(tokenString string) (int32, bool, error) {
 	jwtKey := []byte(os.Getenv("JWT_SECRET"))
 
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		return jwtKey, nil
 	})
 	if err != nil {
-		return -1, err
+		return -1, false, err
 	}
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 		exp := int64(claims["exp"].(float64))
-			if time.Now().Unix() > exp {
-				return -2, errors.New("invalid token")
-			}
+		if time.Now().Unix() > exp {
+			return -2, false, errors.New("invalid token")
+		}
 
-		return int32(claims["sub"].(float64)), nil
+		isAdmin := claims["is_admin"].(bool)
+
+		return int32(claims["sub"].(float64)), isAdmin, nil
 	}
 
-	return -3, errors.New("invalid token")
+	return -3, false, errors.New("invalid token")
 }
+

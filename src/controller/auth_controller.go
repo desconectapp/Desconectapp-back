@@ -88,7 +88,7 @@ func (c *AuthController) AuthMiddleware() gin.HandlerFunc {
 			token = token[7:]
 		}
 
-		userID, err := service.ValidateSession(token)
+		userID, _, err := service.ValidateSession(token)
 		if err != nil {
 			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
 			ctx.Abort()
@@ -97,6 +97,36 @@ func (c *AuthController) AuthMiddleware() gin.HandlerFunc {
 
 		ctx.Set("userID", userID)
 		ctx.Next()
+	}
+}
+
+func (c *AuthController) AdminMiddleware() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		token := ctx.GetHeader("Authorization")
+		if token == "" {
+			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "No token provided"})
+			ctx.Abort()
+			return
+		}
+
+		if len(token) > 7 && token[:7] == "Bearer " {
+			token = token[7:]
+		}
+
+		userID, isAdmin, err := service.ValidateSession(token)
+		if err != nil {
+			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
+			ctx.Abort()
+			return
+		}
+
+		ctx.Set("adminID", userID)
+		ctx.Set("isAdmin", true)
+		if !isAdmin {
+			ctx.JSON(http.StatusForbidden, gin.H{"error": "Admin access required"})
+		} else {
+			ctx.Next()
+		}
 	}
 }
 
