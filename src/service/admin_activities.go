@@ -13,13 +13,16 @@ type AdminActivityService struct {
 }
 
 type AdminActivity struct {
-	ID        int32  `json:"id"`
-	Name      string `json:"name"`
-	Icon      *string `json:"icon"`
-	Category  string `json:"category"`
-	CreatedAt string `json:"created_at"`
+	ID                int32   `json:"id"`
+	Name              string  `json:"name"`
+	Icon              *string `json:"icon"`
+	Category          string  `json:"category"`
+	CreatedAt         string  `json:"created_at"`
+	GroupCount        int64   `json:"group_count"`
+	PartialMatchCount int64   `json:"partial_match_count"`
+	RequestCount      int64   `json:"request_count"`
+	UserCount         int64   `json:"user_count"`
 }
-
 
 func toNullCategory(cat *string) repository.NullCategories {
 	if cat == nil {
@@ -55,11 +58,15 @@ func (s *AdminActivityService) ListActivities(limit, offset int32, name *string,
 	activities := make([]AdminActivity, len(rows))
 	for i, r := range rows {
 		activities[i] = AdminActivity{
-			ID:        r.ID,
-			Name:      r.Name,
-			Icon:      r.Icon,
-			Category:  string(r.Category),
-			CreatedAt: r.CreatedAt.Time.Format("2006-01-02 15:04:05"),
+			ID:                r.ID,
+			Name:              r.Name,
+			Icon:              r.Icon,
+			Category:          string(r.Category),
+			CreatedAt:         r.CreatedAt.Time.Format("2006-01-02 15:04:05"),
+			GroupCount:        r.GroupCount,
+			PartialMatchCount: r.PartialMatchCount,
+			RequestCount:      r.RequestCount,
+			UserCount:         r.UserCount,
 		}
 	}
 	return activities, nil
@@ -72,11 +79,15 @@ func (s *AdminActivityService) GetActivity(id int32) (*AdminActivity, error) {
 	}
 
 	return &AdminActivity{
-		ID:        r.ID,
-		Name:      r.Name,
-		Icon:      r.Icon,
-		Category:  string(r.Category),
-		CreatedAt: r.CreatedAt.Time.Format("2006-01-02 15:04:05"),
+		ID:                r.ID,
+		Name:              r.Name,
+		Icon:              r.Icon,
+		Category:          string(r.Category),
+		CreatedAt:         r.CreatedAt.Time.Format("2006-01-02 15:04:05"),
+		GroupCount:        r.GroupCount,
+		PartialMatchCount: r.PartialMatchCount,
+		RequestCount:      r.RequestCount,
+		UserCount:         r.UserCount,
 	}, nil
 }
 

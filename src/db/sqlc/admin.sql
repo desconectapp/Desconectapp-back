@@ -50,7 +50,16 @@ WHERE
   AND (sqlc.narg('email_validated')::boolean IS NULL OR u.email_validated = sqlc.narg('email_validated')::boolean);
 
 -- name: AdminListActivities :many
-SELECT a.id, a.name, a.icon, a.category, a.created_at
+SELECT 
+  a.id, 
+  a.name, 
+  a.icon, 
+  a.category, 
+  a.created_at,
+  (SELECT COUNT(*) FROM groups g WHERE g.activity_id = a.id) AS group_count,
+  (SELECT COUNT(*) FROM partial_matches pm WHERE pm.activity_id = a.id) AS partial_match_count,
+  (SELECT COUNT(*) FROM activity_requests ar WHERE ar.activity_id = a.id) AS request_count,
+  (SELECT COUNT(*) FROM users_preference up WHERE up.activity_id = a.id) AS user_count
 FROM activities a
 WHERE
   (sqlc.narg('name')::text IS NULL OR a.name ILIKE '%' || sqlc.narg('name')::text || '%')
@@ -59,7 +68,16 @@ ORDER BY a.id
 LIMIT $1 OFFSET $2;
 
 -- name: AdminGetActivity :one
-SELECT a.id, a.name, a.icon, a.category, a.created_at
+SELECT 
+  a.id, 
+  a.name, 
+  a.icon, 
+  a.category, 
+  a.created_at,
+  (SELECT COUNT(*) FROM groups g WHERE g.activity_id = a.id) AS group_count,
+  (SELECT COUNT(*) FROM partial_matches pm WHERE pm.activity_id = a.id) AS partial_match_count,
+  (SELECT COUNT(*) FROM activity_requests ar WHERE ar.activity_id = a.id) AS request_count,
+  (SELECT COUNT(*) FROM users_preference up WHERE up.activity_id = a.id) AS user_count
 FROM activities a
 WHERE a.id = $1;
 
