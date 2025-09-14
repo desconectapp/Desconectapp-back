@@ -49,7 +49,7 @@ WHERE
   AND (sqlc.narg('name')::text IS NULL OR p.name ILIKE '%' || sqlc.narg('name')::text || '%')
   AND (sqlc.narg('email_validated')::boolean IS NULL OR u.email_validated = sqlc.narg('email_validated')::boolean);
 
--- name: AdminListActivities :many
+-- name: AdminListActivitiesAsc :many
 SELECT 
   a.id, 
   a.name, 
@@ -64,7 +64,46 @@ FROM activities a
 WHERE
   (sqlc.narg('name')::text IS NULL OR a.name ILIKE '%' || sqlc.narg('name')::text || '%')
   AND (sqlc.narg('category')::categories IS NULL OR a.category = sqlc.narg('category')::categories)
-ORDER BY a.id
+ORDER BY
+  CASE sqlc.narg('sort_field')
+    WHEN 'name' THEN a.name
+    WHEN 'category' THEN a.category::text
+    WHEN 'created_at' THEN a.created_at::text
+    WHEN 'group_count' THEN (SELECT COUNT(*) FROM groups g WHERE g.activity_id = a.id)::text
+    WHEN 'partial_match_count' THEN (SELECT COUNT(*) FROM partial_matches pm WHERE pm.activity_id = a.id)::text
+    WHEN 'request_count' THEN (SELECT COUNT(*) FROM activity_requests ar WHERE ar.activity_id = a.id)::text
+    WHEN 'user_count' THEN (SELECT COUNT(*) FROM users_preference up WHERE up.activity_id = a.id)::text
+  END
+  , a.id
+  ASC
+LIMIT $1 OFFSET $2;
+
+-- name: AdminListActivitiesDesc :many
+SELECT 
+  a.id, 
+  a.name, 
+  a.icon, 
+  a.category, 
+  a.created_at,
+  (SELECT COUNT(*) FROM groups g WHERE g.activity_id = a.id) AS group_count,
+  (SELECT COUNT(*) FROM partial_matches pm WHERE pm.activity_id = a.id) AS partial_match_count,
+  (SELECT COUNT(*) FROM activity_requests ar WHERE ar.activity_id = a.id) AS request_count,
+  (SELECT COUNT(*) FROM users_preference up WHERE up.activity_id = a.id) AS user_count
+FROM activities a
+WHERE
+  (sqlc.narg('name')::text IS NULL OR a.name ILIKE '%' || sqlc.narg('name')::text || '%')
+  AND (sqlc.narg('category')::categories IS NULL OR a.category = sqlc.narg('category')::categories)
+ORDER BY
+  CASE sqlc.narg('sort_field')
+    WHEN 'name' THEN a.name
+    WHEN 'category' THEN a.category::text
+    WHEN 'created_at' THEN a.created_at::text
+    WHEN 'group_count' THEN (SELECT COUNT(*) FROM groups g WHERE g.activity_id = a.id)::text
+    WHEN 'partial_match_count' THEN (SELECT COUNT(*) FROM partial_matches pm WHERE pm.activity_id = a.id)::text
+    WHEN 'request_count' THEN (SELECT COUNT(*) FROM activity_requests ar WHERE ar.activity_id = a.id)::text
+    WHEN 'user_count' THEN (SELECT COUNT(*) FROM users_preference up WHERE up.activity_id = a.id)::text
+  END
+  DESC
 LIMIT $1 OFFSET $2;
 
 -- name: AdminGetActivity :one

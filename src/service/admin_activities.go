@@ -2,8 +2,10 @@ package service
 
 import (
 	"context"
+	"log"
 
 	repository "gin/db/generated"
+
 	"github.com/jackc/pgx/v5"
 )
 
@@ -44,32 +46,79 @@ func NewAdminActivityService(conn *pgx.Conn) *AdminActivityService {
 	}
 }
 
-func (s *AdminActivityService) ListActivities(limit, offset int32, name *string, category *string) ([]AdminActivity, error) {
-	rows, err := s.queries.AdminListActivities(s.ctx, repository.AdminListActivitiesParams{
-		Limit:    limit,
-		Offset:   offset,
-		Name:     name,
-		Category: toNullCategory(category),
-	})
-	if err != nil {
-		return nil, err
-	}
+func (s *AdminActivityService) ListActivities(
+	limit, offset int32,
+	name, category *string,
+	sortField, sortOrder string,
+) ([]AdminActivity, error) {
 
-	activities := make([]AdminActivity, len(rows))
-	for i, r := range rows {
-		activities[i] = AdminActivity{
-			ID:                r.ID,
-			Name:              r.Name,
-			Icon:              r.Icon,
-			Category:          string(r.Category),
-			CreatedAt:         r.CreatedAt.Time.Format("2006-01-02 15:04:05"),
-			GroupCount:        r.GroupCount,
-			PartialMatchCount: r.PartialMatchCount,
-			RequestCount:      r.RequestCount,
-			UserCount:         r.UserCount,
+	log.Println("ListActivities called with:", limit, offset, name, category, sortField, sortOrder)
+
+	if sortOrder == "DESC" {
+		var rows []repository.AdminListActivitiesDescRow
+		var err error
+
+		rows, err = s.queries.AdminListActivitiesDesc(s.ctx, repository.AdminListActivitiesDescParams{
+			Limit:     limit,
+			Offset:    offset,
+			Name:      name,
+			Category:  toNullCategory(category),
+			SortField: sortField,
+		})
+		if err != nil {
+			return nil, err
 		}
+
+		activities := make([]AdminActivity, len(rows))
+
+		for i, r := range rows {
+			activities[i] = AdminActivity{
+				ID:                r.ID,
+				Name:              r.Name,
+				Icon:              r.Icon,
+				Category:          string(r.Category),
+				CreatedAt:         r.CreatedAt.Time.Format("2006-01-02 15:04:05"),
+				GroupCount:        r.GroupCount,
+				PartialMatchCount: r.PartialMatchCount,
+				RequestCount:      r.RequestCount,
+				UserCount:         r.UserCount,
+			}
+		}
+
+		return activities, nil
+	} else {
+		var rows []repository.AdminListActivitiesAscRow
+		var err error
+
+		rows, err = s.queries.AdminListActivitiesAsc(s.ctx, repository.AdminListActivitiesAscParams{
+			Limit:     limit,
+			Offset:    offset,
+			Name:      name,
+			Category:  toNullCategory(category),
+			SortField: sortField,
+		})
+
+		if err != nil {
+			return nil, err
+		}
+
+		activities := make([]AdminActivity, len(rows))
+		for i, r := range rows {
+			activities[i] = AdminActivity{
+				ID:                r.ID,
+				Name:              r.Name,
+				Icon:              r.Icon,
+				Category:          string(r.Category),
+				CreatedAt:         r.CreatedAt.Time.Format("2006-01-02 15:04:05"),
+				GroupCount:        r.GroupCount,
+				PartialMatchCount: r.PartialMatchCount,
+				RequestCount:      r.RequestCount,
+				UserCount:         r.UserCount,
+			}
+		}
+
+		return activities, nil
 	}
-	return activities, nil
 }
 
 func (s *AdminActivityService) GetActivity(id int32) (*AdminActivity, error) {

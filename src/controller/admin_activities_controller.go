@@ -24,6 +24,9 @@ func (c *AdminActivityController) ListActivities(ctx *gin.Context) {
 	limit, _ := strconv.Atoi(ctx.DefaultQuery("_end", "25"))
 	offset, _ := strconv.Atoi(ctx.DefaultQuery("_start", "0"))
 
+	sortField := ctx.DefaultQuery("_sort", "id")
+	sortOrder := ctx.DefaultQuery("_order", "ASC")
+
 	var namePtr, categoryPtr *string
 	if name := ctx.Query("name"); name != "" {
 		namePtr = &name
@@ -31,9 +34,8 @@ func (c *AdminActivityController) ListActivities(ctx *gin.Context) {
 	if category := ctx.Query("category"); category != "" {
 		categoryPtr = &category
 	}
-	
 
-	activities, err := c.service.ListActivities(int32(limit-offset), int32(offset), namePtr, categoryPtr)
+	activities, err := c.service.ListActivities(int32(limit-offset), int32(offset), namePtr, categoryPtr, sortField, sortOrder)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

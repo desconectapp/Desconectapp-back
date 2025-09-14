@@ -262,14 +262,13 @@ func (q *Queries) AdminGetUser(ctx context.Context, id int32) (AdminGetUserRow, 
 	return i, err
 }
 
-const adminListActivities = `-- name: AdminListActivities :many
+const adminListActivitiesAsc = `-- name: AdminListActivitiesAsc :many
 SELECT 
   a.id, 
   a.name, 
   a.icon, 
   a.category, 
   a.created_at,
-  -- counts
   (SELECT COUNT(*) FROM groups g WHERE g.activity_id = a.id) AS group_count,
   (SELECT COUNT(*) FROM partial_matches pm WHERE pm.activity_id = a.id) AS partial_match_count,
   (SELECT COUNT(*) FROM activity_requests ar WHERE ar.activity_id = a.id) AS request_count,
@@ -278,18 +277,30 @@ FROM activities a
 WHERE
   ($3::text IS NULL OR a.name ILIKE '%' || $3::text || '%')
   AND ($4::categories IS NULL OR a.category = $4::categories)
-ORDER BY a.id
+ORDER BY
+  CASE $5
+    WHEN 'name' THEN a.name
+    WHEN 'category' THEN a.category::text
+    WHEN 'created_at' THEN a.created_at::text
+    WHEN 'group_count' THEN (SELECT COUNT(*) FROM groups g WHERE g.activity_id = a.id)::text
+    WHEN 'partial_match_count' THEN (SELECT COUNT(*) FROM partial_matches pm WHERE pm.activity_id = a.id)::text
+    WHEN 'request_count' THEN (SELECT COUNT(*) FROM activity_requests ar WHERE ar.activity_id = a.id)::text
+    WHEN 'user_count' THEN (SELECT COUNT(*) FROM users_preference up WHERE up.activity_id = a.id)::text
+  END
+  , a.id
+  ASC
 LIMIT $1 OFFSET $2
 `
 
-type AdminListActivitiesParams struct {
-	Limit    int32          `json:"limit"`
-	Offset   int32          `json:"offset"`
-	Name     *string        `json:"name"`
-	Category NullCategories `json:"category"`
+type AdminListActivitiesAscParams struct {
+	Limit     int32          `json:"limit"`
+	Offset    int32          `json:"offset"`
+	Name      *string        `json:"name"`
+	Category  NullCategories `json:"category"`
+	SortField interface{}    `json:"sort_field"`
 }
 
-type AdminListActivitiesRow struct {
+type AdminListActivitiesAscRow struct {
 	ID                int32              `json:"id"`
 	Name              string             `json:"name"`
 	Icon              *string            `json:"icon"`
@@ -301,20 +312,106 @@ type AdminListActivitiesRow struct {
 	UserCount         int64              `json:"user_count"`
 }
 
-func (q *Queries) AdminListActivities(ctx context.Context, arg AdminListActivitiesParams) ([]AdminListActivitiesRow, error) {
-	rows, err := q.db.Query(ctx, adminListActivities,
+func (q *Queries) AdminListActivitiesAsc(ctx context.Context, arg AdminListActivitiesAscParams) ([]AdminListActivitiesAscRow, error) {
+	rows, err := q.db.Query(ctx, adminListActivitiesAsc,
 		arg.Limit,
 		arg.Offset,
 		arg.Name,
 		arg.Category,
+		arg.SortField,
 	)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []AdminListActivitiesRow{}
+	items := []AdminListActivitiesAscRow{}
 	for rows.Next() {
-		var i AdminListActivitiesRow
+		var i AdminListActivitiesAscRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Icon,
+			&i.Category,
+			&i.CreatedAt,
+			&i.GroupCount,
+			&i.PartialMatchCount,
+			&i.RequestCount,
+			&i.UserCount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const adminListActivitiesDesc = `-- name: AdminListActivitiesDesc :many
+SELECT 
+  a.id, 
+  a.name, 
+  a.icon, 
+  a.category, 
+  a.created_at,
+  (SELECT COUNT(*) FROM groups g WHERE g.activity_id = a.id) AS group_count,
+  (SELECT COUNT(*) FROM partial_matches pm WHERE pm.activity_id = a.id) AS partial_match_count,
+  (SELECT COUNT(*) FROM activity_requests ar WHERE ar.activity_id = a.id) AS request_count,
+  (SELECT COUNT(*) FROM users_preference up WHERE up.activity_id = a.id) AS user_count
+FROM activities a
+WHERE
+  ($3::text IS NULL OR a.name ILIKE '%' || $3::text || '%')
+  AND ($4::categories IS NULL OR a.category = $4::categories)
+ORDER BY
+  CASE $5
+    WHEN 'name' THEN a.name
+    WHEN 'category' THEN a.category::text
+    WHEN 'created_at' THEN a.created_at::text
+    WHEN 'group_count' THEN (SELECT COUNT(*) FROM groups g WHERE g.activity_id = a.id)::text
+    WHEN 'partial_match_count' THEN (SELECT COUNT(*) FROM partial_matches pm WHERE pm.activity_id = a.id)::text
+    WHEN 'request_count' THEN (SELECT COUNT(*) FROM activity_requests ar WHERE ar.activity_id = a.id)::text
+    WHEN 'user_count' THEN (SELECT COUNT(*) FROM users_preference up WHERE up.activity_id = a.id)::text
+  END
+  DESC
+LIMIT $1 OFFSET $2
+`
+
+type AdminListActivitiesDescParams struct {
+	Limit     int32          `json:"limit"`
+	Offset    int32          `json:"offset"`
+	Name      *string        `json:"name"`
+	Category  NullCategories `json:"category"`
+	SortField interface{}    `json:"sort_field"`
+}
+
+type AdminListActivitiesDescRow struct {
+	ID                int32              `json:"id"`
+	Name              string             `json:"name"`
+	Icon              *string            `json:"icon"`
+	Category          Categories         `json:"category"`
+	CreatedAt         pgtype.Timestamptz `json:"created_at"`
+	GroupCount        int64              `json:"group_count"`
+	PartialMatchCount int64              `json:"partial_match_count"`
+	RequestCount      int64              `json:"request_count"`
+	UserCount         int64              `json:"user_count"`
+}
+
+func (q *Queries) AdminListActivitiesDesc(ctx context.Context, arg AdminListActivitiesDescParams) ([]AdminListActivitiesDescRow, error) {
+	rows, err := q.db.Query(ctx, adminListActivitiesDesc,
+		arg.Limit,
+		arg.Offset,
+		arg.Name,
+		arg.Category,
+		arg.SortField,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminListActivitiesDescRow{}
+	for rows.Next() {
+		var i AdminListActivitiesDescRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
