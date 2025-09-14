@@ -48,3 +48,37 @@ WHERE
   (sqlc.narg('email')::text IS NULL OR u.email ILIKE '%' || sqlc.narg('email')::text || '%')
   AND (sqlc.narg('name')::text IS NULL OR p.name ILIKE '%' || sqlc.narg('name')::text || '%')
   AND (sqlc.narg('email_validated')::boolean IS NULL OR u.email_validated = sqlc.narg('email_validated')::boolean);
+
+-- name: AdminListActivities :many
+SELECT a.id, a.name, a.icon, a.category, a.created_at
+FROM activities a
+WHERE
+  (sqlc.narg('name')::text IS NULL OR a.name ILIKE '%' || sqlc.narg('name')::text || '%')
+  AND (sqlc.narg('category')::categories IS NULL OR a.category = sqlc.narg('category')::categories)
+ORDER BY a.id
+LIMIT $1 OFFSET $2;
+
+-- name: AdminGetActivity :one
+SELECT a.id, a.name, a.icon, a.category, a.created_at
+FROM activities a
+WHERE a.id = $1;
+
+-- name: AdminCreateActivity :one
+INSERT INTO activities (name, icon, category)
+VALUES ($1, $2, $3)
+RETURNING id, name, icon, category, created_at;
+
+-- name: AdminUpdateActivity :exec
+UPDATE activities
+SET name = $2, icon = $3, category = $4
+WHERE id = $1;
+
+-- name: AdminDeleteActivity :exec
+DELETE FROM activities WHERE id = $1;
+
+-- name: AdminCountActivities :one
+SELECT COUNT(*)
+FROM activities a
+WHERE
+  (sqlc.narg('name')::text IS NULL OR a.name ILIKE '%' || sqlc.narg('name')::text || '%')
+  AND (sqlc.narg('category')::categories IS NULL OR a.category = sqlc.narg('category')::categories);

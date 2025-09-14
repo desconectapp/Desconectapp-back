@@ -11,6 +11,26 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const adminCountActivities = `-- name: AdminCountActivities :one
+SELECT COUNT(*)
+FROM activities a
+WHERE
+  ($1::text IS NULL OR a.name ILIKE '%' || $1::text || '%')
+  AND ($2::categories IS NULL OR a.category = $2::categories)
+`
+
+type AdminCountActivitiesParams struct {
+	Name     *string        `json:"name"`
+	Category NullCategories `json:"category"`
+}
+
+func (q *Queries) AdminCountActivities(ctx context.Context, arg AdminCountActivitiesParams) (int64, error) {
+	row := q.db.QueryRow(ctx, adminCountActivities, arg.Name, arg.Category)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const adminCountUsers = `-- name: AdminCountUsers :one
 SELECT COUNT(*)
 FROM users u
@@ -32,6 +52,39 @@ func (q *Queries) AdminCountUsers(ctx context.Context, arg AdminCountUsersParams
 	var count int64
 	err := row.Scan(&count)
 	return count, err
+}
+
+const adminCreateActivity = `-- name: AdminCreateActivity :one
+INSERT INTO activities (name, icon, category)
+VALUES ($1, $2, $3)
+RETURNING id, name, icon, category, created_at
+`
+
+type AdminCreateActivityParams struct {
+	Name     string     `json:"name"`
+	Icon     *string    `json:"icon"`
+	Category Categories `json:"category"`
+}
+
+type AdminCreateActivityRow struct {
+	ID        int32              `json:"id"`
+	Name      string             `json:"name"`
+	Icon      *string            `json:"icon"`
+	Category  Categories         `json:"category"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+}
+
+func (q *Queries) AdminCreateActivity(ctx context.Context, arg AdminCreateActivityParams) (AdminCreateActivityRow, error) {
+	row := q.db.QueryRow(ctx, adminCreateActivity, arg.Name, arg.Icon, arg.Category)
+	var i AdminCreateActivityRow
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Icon,
+		&i.Category,
+		&i.CreatedAt,
+	)
+	return i, err
 }
 
 const adminCreateProfile = `-- name: AdminCreateProfile :one
@@ -108,6 +161,15 @@ func (q *Queries) AdminCreateUser(ctx context.Context, arg AdminCreateUserParams
 	return i, err
 }
 
+const adminDeleteActivity = `-- name: AdminDeleteActivity :exec
+DELETE FROM activities WHERE id = $1
+`
+
+func (q *Queries) AdminDeleteActivity(ctx context.Context, id int32) error {
+	_, err := q.db.Exec(ctx, adminDeleteActivity, id)
+	return err
+}
+
 const adminDeleteUser = `-- name: AdminDeleteUser :exec
 DELETE FROM users WHERE id = $1
 `
@@ -115,6 +177,33 @@ DELETE FROM users WHERE id = $1
 func (q *Queries) AdminDeleteUser(ctx context.Context, id int32) error {
 	_, err := q.db.Exec(ctx, adminDeleteUser, id)
 	return err
+}
+
+const adminGetActivity = `-- name: AdminGetActivity :one
+SELECT a.id, a.name, a.icon, a.category, a.created_at
+FROM activities a
+WHERE a.id = $1
+`
+
+type AdminGetActivityRow struct {
+	ID        int32              `json:"id"`
+	Name      string             `json:"name"`
+	Icon      *string            `json:"icon"`
+	Category  Categories         `json:"category"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+}
+
+func (q *Queries) AdminGetActivity(ctx context.Context, id int32) (AdminGetActivityRow, error) {
+	row := q.db.QueryRow(ctx, adminGetActivity, id)
+	var i AdminGetActivityRow
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Icon,
+		&i.Category,
+		&i.CreatedAt,
+	)
+	return i, err
 }
 
 const adminGetUser = `-- name: AdminGetUser :one
@@ -154,6 +243,62 @@ func (q *Queries) AdminGetUser(ctx context.Context, id int32) (AdminGetUserRow, 
 		&i.CreatedAt,
 	)
 	return i, err
+}
+
+const adminListActivities = `-- name: AdminListActivities :many
+SELECT a.id, a.name, a.icon, a.category, a.created_at
+FROM activities a
+WHERE
+  ($3::text IS NULL OR a.name ILIKE '%' || $3::text || '%')
+  AND ($4::categories IS NULL OR a.category = $4::categories)
+ORDER BY a.id
+LIMIT $1 OFFSET $2
+`
+
+type AdminListActivitiesParams struct {
+	Limit    int32          `json:"limit"`
+	Offset   int32          `json:"offset"`
+	Name     *string        `json:"name"`
+	Category NullCategories `json:"category"`
+}
+
+type AdminListActivitiesRow struct {
+	ID        int32              `json:"id"`
+	Name      string             `json:"name"`
+	Icon      *string            `json:"icon"`
+	Category  Categories         `json:"category"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+}
+
+func (q *Queries) AdminListActivities(ctx context.Context, arg AdminListActivitiesParams) ([]AdminListActivitiesRow, error) {
+	rows, err := q.db.Query(ctx, adminListActivities,
+		arg.Limit,
+		arg.Offset,
+		arg.Name,
+		arg.Category,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminListActivitiesRow{}
+	for rows.Next() {
+		var i AdminListActivitiesRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Icon,
+			&i.Category,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const adminListUsers = `-- name: AdminListUsers :many
@@ -225,6 +370,29 @@ func (q *Queries) AdminListUsers(ctx context.Context, arg AdminListUsersParams) 
 		return nil, err
 	}
 	return items, nil
+}
+
+const adminUpdateActivity = `-- name: AdminUpdateActivity :exec
+UPDATE activities
+SET name = $2, icon = $3, category = $4
+WHERE id = $1
+`
+
+type AdminUpdateActivityParams struct {
+	ID       int32      `json:"id"`
+	Name     string     `json:"name"`
+	Icon     *string    `json:"icon"`
+	Category Categories `json:"category"`
+}
+
+func (q *Queries) AdminUpdateActivity(ctx context.Context, arg AdminUpdateActivityParams) error {
+	_, err := q.db.Exec(ctx, adminUpdateActivity,
+		arg.ID,
+		arg.Name,
+		arg.Icon,
+		arg.Category,
+	)
+	return err
 }
 
 const adminUpdateProfile = `-- name: AdminUpdateProfile :exec
