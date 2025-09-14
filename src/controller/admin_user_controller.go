@@ -129,3 +129,5 @@ func (c *AdminUserController) DeleteUser(ctx *gin.Context) {
 	}
 	ctx.Status(http.StatusNoContent)
 }
+
+
