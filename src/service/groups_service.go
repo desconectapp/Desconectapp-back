@@ -37,12 +37,6 @@ func (s *GroupsService) CreateGroup(groupParams repository.CreateGroupParams) (r
 	if err != nil {
 		return repository.CreateGroupRow{}, err
 	}
-	// groupMembersInfo.GroupID = id
-	// err = s.queries.BatchAddUserToGroup(s.ctx, groupMembersInfo)
-	// if err != nil {
-	// 	s.queries.DeleteGroup(s.ctx, id)
-	// 	return -1, err
-	// }
 	return group, nil
 }
 
@@ -108,4 +102,11 @@ func (s *GroupsService) DeleteGroup(id int32) (int32, error) {
 	}
 
 	return groupId, nil
+}
+
+func (s *GroupsService) UpdateGroupDescription(params repository.UpdateGroupDescriptiomParams) error {
+
+	err := s.queries.UpdateGroupDescriptiom(s.ctx, params)
+
+	return err
 }

@@ -181,3 +181,29 @@ func (c *GroupsController) DeleteGroup(ctx *gin.Context) {
 	res := GroupIdResponse{GroupId: id}
 	ctx.JSON(http.StatusOK, res)
 }
+
+func (c *GroupsController) UpdateGroupDescription(ctx *gin.Context) {
+	var descriptionParams repository.UpdateGroupDescriptiomParams
+
+	if err := ctx.ShouldBind(&descriptionParams); err != nil {
+		ErrorWithStatus(ctx, "Could not bind", http.StatusBadRequest)
+		return
+	}
+
+	groupIdStr := ctx.Param("groupId")
+	groupId, err := strconv.Atoi(groupIdStr)
+	if err != nil {
+		ErrorNoStatus(ctx, err)
+		return
+	}
+	descriptionParams.ID = int32(groupId)
+
+	err = c.service.UpdateGroupDescription(descriptionParams)
+
+	if err != nil {
+		ErrorNoStatus(ctx, err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{})
+}

@@ -68,6 +68,10 @@ type ActivityBatchStruct struct {
 	ActivityIDBatch []int32 `json:"activity_ids"`
 }
 
+type NewDescription struct {
+	NewDesc    string `json:"description"`
+}
+
 func SendActivityRequest(t *testing.T, r *gin.Engine, userId int32, activityId int32, participantsNeeded int32) ActivityRequest {
 	int32Ptr := func(i int32) *int32 { return &i }
 	float64Ptr := func(f float64) *float64 { return &f }

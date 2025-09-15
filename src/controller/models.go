@@ -17,7 +17,7 @@ type PaginatedGroups struct {
 }
 
 type PaginatedUserGroup struct {
-	Groups []gen.ListUserGroupsRow `json:"members"`
+	Groups []gen.ListUserGroupsRow `json:"groups"`
 	HasMore bool	`json:"has_more"`
 }
 

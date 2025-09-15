@@ -1,6 +1,7 @@
 package test
 
 import (
+	"bytes"
 	"encoding/json"
 	"gin/controller"
 	"gin/router"
@@ -11,7 +12,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 )
-
 
 // groups.GET("", router.groupsController.ListGroups)
 func TestListGroups(t *testing.T){
@@ -207,4 +207,52 @@ func TestDeleteUserFromGroup(t *testing.T) {
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	assert.Equal(t, err, nil, "Error should be nil")
 	assert.Equal(t, group, response.GroupId)
+}
+
+
+func TestUpdateGroupDescription(t *testing.T) {
+	router := router.NewRouter()
+	r :=  router.SetupRoutes()
+	
+	user1, token := NewUserWithProfile(t, r, "zoey", CreateProfile{Name: "zoey", Age: 22, City: "Seoul", CurrentSituation: "WORKING", Gender: "Male"})
+	user2, _ := NewUserWithProfile(t, r, "rumi", CreateProfile{Name: "rumi", Age: 19, City: "Seoul", CurrentSituation: "WORKING", Gender: "Male"})
+	user3, _ := NewUserWithProfile(t, r, "mira", CreateProfile{Name: "mira", Age: 21, City: "Seoul", CurrentSituation: "WORKING", Gender: "Male"})
+		
+	activityId := int32(28)
+
+	members := []int32{user1, user2, user3}
+
+	name := "Huntrix"
+	location := "Seoul"
+	
+	group := NewGroup(t, r, name, location, activityId, members, token)
+
+	desc := "New Description"
+
+	body := NewDescription{
+		NewDesc: desc,
+	}
+	jsonBody, err := json.Marshal(body)
+	assert.Equal(t, err, nil, "Error should be nil")
+
+	req := httptest.NewRequest("PUT", "/groups/"+strconv.Itoa(int(group)), bytes.NewReader(jsonBody))
+	req.Header.Add("content-type", "application/json")
+	req.Header.Add("Authorization", "Bearer "+token)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+
+	req_2 := httptest.NewRequest("GET", "/groups/"+strconv.Itoa(int(group)), nil)
+	req_2.Header.Add("Authorization", "Bearer "+token)
+	w_2 := httptest.NewRecorder()
+	r.ServeHTTP(w_2, req_2)
+
+	var response service.GroupWithMembers
+	err = json.Unmarshal(w_2.Body.Bytes(), &response)
+	
+	assert.Equal(t, err, nil, "Error should be nil")
+	assert.Equal(t, name, *response.Name)
+	assert.Equal(t, location, *response.Location)
+	assert.Equal(t, desc, *response.Description)
+	assert.NotEqual(t, 0, len(response.Members))
 }

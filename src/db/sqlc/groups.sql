@@ -123,3 +123,7 @@ ORDER BY g.created_at DESC;
 DELETE FROM group_members
 WHERE group_id = $1 AND user_id = $2;
 
+-- name: UpdateGroupDescriptiom :exec
+UPDATE groups
+SET description = $2
+WHERE id = $1;
