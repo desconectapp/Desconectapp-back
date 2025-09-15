@@ -11,6 +11,22 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const adminAddGroupMember = `-- name: AdminAddGroupMember :exec
+INSERT INTO group_members (group_id, user_id)
+VALUES ($1, $2)
+ON CONFLICT DO NOTHING
+`
+
+type AdminAddGroupMemberParams struct {
+	GroupID int32 `json:"group_id"`
+	UserID  int32 `json:"user_id"`
+}
+
+func (q *Queries) AdminAddGroupMember(ctx context.Context, arg AdminAddGroupMemberParams) error {
+	_, err := q.db.Exec(ctx, adminAddGroupMember, arg.GroupID, arg.UserID)
+	return err
+}
+
 const adminCountActivities = `-- name: AdminCountActivities :one
 SELECT COUNT(*)
 FROM activities a
@@ -26,6 +42,17 @@ type AdminCountActivitiesParams struct {
 
 func (q *Queries) AdminCountActivities(ctx context.Context, arg AdminCountActivitiesParams) (int64, error) {
 	row := q.db.QueryRow(ctx, adminCountActivities, arg.Name, arg.Category)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const adminCountGroups = `-- name: AdminCountGroups :one
+SELECT COUNT(*) FROM groups
+`
+
+func (q *Queries) AdminCountGroups(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, adminCountGroups)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -82,6 +109,38 @@ func (q *Queries) AdminCreateActivity(ctx context.Context, arg AdminCreateActivi
 		&i.Name,
 		&i.Icon,
 		&i.Category,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const adminCreateGroup = `-- name: AdminCreateGroup :one
+INSERT INTO groups (name, description, location, activity_id)
+VALUES ($1, $2, $3, $4)
+RETURNING id, name, description, location, activity_id, created_at
+`
+
+type AdminCreateGroupParams struct {
+	Name        *string `json:"name"`
+	Description *string `json:"description"`
+	Location    *string `json:"location"`
+	ActivityID  int32   `json:"activity_id"`
+}
+
+func (q *Queries) AdminCreateGroup(ctx context.Context, arg AdminCreateGroupParams) (Group, error) {
+	row := q.db.QueryRow(ctx, adminCreateGroup,
+		arg.Name,
+		arg.Description,
+		arg.Location,
+		arg.ActivityID,
+	)
+	var i Group
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Description,
+		&i.Location,
+		&i.ActivityID,
 		&i.CreatedAt,
 	)
 	return i, err
@@ -170,6 +229,16 @@ func (q *Queries) AdminDeleteActivity(ctx context.Context, id int32) error {
 	return err
 }
 
+const adminDeleteGroup = `-- name: AdminDeleteGroup :exec
+DELETE FROM groups
+WHERE id = $1
+`
+
+func (q *Queries) AdminDeleteGroup(ctx context.Context, id int32) error {
+	_, err := q.db.Exec(ctx, adminDeleteGroup, id)
+	return err
+}
+
 const adminDeleteUser = `-- name: AdminDeleteUser :exec
 DELETE FROM users WHERE id = $1
 `
@@ -219,6 +288,44 @@ func (q *Queries) AdminGetActivity(ctx context.Context, id int32) (AdminGetActiv
 		&i.PartialMatchCount,
 		&i.RequestCount,
 		&i.UserCount,
+	)
+	return i, err
+}
+
+const adminGetGroup = `-- name: AdminGetGroup :one
+SELECT g.id,
+       g.name,
+       g.description,
+       g.location,
+       g.activity_id,
+       g.created_at,
+       COUNT(m.user_id) AS member_count
+FROM groups g
+LEFT JOIN group_members m ON g.id = m.group_id
+WHERE id = $1
+`
+
+type AdminGetGroupRow struct {
+	ID          int32              `json:"id"`
+	Name        *string            `json:"name"`
+	Description *string            `json:"description"`
+	Location    *string            `json:"location"`
+	ActivityID  int32              `json:"activity_id"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	MemberCount int64              `json:"member_count"`
+}
+
+func (q *Queries) AdminGetGroup(ctx context.Context, id int32) (AdminGetGroupRow, error) {
+	row := q.db.QueryRow(ctx, adminGetGroup, id)
+	var i AdminGetGroupRow
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Description,
+		&i.Location,
+		&i.ActivityID,
+		&i.CreatedAt,
+		&i.MemberCount,
 	)
 	return i, err
 }
@@ -433,6 +540,156 @@ func (q *Queries) AdminListActivitiesDesc(ctx context.Context, arg AdminListActi
 	return items, nil
 }
 
+const adminListGroupMembers = `-- name: AdminListGroupMembers :many
+SELECT u.id, p.name, u.email
+FROM group_members gm
+JOIN users u ON gm.user_id = u.id
+JOIN profiles p ON gm.user_id = p.user_id
+WHERE gm.group_id = $1
+`
+
+type AdminListGroupMembersRow struct {
+	ID    int32  `json:"id"`
+	Name  string `json:"name"`
+	Email string `json:"email"`
+}
+
+func (q *Queries) AdminListGroupMembers(ctx context.Context, groupID int32) ([]AdminListGroupMembersRow, error) {
+	rows, err := q.db.Query(ctx, adminListGroupMembers, groupID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminListGroupMembersRow{}
+	for rows.Next() {
+		var i AdminListGroupMembersRow
+		if err := rows.Scan(&i.ID, &i.Name, &i.Email); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const adminListGroupsAsc = `-- name: AdminListGroupsAsc :many
+SELECT g.id,
+       g.name,
+       g.description,
+       g.location,
+       g.activity_id,
+       g.created_at,
+       COUNT(m.user_id) AS member_count
+FROM groups g
+LEFT JOIN group_members m ON g.id = m.group_id
+GROUP BY g.id
+ORDER BY g.name ASC
+LIMIT $1 OFFSET $2
+`
+
+type AdminListGroupsAscParams struct {
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+}
+
+type AdminListGroupsAscRow struct {
+	ID          int32              `json:"id"`
+	Name        *string            `json:"name"`
+	Description *string            `json:"description"`
+	Location    *string            `json:"location"`
+	ActivityID  int32              `json:"activity_id"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	MemberCount int64              `json:"member_count"`
+}
+
+func (q *Queries) AdminListGroupsAsc(ctx context.Context, arg AdminListGroupsAscParams) ([]AdminListGroupsAscRow, error) {
+	rows, err := q.db.Query(ctx, adminListGroupsAsc, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminListGroupsAscRow{}
+	for rows.Next() {
+		var i AdminListGroupsAscRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Description,
+			&i.Location,
+			&i.ActivityID,
+			&i.CreatedAt,
+			&i.MemberCount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const adminListGroupsDesc = `-- name: AdminListGroupsDesc :many
+SELECT g.id,
+       g.name,
+       g.description,
+       g.location,
+       g.activity_id,
+       g.created_at,
+       COUNT(m.user_id) AS member_count
+FROM groups g
+LEFT JOIN group_members m ON g.id = m.group_id
+GROUP BY g.id
+ORDER BY g.name DESC
+LIMIT $1 OFFSET $2
+`
+
+type AdminListGroupsDescParams struct {
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+}
+
+type AdminListGroupsDescRow struct {
+	ID          int32              `json:"id"`
+	Name        *string            `json:"name"`
+	Description *string            `json:"description"`
+	Location    *string            `json:"location"`
+	ActivityID  int32              `json:"activity_id"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	MemberCount int64              `json:"member_count"`
+}
+
+func (q *Queries) AdminListGroupsDesc(ctx context.Context, arg AdminListGroupsDescParams) ([]AdminListGroupsDescRow, error) {
+	rows, err := q.db.Query(ctx, adminListGroupsDesc, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminListGroupsDescRow{}
+	for rows.Next() {
+		var i AdminListGroupsDescRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Description,
+			&i.Location,
+			&i.ActivityID,
+			&i.CreatedAt,
+			&i.MemberCount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const adminListUsers = `-- name: AdminListUsers :many
 SELECT u.id, u.email, u.email_validated,
        p.name, p.age, p.city, p.current_situation, p.gender, p.profile_complete, p.created_at
@@ -504,6 +761,21 @@ func (q *Queries) AdminListUsers(ctx context.Context, arg AdminListUsersParams) 
 	return items, nil
 }
 
+const adminRemoveGroupMember = `-- name: AdminRemoveGroupMember :exec
+DELETE FROM group_members
+WHERE group_id = $1 AND user_id = $2
+`
+
+type AdminRemoveGroupMemberParams struct {
+	GroupID int32 `json:"group_id"`
+	UserID  int32 `json:"user_id"`
+}
+
+func (q *Queries) AdminRemoveGroupMember(ctx context.Context, arg AdminRemoveGroupMemberParams) error {
+	_, err := q.db.Exec(ctx, adminRemoveGroupMember, arg.GroupID, arg.UserID)
+	return err
+}
+
 const adminUpdateActivity = `-- name: AdminUpdateActivity :exec
 UPDATE activities
 SET name = $2, icon = $3, category = $4
@@ -525,6 +797,44 @@ func (q *Queries) AdminUpdateActivity(ctx context.Context, arg AdminUpdateActivi
 		arg.Category,
 	)
 	return err
+}
+
+const adminUpdateGroup = `-- name: AdminUpdateGroup :one
+UPDATE groups
+SET name = $2,
+    description = $3,
+    location = $4,
+    activity_id = $5
+WHERE id = $1
+RETURNING id, name, description, location, activity_id, created_at
+`
+
+type AdminUpdateGroupParams struct {
+	ID          int32   `json:"id"`
+	Name        *string `json:"name"`
+	Description *string `json:"description"`
+	Location    *string `json:"location"`
+	ActivityID  int32   `json:"activity_id"`
+}
+
+func (q *Queries) AdminUpdateGroup(ctx context.Context, arg AdminUpdateGroupParams) (Group, error) {
+	row := q.db.QueryRow(ctx, adminUpdateGroup,
+		arg.ID,
+		arg.Name,
+		arg.Description,
+		arg.Location,
+		arg.ActivityID,
+	)
+	var i Group
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Description,
+		&i.Location,
+		&i.ActivityID,
+		&i.CreatedAt,
+	)
+	return i, err
 }
 
 const adminUpdateProfile = `-- name: AdminUpdateProfile :exec

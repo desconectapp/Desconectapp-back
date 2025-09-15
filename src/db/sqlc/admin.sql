@@ -139,3 +139,80 @@ FROM activities a
 WHERE
   (sqlc.narg('name')::text IS NULL OR a.name ILIKE '%' || sqlc.narg('name')::text || '%')
   AND (sqlc.narg('category')::categories IS NULL OR a.category = sqlc.narg('category')::categories);
+
+-- name: AdminListGroupsAsc :many
+SELECT g.id,
+       g.name,
+       g.description,
+       g.location,
+       g.activity_id,
+       g.created_at,
+       COUNT(m.user_id) AS member_count
+FROM groups g
+LEFT JOIN group_members m ON g.id = m.group_id
+GROUP BY g.id
+ORDER BY g.name ASC
+LIMIT $1 OFFSET $2;
+
+-- name: AdminListGroupsDesc :many
+SELECT g.id,
+       g.name,
+       g.description,
+       g.location,
+       g.activity_id,
+       g.created_at,
+       COUNT(m.user_id) AS member_count
+FROM groups g
+LEFT JOIN group_members m ON g.id = m.group_id
+GROUP BY g.id
+ORDER BY g.name DESC
+LIMIT $1 OFFSET $2;
+
+-- name: AdminGetGroup :one
+SELECT g.id,
+       g.name,
+       g.description,
+       g.location,
+       g.activity_id,
+       g.created_at,
+       COUNT(m.user_id) AS member_count
+FROM groups g
+LEFT JOIN group_members m ON g.id = m.group_id
+WHERE id = $1;
+
+-- name: AdminCreateGroup :one
+INSERT INTO groups (name, description, location, activity_id)
+VALUES ($1, $2, $3, $4)
+RETURNING *;
+
+-- name: AdminUpdateGroup :one
+UPDATE groups
+SET name = $2,
+    description = $3,
+    location = $4,
+    activity_id = $5
+WHERE id = $1
+RETURNING *;
+
+-- name: AdminDeleteGroup :exec
+DELETE FROM groups
+WHERE id = $1;
+
+-- name: AdminListGroupMembers :many
+SELECT u.id, p.name, u.email
+FROM group_members gm
+JOIN users u ON gm.user_id = u.id
+JOIN profiles p ON gm.user_id = p.user_id
+WHERE gm.group_id = $1;
+
+-- name: AdminAddGroupMember :exec
+INSERT INTO group_members (group_id, user_id)
+VALUES ($1, $2)
+ON CONFLICT DO NOTHING;
+
+-- name: AdminRemoveGroupMember :exec
+DELETE FROM group_members
+WHERE group_id = $1 AND user_id = $2;
+
+-- name: AdminCountGroups :one
+SELECT COUNT(*) FROM groups;

@@ -23,6 +23,7 @@ type Router struct {
 	groupsController        *controller.GroupsController
 	adminUserController     *controller.AdminUserController
 	adminActivityController *controller.AdminActivityController
+	adminGroupController    *controller.AdminGroupController
 	r                       *gin.Engine
 }
 
@@ -47,6 +48,7 @@ func NewRouter() *Router {
 	groupsController := controller.NewGroupsController(conn)
 	adminUserController := controller.NewAdminUserController(conn)
 	adminActivityController := controller.NewAdminActivityController(conn)
+	adminGroupController := controller.NewAdminGroupController(conn)
 
 	r := gin.Default()
 	r.Use(cors.New(cors.Config{
@@ -67,6 +69,7 @@ func NewRouter() *Router {
 		groupsController:        groupsController,
 		adminUserController:     adminUserController,
 		adminActivityController: adminActivityController,
+		adminGroupController:    adminGroupController,
 		r:                       r,
 	}
 }
@@ -145,6 +148,17 @@ func (router *Router) SetupRoutes() *gin.Engine {
 		admin.POST("/activities", router.adminActivityController.CreateActivity)
 		admin.PUT("/activities/:id", router.adminActivityController.UpdateActivity)
 		admin.DELETE("/activities/:id", router.adminActivityController.DeleteActivity)
+
+
+		admin.GET("/groups", router.adminGroupController.ListGroups)
+		admin.GET("/groups/:id", router.adminGroupController.GetGroup)
+		admin.POST("/groups", router.adminGroupController.CreateGroup)
+		// admin.PUT("/groups/:id", router.adminGroupController.UpdateGroup)
+		admin.DELETE("/groups/:id", router.adminGroupController.DeleteGroup)
+		admin.GET("/groups/:id/members", router.adminGroupController.ListGroupMembers)
+		admin.POST("/groups/:id/members", router.adminGroupController.AddGroupMember)
+		admin.DELETE("/groups/:id/members/:memberId", router.adminGroupController.RemoveGroupMember)
+		admin.GET("/groups/many", router.adminGroupController.GetManyGroups)
 	}
 
 	return router.r
