@@ -72,6 +72,10 @@ type NewDescription struct {
 	NewDesc    string `json:"description"`
 }
 
+type NewStatus struct {
+	NewStatus    bool `json:"status"`
+}
+
 func SendActivityRequest(t *testing.T, r *gin.Engine, userId int32, activityId int32, participantsNeeded int32) ActivityRequest {
 	int32Ptr := func(i int32) *int32 { return &i }
 	float64Ptr := func(f float64) *float64 { return &f }
@@ -218,6 +222,7 @@ func NewGroup(t *testing.T, r *gin.Engine, name string, location string, activit
 	assert.Equal(t, body.Name, *response.Name)
 	assert.Equal(t, body.Location, *response.Location)
 	assert.Equal(t, body.MembersIds, response.Members)
+	assert.Equal(t, false, *response.Status)
 
 	return response.ID
 }

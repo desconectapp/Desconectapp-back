@@ -4,6 +4,7 @@ import (
 	gen "gin/db/generated"
 	"time"
 	"github.com/jackc/pgx/pgtype"
+	s "gin/service"
 )
 
 type PaginatedUsers struct {
@@ -23,6 +24,12 @@ type PaginatedUserGroup struct {
 
 type PaginatedPreferences struct {
 	Preferences []gen.GetUserPreferencesRow `json:"preferences"`
+	HasMore bool	`json:"has_more"`
+}
+
+
+type PaginatedOpenGroup struct {
+	Groups []s.OpenGroup `json:"groups"`
 	HasMore bool	`json:"has_more"`
 }
 
@@ -77,6 +84,7 @@ type NewGroup struct {
 	Members     []int32        `json:"members"`
 	ActivityName string             `json:"activity_name"`
 	ActivityIcon *string            `json:"activity_icon"`
+	Status	*bool	`json:"status"`
 }
 
 type ActivityIdBatchResponse struct {

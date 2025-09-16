@@ -14,8 +14,23 @@ type GroupWithMembers struct {
 	Icon        *string            `json:"icon"`
 	Location    *string            `json:"location"`
 	Members 	[]repository.GetGroupMembersRow		`json:"members"`
+	Status	bool	`json:"status"`
 }
 
+
+type OpenGroup struct {
+	ID           int32   `json:"id"`
+	Name         *string `json:"name"`
+	Description  *string `json:"description"`
+	Location     *string `json:"location"`
+	ActivityName string  `json:"activity_name"`
+}
+
+type ActivityFilter struct {
+	ActivityId	int32	`json:"activity_id"`
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+}
 
 type GroupsService struct {
 	queries *repository.Queries
@@ -90,6 +105,7 @@ func addMembers(group repository.GetGroupRow, members []repository.GetGroupMembe
         Location:    group.Location,
         Icon:        group.Icon,
         Members:     members,
+		Status: *group.Status,
     }
 }
 
@@ -109,4 +125,77 @@ func (s *GroupsService) UpdateGroupDescription(params repository.UpdateGroupDesc
 	err := s.queries.UpdateGroupDescriptiom(s.ctx, params)
 
 	return err
+}
+
+func (s *GroupsService) ChangeGroupStatus(params repository.ChangeGroupStatusParams) error {
+
+	err := s.queries.ChangeGroupStatus(s.ctx, params)
+
+	return err
+}
+
+func (s *GroupsService) GetStatusOpenGroups(filter ActivityFilter) ([]OpenGroup, error) {
+	var openGroups []OpenGroup
+	var err error
+
+	if filter.ActivityId == 0 {
+		openGroups, err = s.GetStatusOpenGroupsNoFilter(
+			repository.GetStatusOpenGroupsNoFilterParams{
+				Limit: filter.Limit,
+				Offset: filter.Offset,
+			},
+		)
+	} else {
+		openGroups, err = s.GetStatusOpenGroupsWithFilter(
+			repository.GetStatusOpenGroupsWithFilterParams{
+				Limit: filter.Limit,
+				Offset: filter.Offset,
+				ActivityID: &filter.ActivityId,
+			},
+		)
+	}
+	
+	return openGroups, err
+}
+
+func (s *GroupsService) GetStatusOpenGroupsNoFilter(filter repository.GetStatusOpenGroupsNoFilterParams) ([]OpenGroup, error) {
+	groups, err := s.queries.GetStatusOpenGroupsNoFilter(s.ctx, filter)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var openGroups []OpenGroup
+
+	for _, group := range groups {
+		openGroups = append(openGroups, OpenGroup{
+			ID: group.ID,
+			Name: group.Name,
+			Location: group.Location,
+			Description: group.Description,
+			ActivityName: group.ActivityName,
+		})
+	}
+	return openGroups, err
+}
+
+func (s *GroupsService) GetStatusOpenGroupsWithFilter(filter repository.GetStatusOpenGroupsWithFilterParams) ([]OpenGroup, error) {
+	groups, err := s.queries.GetStatusOpenGroupsWithFilter(s.ctx, filter)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var openGroups []OpenGroup
+
+	for _, group := range groups {
+		openGroups = append(openGroups, OpenGroup{
+			ID: group.ID,
+			Name: group.Name,
+			Location: group.Location,
+			Description: group.Description,
+			ActivityName: group.ActivityName,
+		})
+	}
+	return openGroups, err
 }
