@@ -294,11 +294,11 @@ func TestChangeGroupStatusToTrueThenFalse(t *testing.T) {
 	checkStatus(false)
 }
 
-func TestGetStatusOpenList(t *testing.T) {
+func TestGetStatusOpenListNoFilter(t *testing.T) {
 	router := router.NewRouter()
 	r := router.SetupRoutes()
 
-	user1, token := NewUserWithProfile(t, r, "jinshy", CreateProfile{Name: "jinshi", Age: 30, City: "Seoul", CurrentSituation: "WORKING", Gender: "Male"})
+	user1, token := NewUserWithProfile(t, r, "jinshi", CreateProfile{Name: "jinshi", Age: 30, City: "Seoul", CurrentSituation: "WORKING", Gender: "Male"})
 	user2, _ := NewUserWithProfile(t, r, "abby", CreateProfile{Name: "abby", Age: 30, City: "Seoul", CurrentSituation: "WORKING", Gender: "Male"})
 	user3, _ := NewUserWithProfile(t, r, "mystery", CreateProfile{Name: "mystery", Age: 30, City: "Seoul", CurrentSituation: "WORKING", Gender: "Male"})
 
@@ -337,6 +337,76 @@ func TestGetStatusOpenList(t *testing.T) {
 	
 	body := ActivityIdStruct{
 		ActivityID: 0,
+	}
+	jsonBody, err := json.Marshal(body)
+	assert.Equal(t, err, nil, "Error should be nil")
+
+	req := httptest.NewRequest("GET", "/groups/open?limit="+limit+"&offset="+offset, bytes.NewReader(jsonBody))
+	req.Header.Add("content-type", "application/json")	
+	req.Header.Add("Authorization", "Bearer "+token)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	var response controller.PaginatedOpenGroup
+
+	log.Println(response)
+
+	err = json.Unmarshal(w.Body.Bytes(), &response)
+	
+	assert.Equal(t, err, nil, "Error should be nil")
+
+	assert.LessOrEqual(t, strconv.Itoa(len(response.Groups)), limit)
+	assert.Equal(t, false, response.HasMore)
+
+	assert.Equal(t, location, *response.Groups[0].Location)
+	assert.Equal(t, name, *response.Groups[0].Name)
+
+	checkStatus(false)
+}
+
+func TestGetStatusOpenListWithFilter(t *testing.T) {
+	router := router.NewRouter()
+	r := router.SetupRoutes()
+
+	user1, token := NewUserWithProfile(t, r, "jinshi_fan", CreateProfile{Name: "jinshi_fan", Age: 30, City: "Seoul", CurrentSituation: "WORKING", Gender: "Male"})
+	user2, _ := NewUserWithProfile(t, r, "abby_fan", CreateProfile{Name: "abby_fan", Age: 30, City: "Seoul", CurrentSituation: "WORKING", Gender: "Male"})
+	user3, _ := NewUserWithProfile(t, r, "mystery_fan", CreateProfile{Name: "mystery_fan", Age: 30, City: "Seoul", CurrentSituation: "WORKING", Gender: "Male"})
+
+	members := []int32{user1, user2, user3}
+	location := "Seoul"
+	name := "Saja Boys Fans"
+
+	group := NewGroup(t, r, name, location, 28, members, token)
+
+	checkStatus := func(status bool) {
+		body, _ := json.Marshal(NewStatus{NewStatus: status})
+		req := httptest.NewRequest("PUT", "/groups/status/"+strconv.Itoa(int(group)), bytes.NewReader(body))
+		req.Header.Add("content-type", "application/json")
+		req.Header.Add("Authorization", "Bearer "+token)
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		reqGet := httptest.NewRequest("GET", "/groups/"+strconv.Itoa(int(group)), nil)
+		reqGet.Header.Add("Authorization", "Bearer "+token)
+		wGet := httptest.NewRecorder()
+		r.ServeHTTP(wGet, reqGet)
+
+		var resp service.GroupWithMembers
+		err := json.Unmarshal(wGet.Body.Bytes(), &resp)
+		assert.NoError(t, err)
+		assert.Equal(t, name, *resp.Name)
+		assert.Equal(t, location, *resp.Location)
+		assert.Equal(t, status, resp.Status)
+		assert.NotEmpty(t, resp.Members)
+	}
+
+	checkStatus(true)
+
+	limit := "6"
+	offset := "0"
+	
+	body := ActivityIdStruct{
+		ActivityID: 28,
 	}
 	jsonBody, err := json.Marshal(body)
 	assert.Equal(t, err, nil, "Error should be nil")
