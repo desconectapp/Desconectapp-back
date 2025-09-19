@@ -16,12 +16,13 @@ import (
 )
 
 type Router struct {
-	controller           *controller.Controller
-	activitiesController *controller.ActivitiesController
-	authController       *controller.AuthController
+	controller            *controller.Controller
+	activitiesController  *controller.ActivitiesController
+	authController        *controller.AuthController
 	preferencesController *controller.PreferencesController
-	groupsController		*controller.GroupsController
-	r                    *gin.Engine
+	groupsController      *controller.GroupsController
+	chatsController       *controller.ChatsController
+	r                     *gin.Engine
 }
 
 func NewRouter() *Router {
@@ -55,13 +56,12 @@ func NewRouter() *Router {
 	}))
 	r.Use(middleware.ErrorHandler())
 	return &Router{
-		controller:           c,
-		activitiesController: activitiesController,
-		authController:       authController,
+		controller:            c,
+		activitiesController:  activitiesController,
+		authController:        authController,
 		preferencesController: preferencesController,
-		groupsController: groupsController,
-		r:                    r,
-
+		groupsController:      groupsController,
+		r:                     r,
 	}
 }
 
@@ -101,10 +101,10 @@ func (router *Router) SetupRoutes() *gin.Engine {
 		activities.GET("", router.activitiesController.GetActivities)
 		activities.DELETE("/request/:requestId", router.activitiesController.DeleteActivityRequest)
 	}
-	
+
 	preferences := router.r.Group("/preferences")
 	preferences.Use(router.authController.AuthMiddleware())
-	
+
 	{
 		preferences.GET("", router.preferencesController.GetUserPreferences)
 		preferences.POST("", router.preferencesController.AddPreference)
@@ -124,6 +124,12 @@ func (router *Router) SetupRoutes() *gin.Engine {
 		groups.PUT("description/:groupId", router.groupsController.UpdateGroupDescription)
 		groups.PUT("status/:groupId", router.groupsController.ChangeGroupStatus)
 		groups.GET("/open", router.groupsController.GetOpenGroups)
+	}
+
+	chats := router.r.Group("/chats")
+	chats.Use(router.authController.AuthMiddleware())
+	{
+		chats.GET("/token", router.chatsController.GetToken)
 	}
 
 	return router.r
