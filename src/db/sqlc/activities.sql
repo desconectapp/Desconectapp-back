@@ -34,6 +34,10 @@ WHERE id = $1;
 SELECT * FROM activities
 WHERE name = $1;
 
+-- name: GetActivityByID :one
+SELECT * FROM activities
+WHERE id = $1;
+
 -- name: CreateActivity :one
 INSERT INTO activities (name, icon, category)
 VALUES ($1, $2, $3)

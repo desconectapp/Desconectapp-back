@@ -138,6 +138,24 @@ func (q *Queries) GetActivities(ctx context.Context, arg GetActivitiesParams) ([
 	return items, nil
 }
 
+const getActivityByID = `-- name: GetActivityByID :one
+SELECT id, name, icon, created_at, category FROM activities
+WHERE id = $1
+`
+
+func (q *Queries) GetActivityByID(ctx context.Context, id int32) (Activity, error) {
+	row := q.db.QueryRow(ctx, getActivityByID, id)
+	var i Activity
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Icon,
+		&i.CreatedAt,
+		&i.Category,
+	)
+	return i, err
+}
+
 const getActivityByName = `-- name: GetActivityByName :one
 SELECT id, name, icon, created_at, category FROM activities
 WHERE name = $1

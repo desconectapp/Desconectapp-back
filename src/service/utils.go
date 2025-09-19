@@ -19,7 +19,7 @@ import (
 
 func CreateAccessAndRefreshTokens(userID int32, accesExpirationTime int64, refreshExpirationTime int64) (string, string, error) {
 	jwtKey := []byte(os.Getenv("JWT_SECRET"))
-	
+
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sub": userID,
 		"exp": accesExpirationTime,
@@ -54,7 +54,7 @@ func NewTestToken(userID int32) (string, error) {
 	accesExpirationTime := time.Now().Add(7 * 24 * time.Hour).Unix()
 
 	jwtKey := []byte(os.Getenv("JWT_SECRET"))
-	
+
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sub": userID,
 		"exp": accesExpirationTime,
@@ -80,9 +80,9 @@ func ValidateSession(tokenString string) (int32, error) {
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 		exp := int64(claims["exp"].(float64))
-			if time.Now().Unix() > exp {
-				return -2, errors.New("invalid token")
-			}
+		if time.Now().Unix() > exp {
+			return -2, errors.New("invalid token")
+		}
 
 		return int32(claims["sub"].(float64)), nil
 	}
@@ -118,18 +118,12 @@ func GenerateActivity(s *ActivitiesRequestService, name string) (repository.Acti
 	for _, activity := range activities {
 		activitiesNames = append(activitiesNames, activity.Name)
 	}
-	
-	prompt := "Given the activities listed below and the activity name given, return " +
-		"the activity that best matches the meaning of the given name, or generate a new short name for the activity: " +
-		"In case the activity is new, also generate an emoji that represents the activity and a category for it. " +
-		"The response must be a JSON object of the form: " +
-		"{ " +
-		"\"name\": \"<name>\", " +
-		"\"icon\": \"<emoji>\", " +
-		"\"category\": \"<category>\" " +
-		"}" + " where category is one of: SPORT, CREATIVE, OUTDOOR, INDOOR, GAME, SOCIAL, WELLNESS. " +
-		"Activities: " + fmt.Sprintf("%v", activitiesNames) +
-		". Activity name: " + name + "."
+
+	prompt := "Dada una lista de actividades y un nombre de actividad, devolvé en JSON la mejor coincidencia o creá una nueva si no existe o si la coincidencia es demasiado amplia. " +
+	"Si la coincidencia es amplia (ej: 'ceramics' → 'arts & crafts'), generá una nueva actividad con nombre corto, emoji y categoría específica. " +
+	"Formato del JSON: {\"name\":\"<nombre>\",\"icon\":\"<emoji>\",\"category\":\"<SPORT|CREATIVE|OUTDOOR|INDOOR|GAME|SOCIAL|WELLNESS>\"}. " +
+	"Lista de actividades: " + fmt.Sprintf("%v", activitiesNames) + ". " +
+	"Nombre de actividad: " + name + "."
 
 	fmt.Print(prompt)
 
@@ -147,14 +141,13 @@ func GenerateActivity(s *ActivitiesRequestService, name string) (repository.Acti
 	}
 
 	// Make HTTP request with Authorization header
-	req, err := http.NewRequest("POST", "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent", bytes.NewBuffer(body))
+	req, err := http.NewRequest("POST", "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent", bytes.NewBuffer(body))
 	if err != nil {
 		return repository.Activity{}, err
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-goog-api-key", os.Getenv("GEMINI_API_KEY"))
-	fmt.Print("Request body: ", string(body))
-	fmt.Print("GEMINI_API_KEY: ", os.Getenv("GEMINI_API_KEY"))
+
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -167,13 +160,10 @@ func GenerateActivity(s *ActivitiesRequestService, name string) (repository.Acti
 		return repository.Activity{}, err
 	}
 
-	fmt.Print("Response status: ", resp.Status)
-	fmt.Print("Response body: ", string(responseBody))
-
 	if resp.StatusCode != http.StatusOK {
 		return repository.Activity{}, fmt.Errorf("failed to create activity in external API: %s", resp.Status)
 	}
-	
+
 	var result map[string]interface{}
 	err = json.Unmarshal(responseBody, &result)
 	if err != nil {
@@ -222,7 +212,7 @@ func GenerateActivity(s *ActivitiesRequestService, name string) (repository.Acti
 		// Activity found, return it with correct ID
 		return existingActivity, nil
 	}
-	
+
 	// Activity doesn't exist, create it in the database
 	if err != pgx.ErrNoRows {
 		// This is an unexpected error, not just "not found"
