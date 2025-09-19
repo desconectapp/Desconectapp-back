@@ -29,3 +29,12 @@ WHERE user_id = $1 AND activity_id = $2;
 -- name: DeleteActivityRequest :exec
 DELETE FROM activity_requests
 WHERE id = $1;
+
+-- name: GetActivityByName :one
+SELECT * FROM activities
+WHERE name = $1;
+
+-- name: CreateActivity :one
+INSERT INTO activities (name, icon, category)
+VALUES ($1, $2, $3)
+RETURNING *;

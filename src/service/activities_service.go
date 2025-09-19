@@ -36,6 +36,20 @@ func (s *ActivitiesRequestService) ListActivitiesRequests(params repository.List
 
 func (s *ActivitiesRequestService) CreateActivityRequest(params repository.CreateActivityRequestParams) (repository.ActivityRequest, error) {
 
+	// Primero chequeamos si la actividad es nueva (id=-1)
+	if *params.ActivityID == -1 {
+		newActivity, err := GenerateActivity(s, *params.Description)
+		if err != nil {
+			return repository.ActivityRequest{}, err
+		}
+
+		
+
+
+		params.ActivityID = &newActivity.ID
+	}
+
+
 	existingActivityRequest, err := s.queries.GetActivityRequestByUserAndActivityID(s.ctx, repository.GetActivityRequestByUserAndActivityIDParams{
 		UserID:     params.UserID,
 		ActivityID: params.ActivityID,
@@ -80,4 +94,12 @@ func (s *ActivitiesRequestService) DeleteActivityRequest(requestId int) error {
 		return err
 	}
 	return nil
+}
+
+func (s *ActivitiesRequestService) CreateActivity(name string) (repository.Activity, error) {
+	activity, err := GenerateActivity(s, name)
+	if err != nil {
+		return repository.Activity{}, err
+	}
+	return activity, nil
 }

@@ -9,6 +9,31 @@ import (
 	"context"
 )
 
+const createActivity = `-- name: CreateActivity :one
+INSERT INTO activities (name, icon, category)
+VALUES ($1, $2, $3)
+RETURNING id, name, icon, created_at, category
+`
+
+type CreateActivityParams struct {
+	Name     string     `json:"name"`
+	Icon     *string    `json:"icon"`
+	Category Categories `json:"category"`
+}
+
+func (q *Queries) CreateActivity(ctx context.Context, arg CreateActivityParams) (Activity, error) {
+	row := q.db.QueryRow(ctx, createActivity, arg.Name, arg.Icon, arg.Category)
+	var i Activity
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Icon,
+		&i.CreatedAt,
+		&i.Category,
+	)
+	return i, err
+}
+
 const createActivityRequest = `-- name: CreateActivityRequest :one
 INSERT INTO activity_requests (
   user_id, activity_id, description,
@@ -111,6 +136,24 @@ func (q *Queries) GetActivities(ctx context.Context, arg GetActivitiesParams) ([
 		return nil, err
 	}
 	return items, nil
+}
+
+const getActivityByName = `-- name: GetActivityByName :one
+SELECT id, name, icon, created_at, category FROM activities
+WHERE name = $1
+`
+
+func (q *Queries) GetActivityByName(ctx context.Context, name string) (Activity, error) {
+	row := q.db.QueryRow(ctx, getActivityByName, name)
+	var i Activity
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Icon,
+		&i.CreatedAt,
+		&i.Category,
+	)
+	return i, err
 }
 
 const getActivityRequestByUserAndActivityID = `-- name: GetActivityRequestByUserAndActivityID :one
