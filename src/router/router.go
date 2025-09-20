@@ -45,6 +45,8 @@ func NewRouter() *Router {
 
 	groupsController := controller.NewGroupsController(conn)
 
+	chatsController := controller.NewChatsController(conn)
+
 	r := gin.Default()
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"*"},
@@ -61,6 +63,7 @@ func NewRouter() *Router {
 		authController:        authController,
 		preferencesController: preferencesController,
 		groupsController:      groupsController,
+		chatsController:       chatsController,
 		r:                     r,
 	}
 }

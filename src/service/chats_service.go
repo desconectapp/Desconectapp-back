@@ -2,9 +2,13 @@ package service
 
 import (
 	"context"
+	"fmt"
 	repository "gin/db/generated"
+	"os"
+	"time"
 
-	"github.com/jackc/pgx/v5"
+	"github.com/golang-jwt/jwt"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type ChatsService struct {
@@ -12,7 +16,7 @@ type ChatsService struct {
 	ctx     context.Context
 }
 
-func NewChatsService(conn *pgx.Conn) *ChatsService {
+func NewChatsService(conn *pgxpool.Pool) *ChatsService {
 	queries := repository.New(conn)
 	ctx := context.Background()
 
@@ -20,4 +24,27 @@ func NewChatsService(conn *pgx.Conn) *ChatsService {
 		queries: queries,
 		ctx:     ctx,
 	}
+}
+
+func (s *ChatsService) GetToken(userID int32) (string, error) {
+	secret := os.Getenv("SUPABASE_JWT_SECRET")
+	if secret == "" {
+		return "", fmt.Errorf("SUPABASE_JWT_SECRET not configured")
+	}
+
+	// Create claims — sub must be your user ID
+	claims := jwt.MapClaims{
+		"sub":  fmt.Sprintf("%d", userID),               // auth.uid() will return this
+		"exp":  time.Now().Add(15 * time.Minute).Unix(), // short-lived for safety
+		"role": "authenticated",                         // optional but common for RLS policies
+	}
+
+	// Sign the token
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	signed, err := token.SignedString([]byte(secret))
+	if err != nil {
+		return "", err
+	}
+
+	return signed, nil
 }

@@ -2,16 +2,17 @@ package controller
 
 import (
 	"gin/service"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type ChatsController struct {
 	chatsService *service.ChatsService
 }
 
-func NewChatsController(conn *pgx.Conn) *ChatsController {
+func NewChatsController(conn *pgxpool.Pool) *ChatsController {
 	service := service.NewChatsService(conn)
 	return &ChatsController{
 		chatsService: service,
@@ -19,11 +20,23 @@ func NewChatsController(conn *pgx.Conn) *ChatsController {
 }
 
 func (c *ChatsController) GetToken(ctx *gin.Context) {
-	token, err := c.chatsService.GetToken()
-	if err != nil {
-		ctx.Error(gin.Error{
-			Err:  err,
-			Type: gin.ErrorTypePublic,
-		})
+	userID, exists := ctx.Get("userID")
+	if !exists {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "User ID not found in token"})
+		return
 	}
+
+	userIDInt32, ok := userID.(int32)
+	if !ok {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID format"})
+		return
+	}
+
+	token, err := c.chatsService.GetToken(userIDInt32)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"supabase_token": token})
 }
