@@ -7,7 +7,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	repository "gin/db/generated"
 )
@@ -21,13 +21,12 @@ type Controller struct {
 	service *service.Service
 }
 
-func NewController(conn *pgx.Conn) *Controller {
+func NewController(conn *pgxpool.Pool) *Controller {
 	service := service.NewService(conn)
 	return &Controller{
 		service: service,
 	}
 }
-
 
 func (c *Controller) ListUsers(ctx *gin.Context) {
 	var userParams repository.ListUsersParams
@@ -38,7 +37,7 @@ func (c *Controller) ListUsers(ctx *gin.Context) {
 	userParams.Offset = int32(offset)
 
 	users, err := c.service.ListUsers(userParams)
-	
+
 	if err != nil {
 		ctx.Error(&gin.Error{
 			Err:  err,
@@ -67,13 +66,12 @@ func (c *Controller) CreateProfile(ctx *gin.Context) {
 	}
 
 	if profileData.Age < MIN_AGE || profileData.Age > MAX_AGE {
-		ErrorWithStatus(ctx, "Age must be between 15 and 100",http.StatusBadRequest)
+		ErrorWithStatus(ctx, "Age must be between 15 and 100", http.StatusBadRequest)
 		return
 	}
 
 	userToken, _ := ctx.Get("userID")
 	profileData.UserID = userToken.(int32)
-
 
 	user, err := c.service.CreateProfile(profileData)
 	if err != nil {
@@ -82,12 +80,12 @@ func (c *Controller) CreateProfile(ctx *gin.Context) {
 	}
 
 	res := Profile{
-		UserID: user.UserID,
-		Age: user.Age,
-		Name: user.Name,
-		City: user.City,
+		UserID:           user.UserID,
+		Age:              user.Age,
+		Name:             user.Name,
+		City:             user.City,
 		CurrentSituation: user.CurrentSituation,
-		Gender: user.Gender,
+		Gender:           user.Gender,
 	}
 
 	ctx.JSON(http.StatusOK, res)
@@ -107,12 +105,12 @@ func (c *Controller) GetUser(ctx *gin.Context) {
 	}
 
 	res := Profile{
-		UserID: user.UserID,
-		Age: user.Age,
-		Name: user.Name,
-		City: user.City,
+		UserID:           user.UserID,
+		Age:              user.Age,
+		Name:             user.Name,
+		City:             user.City,
 		CurrentSituation: user.CurrentSituation,
-		Gender: user.Gender,
+		Gender:           user.Gender,
 	}
 
 	ctx.JSON(http.StatusOK, res)

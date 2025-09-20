@@ -9,7 +9,7 @@ import (
 	"log"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // TimeSlot represents a time range with start and end hours
@@ -68,7 +68,7 @@ type ActivitiesController struct {
 	service *service.ActivitiesRequestService
 }
 
-func NewActivitesController(conn *pgx.Conn) *ActivitiesController {
+func NewActivitesController(conn *pgxpool.Pool) *ActivitiesController {
 	service := service.NewActivitiesRequestService(conn)
 	return &ActivitiesController{
 		service: service,

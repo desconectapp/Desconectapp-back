@@ -4,7 +4,7 @@ import (
 	"context"
 	repository "gin/db/generated"
 
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Service struct {
@@ -12,7 +12,7 @@ type Service struct {
 	ctx     context.Context
 }
 
-func NewService(conn *pgx.Conn) *Service {
+func NewService(conn *pgxpool.Pool) *Service {
 	queries := repository.New(conn)
 	ctx := context.Background()
 

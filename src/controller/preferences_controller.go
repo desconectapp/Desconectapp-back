@@ -10,14 +10,14 @@ import (
 	"gin/service"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type PreferencesController struct {
 	service *service.PreferenceService
 }
 
-func NewPreferencesController(conn *pgx.Conn) *PreferencesController {
+func NewPreferencesController(conn *pgxpool.Pool) *PreferencesController {
 	service := service.NewPreferenceService(conn)
 
 	return &PreferencesController{
@@ -33,12 +33,11 @@ func (c *PreferencesController) GetUserPreferences(ctx *gin.Context) {
 	preferencesParams.Limit = int32(limit) + 1
 	preferencesParams.Offset = int32(offset)
 
-	
 	userToken, _ := ctx.Get("userID")
 	preferencesParams.UserID = userToken.(int32)
-	
+
 	preferences, err := c.service.GetUserPreferences(preferencesParams)
-	
+
 	if err != nil {
 		ErrorNoStatus(ctx, err)
 		return
@@ -51,7 +50,6 @@ func (c *PreferencesController) GetUserPreferences(ctx *gin.Context) {
 	}
 
 	result := PaginatedPreferences{Preferences: preferences, HasMore: hasMore}
-
 
 	ctx.JSON(http.StatusOK, result)
 
@@ -75,11 +73,11 @@ func (c *PreferencesController) AddPreference(ctx *gin.Context) {
 		return
 	}
 	res := ActivityIdResponse{
-		ActivityPreferenseID:  addPreferenceParams.ActivityID,
+		ActivityPreferenseID: addPreferenceParams.ActivityID,
 	}
 
 	ctx.JSON(http.StatusOK, res)
-	
+
 }
 
 func (c *PreferencesController) DeletePreference(ctx *gin.Context) {

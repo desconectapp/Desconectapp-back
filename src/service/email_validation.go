@@ -11,7 +11,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -24,7 +24,7 @@ type EmailValidationService struct {
 	ctx          context.Context
 }
 
-func NewEmailValidationService(conn *pgx.Conn) *EmailValidationService {
+func NewEmailValidationService(conn *pgxpool.Pool) *EmailValidationService {
 	queries := repository.New(conn)
 	ctx := context.Background()
 
