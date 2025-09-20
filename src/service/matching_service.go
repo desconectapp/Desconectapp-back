@@ -6,7 +6,7 @@ import (
 	repository "gin/db/generated"
 	"math"
 
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type MatchingService struct {
@@ -14,7 +14,7 @@ type MatchingService struct {
 	ctx     context.Context
 }
 
-func NewMatchingService(conn *pgx.Conn) *MatchingService {
+func NewMatchingService(conn *pgxpool.Pool) *MatchingService {
 	queries := repository.New(conn)
 	ctx := context.Background()
 

@@ -6,6 +6,7 @@ import (
 	repository "gin/db/generated"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type ActivitiesRequestService struct {
@@ -14,7 +15,7 @@ type ActivitiesRequestService struct {
 	matchingService *MatchingService
 }
 
-func NewActivitiesRequestService(conn *pgx.Conn) *ActivitiesRequestService {
+func NewActivitiesRequestService(conn *pgxpool.Pool) *ActivitiesRequestService {
 	queries := repository.New(conn)
 	ctx := context.Background()
 	matchingService := NewMatchingService(conn)

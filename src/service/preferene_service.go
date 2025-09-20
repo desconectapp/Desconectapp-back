@@ -4,7 +4,7 @@ import (
 	"context"
 	repository "gin/db/generated"
 
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type PreferenceService struct {
@@ -12,7 +12,7 @@ type PreferenceService struct {
 	ctx     context.Context
 }
 
-func NewPreferenceService(conn *pgx.Conn) *PreferenceService {
+func NewPreferenceService(conn *pgxpool.Pool) *PreferenceService {
 	queries := repository.New(conn)
 	ctx := context.Background()
 
@@ -22,7 +22,7 @@ func NewPreferenceService(conn *pgx.Conn) *PreferenceService {
 	}
 }
 
-func (s *PreferenceService) GetUserPreferences(params repository.GetUserPreferencesParams) ([]repository.GetUserPreferencesRow, error ) {	
+func (s *PreferenceService) GetUserPreferences(params repository.GetUserPreferencesParams) ([]repository.GetUserPreferencesRow, error) {
 	preferences, err := s.queries.GetUserPreferences(s.ctx, params)
 
 	if err != nil {
@@ -36,8 +36,8 @@ func (s *PreferenceService) BatchAddPreferences(params repository.BatchAddPrefer
 	return err
 }
 
-func (s *PreferenceService) AddPreference(params repository.AddPreferenceParams) (error) {
-	err := s.queries.AddPreference(s.ctx, params) 
+func (s *PreferenceService) AddPreference(params repository.AddPreferenceParams) error {
+	err := s.queries.AddPreference(s.ctx, params)
 	return err
 }
 
