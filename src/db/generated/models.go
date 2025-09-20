@@ -137,6 +137,7 @@ type User struct {
 	Password       string `json:"password"`
 	IsAdmin        bool   `json:"is_admin"`
 	EmailValidated bool   `json:"email_validated"`
+	IsSuspended    bool   `json:"is_suspended"`
 }
 
 type UsersPreference struct {

@@ -5,7 +5,8 @@ CREATE TABLE users (
   email TEXT UNIQUE NOT NULL,
   password TEXT NOT NULL,
   is_admin BOOLEAN NOT NULL DEFAULT false,
-  email_validated BOOLEAN NOT NULL DEFAULT false
+  email_validated BOOLEAN NOT NULL DEFAULT false,
+  is_suspended BOOLEAN NOT NULL DEFAULT false
 );
 
 DROP TABLE IF EXISTS email_verification_codes CASCADE;

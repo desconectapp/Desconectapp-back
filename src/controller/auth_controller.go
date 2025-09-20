@@ -266,6 +266,7 @@ func (c *AuthController) ForgotPassword(ctx *gin.Context) {
 
 	userId, err := c.emailService.StartForgotPasswordFlow(forgotPasswordReq.Email)
 	if err != nil {
+		ctx.Status(400)
 		ctx.Error(gin.Error{
 			Err:  err,
 			Type: gin.ErrorTypePublic,

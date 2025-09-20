@@ -134,4 +134,11 @@ func (c *AdminUserController) DeleteUser(ctx *gin.Context) {
 	ctx.Status(http.StatusNoContent)
 }
 
-
+func (c *AdminUserController) SuspendUser(ctx *gin.Context) {
+	id, _ := strconv.Atoi(ctx.Param("id"))
+	if err := c.service.SuspendUser(int32(id)); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "The server couldn't suspend the user"})
+		return
+	}
+	ctx.Status(http.StatusNoContent)
+}

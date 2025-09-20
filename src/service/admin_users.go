@@ -12,6 +12,7 @@ type AdminUserService struct {
 	ctx     context.Context
 }
 
+
 type AdminUser struct {
 	ID               int32  `json:"id"`
 	Email            string `json:"email"`
@@ -23,6 +24,7 @@ type AdminUser struct {
 	Gender           string `json:"gender"`
 	ProfileComplete  bool   `json:"profile_complete"`
 	CreatedAt        string `json:"created_at"`
+	IsSuspended 	 bool	`json:"is_suspended"`
 }
 
 func NewAdminUserService(conn *pgx.Conn) *AdminUserService {
@@ -60,6 +62,7 @@ func (s *AdminUserService) ListUsers(limit, offset int32, email, name *string, v
 			Gender:           r.Gender,
 			ProfileComplete:  r.ProfileComplete,
 			CreatedAt:        r.CreatedAt.Time.Format("2006-01-02 15:04:05"),
+			IsSuspended:      r.IsSuspended,
 		}
 	}
 	return users, nil
@@ -136,9 +139,14 @@ func (s *AdminUserService) DeleteUser(id int32) error {
 }
 
 func (s *AdminUserService) CountUsers(email, name *string, validated *bool) (int64, error) {
-    return s.queries.AdminCountUsers(s.ctx, repository.AdminCountUsersParams{
-        Email: email,
-        Name:  name,
-        EmailValidated: validated,
-    })
+	return s.queries.AdminCountUsers(s.ctx, repository.AdminCountUsersParams{
+		Email:          email,
+		Name:           name,
+		EmailValidated: validated,
+	})
 }
+
+func (s *AdminUserService) SuspendUser(id int32) any {
+	return s.queries.AdminSuspendUser(s.ctx, id)
+}
+

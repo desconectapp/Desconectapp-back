@@ -1,5 +1,5 @@
 -- name: AdminListUsers :many
-SELECT u.id, u.email, u.email_validated,
+SELECT u.id, u.email, u.email_validated, u.is_suspended,
        p.name, p.age, p.city, p.current_situation, p.gender, p.profile_complete, p.created_at
 FROM users u
 JOIN profiles p ON u.id = p.user_id
@@ -11,7 +11,7 @@ ORDER BY u.id
 LIMIT $1 OFFSET $2;
 
 -- name: AdminGetUser :one
-SELECT u.id, u.email, u.email_validated,
+SELECT u.id, u.email, u.email_validated, u.is_suspended,
        p.name, p.age, p.city, p.current_situation, p.gender, p.profile_complete, p.created_at
 FROM users u
 JOIN profiles p ON u.id = p.user_id
@@ -39,6 +39,17 @@ WHERE user_id = $1;
 
 -- name: AdminDeleteUser :exec
 DELETE FROM users WHERE id = $1;
+
+-- name: AdminSuspendUser :exec
+WITH suspend AS (
+    UPDATE users
+    SET is_suspended = true
+    WHERE id = $1
+    RETURNING id
+)
+DELETE FROM group_members
+WHERE user_id IN (SELECT id FROM suspend);
+
 
 -- name: AdminCountUsers :one
 SELECT COUNT(*)
