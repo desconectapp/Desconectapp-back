@@ -5,17 +5,12 @@ import (
 	"gin/service"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestChatsGetToken(t *testing.T) {
-	os.Setenv("DATABASE_URL", "postgres://postgres:password@localhost:5432/testdb?sslmode=disable")
-	os.Setenv("JWT_SECRET", "test-jwt-secret-key")
-	os.Setenv("SUPABASE_JWT_SECRET", "test-supabase-jwt-secret")
-
 	r := router.NewRouter()
 	router := r.SetupRoutes()
 
@@ -67,7 +62,4 @@ func TestChatsGetToken(t *testing.T) {
 		assert.Contains(t, responseBody, "supabase_token", "Response should contain supabase_token")
 	})
 
-	os.Unsetenv("DATABASE_URL")
-	os.Unsetenv("JWT_SECRET")
-	os.Unsetenv("SUPABASE_JWT_SECRET")
 }
