@@ -36,6 +36,10 @@ func (c *AdminUserController) ListUsers(ctx *gin.Context) {
 	email := ctx.Query("email")
 	name := ctx.Query("name")
 
+	if q := ctx.Query("q"); q != "" {
+		email = q
+	}
+
 	emailValidated := ctx.Query("email_validated")
 	var filterEmailValidated *bool
 	if emailValidated != "" {

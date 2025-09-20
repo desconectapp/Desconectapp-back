@@ -153,7 +153,7 @@ func (router *Router) SetupRoutes() *gin.Engine {
 		admin.GET("/groups", router.adminGroupController.ListGroups)
 		admin.GET("/groups/:id", router.adminGroupController.GetGroup)
 		admin.POST("/groups", router.adminGroupController.CreateGroup)
-		// admin.PUT("/groups/:id", router.adminGroupController.UpdateGroup)
+		admin.PUT("/groups/:id", router.adminGroupController.UpdateGroup)
 		admin.DELETE("/groups/:id", router.adminGroupController.DeleteGroup)
 		admin.GET("/groups/:id/members", router.adminGroupController.ListGroupMembers)
 		admin.POST("/groups/:id/members", router.adminGroupController.AddGroupMember)

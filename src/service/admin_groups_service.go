@@ -2,8 +2,6 @@ package service
 
 import (
 	"context"
-	"log"
-
 	repository "gin/db/generated"
 
 	"github.com/jackc/pgx/v5"
@@ -45,8 +43,6 @@ func (s *AdminGroupService) ListGroups(
 	name *string,
 	sortField, sortOrder string,
 ) ([]AdminGroup, error) {
-	log.Println("ListGroups called with:", limit, offset, name, sortField, sortOrder)
-
 	if sortOrder == "DESC" {
 		rows, err := s.queries.AdminListGroupsDesc(s.ctx, repository.AdminListGroupsDescParams{
 			Limit:  limit,
@@ -149,28 +145,21 @@ func (s *AdminGroupService) CreateGroup(name string, description *string, locati
 	}, nil
 }
 
-// func (s *AdminGroupService) UpdateGroup(id int32, name string, description *string, location *string, activityID int32) (Group, error) {
-// 	r, err := s.queries.AdminUpdateGroup(s.ctx, repository.AdminUpdateGroupParams{
-// 		ID:          id,
-// 		Name:        &name,
-// 		Description: description,
-// 		Location:    location,
-// 		ActivityID:  activityID,
-// 	})
-//
-// 	if err != nil {
-// 		return nil, err
-// 	}
-//
-// 	return Group {
-// 		ID:          r.ID,
-// 		Name:        name,
-// 		Description: r.Description,
-// 		Location:    r.Location,
-// 		ActivityID:  r.ActivityID,
-// 		CreatedAt:   r.CreatedAt,
-// 	}, nil
-// }
+func (s *AdminGroupService) UpdateGroup(id int32, name string, description *string, location *string, activityID int32) (*repository.Group, error) {
+	r, err := s.queries.AdminUpdateGroup(s.ctx, repository.AdminUpdateGroupParams{
+		ID:          id,
+		Name:        &name,
+		Description: description,
+		Location:    location,
+		ActivityID:  activityID,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &r, nil
+}
 
 func (s *AdminGroupService) CountGroups() (int64, error) {
 	count, err := s.queries.AdminCountGroups(s.ctx)

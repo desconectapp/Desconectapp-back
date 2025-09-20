@@ -51,7 +51,9 @@ func (e *AdminGroupController) ListGroups(ctx *gin.Context) {
 
 func (c *AdminGroupController) GetGroup(ctx *gin.Context) {
 	id, _ := strconv.Atoi(ctx.Param("id"))
+	log.Println("Fetching group with ID:", id)
 	group, err := c.service.GetGroup(int32(id))
+	log.Println("Fetched group:", group)
 	if err != nil {
 		ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
@@ -79,26 +81,26 @@ func (c *AdminGroupController) CreateGroup(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, group)
 }
 
-// func (c *AdminGroupController) UpdateGroup(ctx *gin.Context) {
-// 	id, _ := strconv.Atoi(ctx.Param("id"))
-// 	var req struct {
-// 		Name        string  `json:"name"`
-// 		Description *string `json:"description"`
-// 		Location    *string `json:"location"`
-// 		ActivityID  *int32  `json:"activity_id"`
-// 	}
-// 	if err := ctx.ShouldBindJSON(&req); err != nil {
-// 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-// 		return
-// 	}
-//
-// 	err := c.service.UpdateGroup(int32(id), req.Name, req.Description, req.Location, *req.ActivityID)
-// 	if err != nil {
-// 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-// 		return
-// 	}
-// 	ctx.Status(http.StatusNoContent)
-// }
+func (c *AdminGroupController) UpdateGroup(ctx *gin.Context) {
+	id, _ := strconv.Atoi(ctx.Param("id"))
+	var req struct {
+		Name        string  `json:"name"`
+		Description *string `json:"description"`
+		Location    *string `json:"location"`
+		ActivityID  *int32  `json:"activity_id"`
+	}
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	group, err := c.service.UpdateGroup(int32(id), req.Name, req.Description, req.Location, *req.ActivityID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	ctx.JSON(http.StatusOK, group)
+}
 
 func (c *AdminGroupController) DeleteGroup(ctx *gin.Context) {
 	id, _ := strconv.Atoi(ctx.Param("id"))

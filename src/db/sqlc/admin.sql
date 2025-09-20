@@ -178,7 +178,8 @@ SELECT g.id,
        COUNT(m.user_id) AS member_count
 FROM groups g
 LEFT JOIN group_members m ON g.id = m.group_id
-WHERE id = $1;
+WHERE g.id = $1
+GROUP BY g.id, g.name, g.description, g.location, g.activity_id, g.created_at;
 
 -- name: AdminCreateGroup :one
 INSERT INTO groups (name, description, location, activity_id)

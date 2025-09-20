@@ -28,9 +28,13 @@ func (c *AdminActivityController) ListActivities(ctx *gin.Context) {
 	sortOrder := ctx.DefaultQuery("_order", "ASC")
 
 	var namePtr, categoryPtr *string
+	if q := ctx.Query("q"); q != "" {
+		namePtr = &q
+	}
 	if name := ctx.Query("name"); name != "" {
 		namePtr = &name
 	}
+
 	if category := ctx.Query("category"); category != "" {
 		categoryPtr = &category
 	}
