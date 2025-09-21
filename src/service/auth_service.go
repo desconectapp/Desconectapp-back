@@ -10,6 +10,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -22,14 +23,14 @@ type AuthService struct {
 }
 
 type Session struct {
-	UserId 				 int32
+	UserId           int32
 	Token            string
 	RefreshToken     string
 	ExpiresAt        time.Time
 	RefreshExpiresAt time.Time
 }
 
-func NewAuthService(conn *pgx.Conn) *AuthService {
+func NewAuthService(conn *pgxpool.Pool) *AuthService {
 	queries := repository.New(conn)
 	ctx := context.Background()
 	jwtKey := []byte(os.Getenv("JWT_SECRET"))
@@ -66,12 +67,11 @@ func (s *AuthService) Login(email, password string) (*Session, error) {
 	}
 
 	return &Session{
-		UserId:				user.ID,
+		UserId:           user.ID,
 		Token:            accessTokenString,
 		RefreshToken:     refreshTokenString,
-		ExpiresAt: 		s.expirationsTime(accesExpirationTime),
+		ExpiresAt:        s.expirationsTime(accesExpirationTime),
 		RefreshExpiresAt: s.expirationsTime(refreshExpirationTime),
-
 	}, nil
 }
 
@@ -85,9 +85,9 @@ func (s *AuthService) RefreshToken(refreshToken string) (*Session, error) {
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 		exp := int64(claims["exp"].(float64))
-			if time.Now().Unix() > exp {
-				return nil, errors.New("invalid token")
-			}
+		if time.Now().Unix() > exp {
+			return nil, errors.New("invalid token")
+		}
 
 		userID := int32(claims["sub"].(float64))
 
@@ -105,17 +105,16 @@ func (s *AuthService) RefreshToken(refreshToken string) (*Session, error) {
 		}
 
 		return &Session{
-			UserId:			  userID,
+			UserId:           userID,
 			Token:            newAccessTokenString,
 			RefreshToken:     newRefreshToken,
-			ExpiresAt: 		s.expirationsTime(accesExpirationTime),
-		RefreshExpiresAt: s.expirationsTime(refreshExpirationTime),
+			ExpiresAt:        s.expirationsTime(accesExpirationTime),
+			RefreshExpiresAt: s.expirationsTime(refreshExpirationTime),
 		}, nil
 	}
 
 	return nil, errors.New("invalid refresh token")
 }
-
 
 func (s *AuthService) Signup(name, email, password string) (*Session, error) {
 	_, err := s.queries.GetUserByEmail(s.ctx, email)
@@ -150,15 +149,13 @@ func (s *AuthService) Signup(name, email, password string) (*Session, error) {
 	}
 
 	return &Session{
-		UserId:				user.ID,
+		UserId:           user.ID,
 		Token:            accessTokenString,
 		RefreshToken:     refreshTokenString,
-		ExpiresAt: 		s.expirationsTime(accesExpirationTime),
+		ExpiresAt:        s.expirationsTime(accesExpirationTime),
 		RefreshExpiresAt: s.expirationsTime(refreshExpirationTime),
 	}, nil
 }
-
-
 
 func (s *AuthService) expirationsTime(expiresAt int64) time.Time {
 	pgExpiresAt := pgtype.Timestamptz{

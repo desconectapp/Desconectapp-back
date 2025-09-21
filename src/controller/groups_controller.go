@@ -8,14 +8,14 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type GroupsController struct {
 	service *service.GroupsService
 }
 
-func NewGroupsController(conn *pgx.Conn) *GroupsController {
+func NewGroupsController(conn *pgxpool.Pool) *GroupsController {
 	service := service.NewGroupsService(conn)
 	return &GroupsController{
 		service: service,
@@ -23,11 +23,11 @@ func NewGroupsController(conn *pgx.Conn) *GroupsController {
 }
 
 type GroupInfo struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Location    string `json:"location"`
-	ActivityID  int32  `json:"activity_id"`
-	MembersIds []int32 `json:"members_ids"`
+	Name        string  `json:"name"`
+	Description string  `json:"description"`
+	Location    string  `json:"location"`
+	ActivityID  int32   `json:"activity_id"`
+	MembersIds  []int32 `json:"members_ids"`
 }
 
 func (c *GroupsController) ListGroups(ctx *gin.Context) {
@@ -43,7 +43,7 @@ func (c *GroupsController) ListGroups(ctx *gin.Context) {
 	hasMore := len(groupsList) == int(groupParams.Limit)
 
 	if hasMore {
-		groupsList = groupsList[:len(groupsList) - 1]
+		groupsList = groupsList[:len(groupsList)-1]
 	}
 
 	result := PaginatedGroups{Groups: groupsList, HasMore: hasMore}
@@ -71,7 +71,7 @@ func (c *GroupsController) ListUserGroups(ctx *gin.Context) {
 	hasMore := len(groupsList) == int(groupParams.Limit)
 
 	if hasMore {
-		groupsList = groupsList[:len(groupsList) - 1]
+		groupsList = groupsList[:len(groupsList)-1]
 	}
 
 	result := PaginatedUserGroup{Groups: groupsList, HasMore: hasMore}
@@ -87,7 +87,7 @@ func (c *GroupsController) GetGroup(ctx *gin.Context) {
 	groupStr := ctx.Param("groupId")
 
 	groupId, err := strconv.Atoi(groupStr)
-	
+
 	if err != nil {
 		ErrorNoStatus(ctx, err)
 		return
@@ -100,7 +100,7 @@ func (c *GroupsController) GetGroup(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, group)	
+	ctx.JSON(http.StatusOK, group)
 }
 
 func (c *GroupsController) CreateGroup(ctx *gin.Context) {
@@ -112,23 +112,25 @@ func (c *GroupsController) CreateGroup(ctx *gin.Context) {
 		return
 	}
 
-	log.Println(groupInfo.UserIds)
-
 	group, err := c.service.CreateGroup(groupInfo)
+
+	log.Println(err)
+
 	if err != nil {
 		ErrorNoStatus(ctx, err)
 		return
 	}
 
 	res := NewGroup{
-		ID: group.ID,
-		Name: group.Name,
-		Description: group.Description,
-		Location: group.Location,
-		ActivityID: group.ActivityID,
+		ID:           group.ID,
+		Name:         group.Name,
+		Description:  group.Description,
+		Location:     group.Location,
+		ActivityID:   group.ActivityID,
 		ActivityName: group.ActivityName,
 		ActivityIcon: group.ActivityIcon,
-		Members: group.Members,
+		Members:      group.Members,
+		Status:       group.Status,
 	}
 
 	ctx.JSON(http.StatusCreated, res)
@@ -138,7 +140,7 @@ func (c *GroupsController) ExitGroup(ctx *gin.Context) {
 	var exitParams repository.ExitGroupParams
 
 	log.Printf("Called")
-	
+
 	groupIdStr := ctx.Param("groupId")
 	groupId, err := strconv.Atoi(groupIdStr)
 	if err != nil {
@@ -149,9 +151,6 @@ func (c *GroupsController) ExitGroup(ctx *gin.Context) {
 
 	userToken, _ := ctx.Get("userID")
 	exitParams.UserID = userToken.(int32)
-	
-	log.Printf("Group: %d", exitParams.GroupID)
-	log.Printf("User: %d", exitParams.UserID)
 
 	err = c.service.ExitGroup(exitParams)
 	if err != nil {
@@ -179,5 +178,89 @@ func (c *GroupsController) DeleteGroup(ctx *gin.Context) {
 	}
 
 	res := GroupIdResponse{GroupId: id}
+	ctx.JSON(http.StatusOK, res)
+}
+
+func (c *GroupsController) UpdateGroupDescription(ctx *gin.Context) {
+	var descriptionParams repository.UpdateGroupDescriptiomParams
+
+	if err := ctx.ShouldBind(&descriptionParams); err != nil {
+		ErrorWithStatus(ctx, "Could not bind", http.StatusBadRequest)
+		return
+	}
+
+	groupIdStr := ctx.Param("groupId")
+	groupId, err := strconv.Atoi(groupIdStr)
+	if err != nil {
+		ErrorNoStatus(ctx, err)
+		return
+	}
+	descriptionParams.ID = int32(groupId)
+
+	err = c.service.UpdateGroupDescription(descriptionParams)
+
+	if err != nil {
+		ErrorNoStatus(ctx, err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{})
+}
+
+func (c *GroupsController) ChangeGroupStatus(ctx *gin.Context) {
+	var descriptionParams repository.ChangeGroupStatusParams
+
+	if err := ctx.ShouldBind(&descriptionParams); err != nil {
+		ErrorWithStatus(ctx, "Could not bind", http.StatusBadRequest)
+		return
+	}
+
+	groupIdStr := ctx.Param("groupId")
+	groupId, err := strconv.Atoi(groupIdStr)
+	if err != nil {
+		ErrorNoStatus(ctx, err)
+		return
+	}
+	descriptionParams.ID = int32(groupId)
+
+	err = c.service.ChangeGroupStatus(descriptionParams)
+
+	if err != nil {
+		ErrorNoStatus(ctx, err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{})
+}
+
+func (c *GroupsController) GetOpenGroups(ctx *gin.Context) {
+	var filter service.ActivityFilter
+
+	if err := ctx.ShouldBind(&filter); err != nil {
+		ErrorWithStatus(ctx, "Could not bind", http.StatusBadRequest)
+		return
+	}
+
+	limit, offset := GetLimmitAndOffset(ctx)
+
+	filter.Limit = int32(limit) + 1
+	filter.Offset = int32(offset)
+
+	groups, err := c.service.GetStatusOpenGroups(filter)
+
+	log.Println(groups)
+
+	hasMore := len(groups) == int(filter.Limit)
+	if hasMore {
+		groups = groups[:len(groups)-1]
+	}
+
+	if err != nil {
+		ErrorNoStatus(ctx, err)
+		return
+	}
+
+	res := PaginatedOpenGroup{Groups: groups, HasMore: hasMore}
+
 	ctx.JSON(http.StatusOK, res)
 }

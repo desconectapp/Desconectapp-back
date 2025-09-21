@@ -1,7 +1,7 @@
 -- name: CreateGroup :one
 WITH inserted_group AS (
-  INSERT INTO groups (name, description, location, activity_id)
-  VALUES ($1, $2, $3, $4)
+  INSERT INTO groups (name, description, location, activity_id, status)
+  VALUES ($1, $2, $3, $4, false)
   RETURNING *
 ), inserted_members AS (
   INSERT INTO group_members (user_id, group_id)
@@ -19,6 +19,7 @@ SELECT
   g.location,
   g.activity_id,
   g.created_at,
+  g.status,
   CAST(
     COALESCE(
       array_agg(m.user_id) FILTER (WHERE m.user_id IS NOT NULL),
@@ -30,7 +31,7 @@ SELECT
 FROM inserted_group g
 LEFT JOIN inserted_members m ON g.id = m.group_id
 JOIN activities a ON g.activity_id = a.id
-GROUP BY g.id, g.name, g.description, g.location, g.activity_id, g.created_at, a.name, a.icon;
+GROUP BY g.id, g.name, g.description, g.location, g.activity_id, g.created_at, a.name, a.icon, g.status;
 
 -- name: ListGroups :many
 WITH selected_groups AS (
@@ -62,13 +63,14 @@ SELECT
   g.created_at,
   a.name AS activity,
   a.icon,
-  g.location
+  g.location,
+  g.status
 FROM groups g
 JOIN activities a ON g.activity_id = a.id
 LEFT JOIN group_members gm ON gm.group_id = g.id
 LEFT JOIN users u ON gm.user_id = u.id
 WHERE g.id = $1
-GROUP BY g.id, g.name, g.description, g.created_at, a.name, a.icon, g.location;
+GROUP BY g.id, g.name, g.description, g.created_at, a.name, a.icon, g.location, g.status;
 
 -- name: DeleteGroup :one
 DELETE FROM groups
@@ -123,3 +125,37 @@ ORDER BY g.created_at DESC;
 DELETE FROM group_members
 WHERE group_id = $1 AND user_id = $2;
 
+-- name: UpdateGroupDescriptiom :exec
+UPDATE groups
+SET description = $2
+WHERE id = $1;
+
+-- name: ChangeGroupStatus :exec
+UPDATE groups
+SET status = $2
+WHERE id = $1;
+
+-- name: GetStatusOpenGroupsWithFilter :many
+SELECT 
+    g.id,
+    g.name,
+    g.description,
+    g.location,
+    a.name AS activity_name
+FROM groups g
+JOIN activities a ON g.activity_id = a.id
+WHERE g.status = TRUE
+  AND g.activity_id = sqlc.narg('activity_id')::int
+LIMIT $1 OFFSET $2;
+
+-- name: GetStatusOpenGroupsNoFilter :many
+SELECT 
+    g.id,
+    g.name,
+    g.description,
+    g.location,
+    a.name AS activity_name
+FROM groups g
+JOIN activities a ON g.activity_id = a.id
+WHERE g.status = TRUE
+LIMIT $1 OFFSET $2;
