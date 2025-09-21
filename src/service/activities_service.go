@@ -36,6 +36,9 @@ func (s *ActivitiesRequestService) ListActivitiesRequests(params repository.List
 }
 
 func (s *ActivitiesRequestService) CreateActivityRequest(params repository.CreateActivityRequestParams) (repository.ActivityRequest, error) {
+	if params.UserID == nil || params.ActivityID == nil {
+		return repository.ActivityRequest{}, fmt.Errorf("UserID and ActivityID cannot be nil")
+	}
 
 	// Primero chequeamos si la actividad es nueva (id=-1)
 	if *params.ActivityID == -1 {

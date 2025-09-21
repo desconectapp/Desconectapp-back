@@ -7,6 +7,8 @@ package repository
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createEmailVerificationToken = `-- name: CreateEmailVerificationToken :exec
@@ -86,7 +88,7 @@ INSERT INTO users (
 ) VALUES (
   $1, $2
 )
-RETURNING id, email
+RETURNING id, uuid, email
 `
 
 type CreateUserParams struct {
@@ -95,14 +97,15 @@ type CreateUserParams struct {
 }
 
 type CreateUserRow struct {
-	ID    int32  `json:"id"`
-	Email string `json:"email"`
+	ID    int32       `json:"id"`
+	Uuid  pgtype.UUID `json:"uuid"`
+	Email string      `json:"email"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (CreateUserRow, error) {
 	row := q.db.QueryRow(ctx, createUser, arg.Email, arg.Password)
 	var i CreateUserRow
-	err := row.Scan(&i.ID, &i.Email)
+	err := row.Scan(&i.ID, &i.Uuid, &i.Email)
 	return i, err
 }
 
@@ -140,7 +143,7 @@ func (q *Queries) GetUser(ctx context.Context, userID int32) (Profile, error) {
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, email, password, is_admin, email_validated, is_suspended FROM users
+SELECT id, uuid, email, password, is_admin, email_validated, is_suspended FROM users
 WHERE email = $1 LIMIT 1
 `
 
@@ -149,6 +152,7 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 	var i User
 	err := row.Scan(
 		&i.ID,
+		&i.Uuid,
 		&i.Email,
 		&i.Password,
 		&i.IsAdmin,
@@ -159,20 +163,50 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 }
 
 const getUserById = `-- name: GetUserById :one
-SELECT id, email, email_validated FROM users
+SELECT id, uuid, email, email_validated FROM users
 WHERE id = $1 LIMIT 1
 `
 
 type GetUserByIdRow struct {
-	ID             int32  `json:"id"`
-	Email          string `json:"email"`
-	EmailValidated bool   `json:"email_validated"`
+	ID             int32       `json:"id"`
+	Uuid           pgtype.UUID `json:"uuid"`
+	Email          string      `json:"email"`
+	EmailValidated bool        `json:"email_validated"`
 }
 
 func (q *Queries) GetUserById(ctx context.Context, id int32) (GetUserByIdRow, error) {
 	row := q.db.QueryRow(ctx, getUserById, id)
 	var i GetUserByIdRow
-	err := row.Scan(&i.ID, &i.Email, &i.EmailValidated)
+	err := row.Scan(
+		&i.ID,
+		&i.Uuid,
+		&i.Email,
+		&i.EmailValidated,
+	)
+	return i, err
+}
+
+const getUserByUUID = `-- name: GetUserByUUID :one
+SELECT id, uuid, email, email_validated FROM users
+WHERE uuid = $1 LIMIT 1
+`
+
+type GetUserByUUIDRow struct {
+	ID             int32       `json:"id"`
+	Uuid           pgtype.UUID `json:"uuid"`
+	Email          string      `json:"email"`
+	EmailValidated bool        `json:"email_validated"`
+}
+
+func (q *Queries) GetUserByUUID(ctx context.Context, uuid pgtype.UUID) (GetUserByUUIDRow, error) {
+	row := q.db.QueryRow(ctx, getUserByUUID, uuid)
+	var i GetUserByUUIDRow
+	err := row.Scan(
+		&i.ID,
+		&i.Uuid,
+		&i.Email,
+		&i.EmailValidated,
+	)
 	return i, err
 }
 

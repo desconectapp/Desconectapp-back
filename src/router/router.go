@@ -24,6 +24,7 @@ type Router struct {
 	adminUserController     *controller.AdminUserController
 	adminActivityController *controller.AdminActivityController
 	adminGroupController    *controller.AdminGroupController
+	chatsController         *controller.ChatsController
 	r                       *gin.Engine
 }
 
@@ -50,6 +51,8 @@ func NewRouter() *Router {
 	adminActivityController := controller.NewAdminActivityController(conn)
 	adminGroupController := controller.NewAdminGroupController(conn)
 
+	chatsController := controller.NewChatsController(conn)
+
 	r := gin.Default()
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:              []string{"http://localhost:5173"},
@@ -67,6 +70,7 @@ func NewRouter() *Router {
 		authController:          authController,
 		preferencesController:   preferencesController,
 		groupsController:        groupsController,
+		chatsController:         chatsController,
 		adminUserController:     adminUserController,
 		adminActivityController: adminActivityController,
 		adminGroupController:    adminGroupController,
@@ -134,6 +138,11 @@ func (router *Router) SetupRoutes() *gin.Engine {
 		groups.PUT("status/:groupId", router.groupsController.ChangeGroupStatus)
 		groups.GET("/open", router.groupsController.GetOpenGroups)
 	}
+	chats := router.r.Group("/chats")
+	chats.Use(router.authController.AuthMiddleware())
+	{
+		chats.GET("/token", router.chatsController.GetToken)
+	}
 
 	admin := router.r.Group("/admin")
 	admin.Use(router.authController.AdminMiddleware())
@@ -156,7 +165,6 @@ func (router *Router) SetupRoutes() *gin.Engine {
 		admin.POST("/activities", router.adminActivityController.CreateActivity)
 		admin.PUT("/activities/:id", router.adminActivityController.UpdateActivity)
 		admin.DELETE("/activities/:id", router.adminActivityController.DeleteActivity)
-
 
 		admin.GET("/groups", router.adminGroupController.ListGroups)
 		admin.GET("/groups/:id", router.adminGroupController.GetGroup)

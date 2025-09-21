@@ -2,6 +2,7 @@ DROP TABLE IF EXISTS users CASCADE;
 
 CREATE TABLE users (
   id SERIAL PRIMARY KEY,
+  uuid UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
   email TEXT UNIQUE NOT NULL,
   password TEXT NOT NULL,
   is_admin BOOLEAN NOT NULL DEFAULT false,
@@ -120,7 +121,7 @@ COPY activities(name, icon, category)
 FROM '/activities.csv'
 WITH (FORMAT csv, HEADER true);
 
-COPY users(email, password, is_admin)
+COPY users(email, password, uuid, is_admin)
 FROM '/users.csv'
 WITH (FORMAT csv, HEADER true);
 
