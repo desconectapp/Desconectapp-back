@@ -38,6 +38,7 @@ type CreateActivityRequestInput struct {
 // Monday starts at 0, Tuesday at 24, Wednesday at 48, etc.
 // For each day, hours are added as: day_offset + hour
 func parseSchedulesToWeekHours(schedules Schedules) []int32 {
+
 	dayOffsets := map[string]int32{
 		"monday":    0,
 		"tuesday":   24,
