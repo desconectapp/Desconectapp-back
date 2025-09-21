@@ -117,12 +117,13 @@ func (c *AdminUserController) UpdateUser(ctx *gin.Context) {
 		return
 	}
 
-	err := c.service.UpdateUserWithProfile(int32(id), req.Email, req.Validated, req.Name, req.Age, req.City, req.Situation, req.Gender, req.Complete)
+	updated, err := c.service.UpdateUserWithProfile(int32(id), req.Email, req.Validated, req.Name, req.Age, req.City, req.Situation, req.Gender, req.Complete)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	ctx.Status(http.StatusNoContent)
+
+	ctx.JSON(http.StatusOK, updated)
 }
 
 func (c *AdminUserController) DeleteUser(ctx *gin.Context) {

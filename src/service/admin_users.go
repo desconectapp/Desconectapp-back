@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 
 	repository "gin/db/generated"
 
@@ -12,7 +13,6 @@ type AdminUserService struct {
 	queries *repository.Queries
 	ctx     context.Context
 }
-
 
 type AdminUser struct {
 	ID               int32  `json:"id"`
@@ -25,7 +25,7 @@ type AdminUser struct {
 	Gender           string `json:"gender"`
 	ProfileComplete  bool   `json:"profile_complete"`
 	CreatedAt        string `json:"created_at"`
-	IsSuspended 	 bool	`json:"is_suspended"`
+	IsSuspended      bool   `json:"is_suspended"`
 }
 
 func NewAdminUserService(conn *pgxpool.Pool) *AdminUserService {
@@ -114,17 +114,17 @@ func (s *AdminUserService) CreateUserWithProfile(email, password string, validat
 	return s.GetUser(user.ID)
 }
 
-func (s *AdminUserService) UpdateUserWithProfile(id int32, email string, validated bool, name string, age int32, city, situation, gender string, complete bool) error {
-	err := s.queries.AdminUpdateUser(s.ctx, repository.AdminUpdateUserParams{
+func (s *AdminUserService) UpdateUserWithProfile(id int32, email string, validated bool, name string, age int32, city, situation, gender string, complete bool) (*AdminUser, error) {
+	user, err := s.queries.AdminUpdateUser(s.ctx, repository.AdminUpdateUserParams{
 		ID:             id,
 		Email:          email,
 		EmailValidated: validated,
 	})
 	if err != nil {
-		return err
+		return nil, fmt.Errorf("failed to update user: %w", err)
 	}
 
-	return s.queries.AdminUpdateProfile(s.ctx, repository.AdminUpdateProfileParams{
+	profile, err := s.queries.AdminUpdateProfile(s.ctx, repository.AdminUpdateProfileParams{
 		UserID:           id,
 		Name:             name,
 		Age:              age,
@@ -133,6 +133,23 @@ func (s *AdminUserService) UpdateUserWithProfile(id int32, email string, validat
 		Gender:           gender,
 		ProfileComplete:  complete,
 	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to update profile: %w", err)
+	}
+
+	return &AdminUser{
+		ID:               user.ID,
+		Email:            user.Email,
+		EmailValidated:   user.EmailValidated,
+		Name:             profile.Name,
+		Age:              profile.Age,
+		City:             profile.City,
+		CurrentSituation: profile.CurrentSituation,
+		Gender:           profile.Gender,
+		ProfileComplete:  profile.ProfileComplete,
+		CreatedAt:        profile.CreatedAt.Time.Format("2006-01-02 15:04:05"),
+		IsSuspended:      user.IsSuspended,
+	}, nil
 }
 
 func (s *AdminUserService) DeleteUser(id int32) error {

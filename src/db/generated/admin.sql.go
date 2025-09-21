@@ -872,10 +872,11 @@ func (q *Queries) AdminUpdateGroup(ctx context.Context, arg AdminUpdateGroupPara
 	return i, err
 }
 
-const adminUpdateProfile = `-- name: AdminUpdateProfile :exec
+const adminUpdateProfile = `-- name: AdminUpdateProfile :one
 UPDATE profiles
 SET name = $2, age = $3, city = $4, current_situation = $5, gender = $6, profile_complete = $7
 WHERE user_id = $1
+RETURNING user_id, name, age, city, current_situation, gender, profile_complete, created_at
 `
 
 type AdminUpdateProfileParams struct {
@@ -888,8 +889,19 @@ type AdminUpdateProfileParams struct {
 	ProfileComplete  bool   `json:"profile_complete"`
 }
 
-func (q *Queries) AdminUpdateProfile(ctx context.Context, arg AdminUpdateProfileParams) error {
-	_, err := q.db.Exec(ctx, adminUpdateProfile,
+type AdminUpdateProfileRow struct {
+	UserID           int32            `json:"user_id"`
+	Name             string           `json:"name"`
+	Age              int32            `json:"age"`
+	City             string           `json:"city"`
+	CurrentSituation string           `json:"current_situation"`
+	Gender           string           `json:"gender"`
+	ProfileComplete  bool             `json:"profile_complete"`
+	CreatedAt        pgtype.Timestamp `json:"created_at"`
+}
+
+func (q *Queries) AdminUpdateProfile(ctx context.Context, arg AdminUpdateProfileParams) (AdminUpdateProfileRow, error) {
+	row := q.db.QueryRow(ctx, adminUpdateProfile,
 		arg.UserID,
 		arg.Name,
 		arg.Age,
@@ -898,13 +910,25 @@ func (q *Queries) AdminUpdateProfile(ctx context.Context, arg AdminUpdateProfile
 		arg.Gender,
 		arg.ProfileComplete,
 	)
-	return err
+	var i AdminUpdateProfileRow
+	err := row.Scan(
+		&i.UserID,
+		&i.Name,
+		&i.Age,
+		&i.City,
+		&i.CurrentSituation,
+		&i.Gender,
+		&i.ProfileComplete,
+		&i.CreatedAt,
+	)
+	return i, err
 }
 
-const adminUpdateUser = `-- name: AdminUpdateUser :exec
+const adminUpdateUser = `-- name: AdminUpdateUser :one
 UPDATE users
 SET email = $2, email_validated = $3
 WHERE id = $1
+RETURNING id, email, email_validated, is_suspended
 `
 
 type AdminUpdateUserParams struct {
@@ -913,7 +937,21 @@ type AdminUpdateUserParams struct {
 	EmailValidated bool   `json:"email_validated"`
 }
 
-func (q *Queries) AdminUpdateUser(ctx context.Context, arg AdminUpdateUserParams) error {
-	_, err := q.db.Exec(ctx, adminUpdateUser, arg.ID, arg.Email, arg.EmailValidated)
-	return err
+type AdminUpdateUserRow struct {
+	ID             int32  `json:"id"`
+	Email          string `json:"email"`
+	EmailValidated bool   `json:"email_validated"`
+	IsSuspended    bool   `json:"is_suspended"`
+}
+
+func (q *Queries) AdminUpdateUser(ctx context.Context, arg AdminUpdateUserParams) (AdminUpdateUserRow, error) {
+	row := q.db.QueryRow(ctx, adminUpdateUser, arg.ID, arg.Email, arg.EmailValidated)
+	var i AdminUpdateUserRow
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.EmailValidated,
+		&i.IsSuspended,
+	)
+	return i, err
 }

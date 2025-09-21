@@ -27,15 +27,17 @@ INSERT INTO profiles (user_id, name, age, city, current_situation, gender)
 VALUES ($1, $2, $3, $4, $5, $6)
 RETURNING user_id, name, age, city, current_situation, gender, profile_complete, created_at;
 
--- name: AdminUpdateUser :exec
+-- name: AdminUpdateUser :one
 UPDATE users
 SET email = $2, email_validated = $3
-WHERE id = $1;
+WHERE id = $1
+RETURNING id, email, email_validated, is_suspended;
 
--- name: AdminUpdateProfile :exec
+-- name: AdminUpdateProfile :one
 UPDATE profiles
 SET name = $2, age = $3, city = $4, current_situation = $5, gender = $6, profile_complete = $7
-WHERE user_id = $1;
+WHERE user_id = $1
+RETURNING user_id, name, age, city, current_situation, gender, profile_complete, created_at;
 
 -- name: AdminDeleteUser :exec
 DELETE FROM users WHERE id = $1;
