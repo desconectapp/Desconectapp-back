@@ -18,8 +18,8 @@ JOIN profiles p ON u.id = p.user_id
 WHERE u.id = $1;
 
 -- name: AdminCreateUser :one
-INSERT INTO users (email, password, email_validated)
-VALUES ($1, $2, $3)
+INSERT INTO users (email, password, email_validated, is_admin)
+VALUES ($1, $2, $3, $4)
 RETURNING id, email, email_validated;
 
 -- name: AdminCreateProfile :one

@@ -2,6 +2,7 @@ package controller
 
 import (
 	"gin/service"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -86,13 +87,16 @@ func (c *AdminUserController) CreateUser(ctx *gin.Context) {
 		City      string `json:"city"`
 		Situation string `json:"situation"`
 		Gender    string `json:"gender"`
+		IsAdmin   bool   `json:"is_admin"`
 	}
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	user, err := c.service.CreateUserWithProfile(req.Email, req.Password, req.Validated, req.Name, req.Age, req.City, req.Situation, req.Gender)
+	log.Println(req.IsAdmin)
+
+	user, err := c.service.CreateUserWithProfile(req.Email, req.Password, req.Validated, req.Name, req.Age, req.City, req.Situation, req.Gender, req.IsAdmin)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

@@ -7,6 +7,7 @@ import (
 	repository "gin/db/generated"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type AdminUserService struct {
@@ -89,11 +90,17 @@ func (s *AdminUserService) GetUser(id int32) (*AdminUser, error) {
 	}, nil
 }
 
-func (s *AdminUserService) CreateUserWithProfile(email, password string, validated bool, name string, age int32, city, situation, gender string) (*AdminUser, error) {
+func (s *AdminUserService) CreateUserWithProfile(email, password string, validated bool, name string, age int32, city, situation, gender string, isAdmin bool) (*AdminUser, error) {
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, err
+	}
+
 	user, err := s.queries.AdminCreateUser(s.ctx, repository.AdminCreateUserParams{
 		Email:          email,
-		Password:       password,
+		Password:       string(hashedPassword),
 		EmailValidated: validated,
+		IsAdmin:        isAdmin,
 	})
 	if err != nil {
 		return nil, err

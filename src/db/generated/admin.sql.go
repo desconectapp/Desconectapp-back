@@ -197,8 +197,8 @@ func (q *Queries) AdminCreateProfile(ctx context.Context, arg AdminCreateProfile
 }
 
 const adminCreateUser = `-- name: AdminCreateUser :one
-INSERT INTO users (email, password, email_validated)
-VALUES ($1, $2, $3)
+INSERT INTO users (email, password, email_validated, is_admin)
+VALUES ($1, $2, $3, $4)
 RETURNING id, email, email_validated
 `
 
@@ -206,6 +206,7 @@ type AdminCreateUserParams struct {
 	Email          string `json:"email"`
 	Password       string `json:"password"`
 	EmailValidated bool   `json:"email_validated"`
+	IsAdmin        bool   `json:"is_admin"`
 }
 
 type AdminCreateUserRow struct {
@@ -215,7 +216,12 @@ type AdminCreateUserRow struct {
 }
 
 func (q *Queries) AdminCreateUser(ctx context.Context, arg AdminCreateUserParams) (AdminCreateUserRow, error) {
-	row := q.db.QueryRow(ctx, adminCreateUser, arg.Email, arg.Password, arg.EmailValidated)
+	row := q.db.QueryRow(ctx, adminCreateUser,
+		arg.Email,
+		arg.Password,
+		arg.EmailValidated,
+		arg.IsAdmin,
+	)
 	var i AdminCreateUserRow
 	err := row.Scan(&i.ID, &i.Email, &i.EmailValidated)
 	return i, err
