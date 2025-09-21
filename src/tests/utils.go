@@ -2,15 +2,20 @@ package test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"gin/controller"
 	"gin/service"
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
+	repository "gin/db/generated"
+
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
@@ -118,9 +123,19 @@ func SendActivityRequest(t *testing.T, r *gin.Engine, userId int32, activityId i
 	err = json.Unmarshal(w.Body.Bytes(), &response)
 	assert.Equal(t, err, nil, "Error should be nil")
 
+	activity, err := GetActivityByID(activityId)
+	assert.Equal(t, err, nil, "Error should be nil")
+	
+	var expectedDescription string
+	if activity.Icon != nil {
+		expectedDescription = *activity.Icon + " " + activity.Name
+	} else {
+		expectedDescription = activity.Name
+	}
+
 	assert.Equal(t, *body.UserID, *response.UserID, "UserID should match")
 	assert.Equal(t, *body.ActivityID, *response.ActivityID, "ActivityID should match")
-	assert.Equal(t, *body.Description, *response.Description, "Description should match")
+	assert.Equal(t, expectedDescription, *response.Description, "Description should match")
 	assert.Equal(t, *body.ParticipantsNeeded, *response.ParticipantsNeeded, "Participants Needed should match")
 	assert.Equal(t, *body.MaxParticipants, *response.MaximumParticipants, "Maximum Participants should match")
 	assert.Equal(t, *body.Latitude, *response.Latitude, "Latitude should match")
@@ -259,3 +274,21 @@ func NewUserWithProfile(t *testing.T, r *gin.Engine, emailStart string, profile 
 
 	return userID, token
 }
+
+// GetActivityByID retrieves an activity from the database by its ID for testing purposes
+func GetActivityByID(activityID int32) (repository.Activity, error) {
+	conn, err := pgxpool.New(context.Background(), os.Getenv("DATABASE_URL"))
+	if err != nil {
+		return repository.Activity{}, err
+	}
+	defer conn.Close()
+
+	queries := repository.New(conn)
+	activity, err := queries.GetActivityByID(context.Background(), activityID)
+	if err != nil {
+		return repository.Activity{}, err
+	}
+
+	return activity, nil
+}
+
