@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"gin/controller"
 	"gin/service"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -146,6 +147,8 @@ func NewUser(t *testing.T, r *gin.Engine, emailStart string) (int32, string) {
 	r.ServeHTTP(w, req)
 
 	var response controller.AuthResponse
+
+	log.Println(response)
 
 	err = json.Unmarshal(w.Body.Bytes(), &response)
 	assert.Equal(t, err, nil, "Error should be nil")
