@@ -6,7 +6,7 @@ import (
 
 	repository "gin/db/generated"
 
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type AdminActivityService struct {
@@ -36,7 +36,7 @@ func toNullCategory(cat *string) repository.NullCategories {
 	}
 }
 
-func NewAdminActivityService(conn *pgx.Conn) *AdminActivityService {
+func NewAdminActivityService(conn *pgxpool.Pool) *AdminActivityService {
 	queries := repository.New(conn)
 	ctx := context.Background()
 

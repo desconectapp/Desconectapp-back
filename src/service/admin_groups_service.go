@@ -4,7 +4,7 @@ import (
 	"context"
 	repository "gin/db/generated"
 
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type AdminGroupService struct {
@@ -28,7 +28,7 @@ type AdminGroupMember struct {
 	Email *string `json:"email,omitempty"`
 }
 
-func NewAdminGroupService(conn *pgx.Conn) *AdminGroupService {
+func NewAdminGroupService(conn *pgxpool.Pool) *AdminGroupService {
 	queries := repository.New(conn)
 	ctx := context.Background()
 

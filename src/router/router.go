@@ -52,7 +52,7 @@ func NewRouter() *Router {
 
 	r := gin.Default()
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:              []string{"http://localhost:5174"},
+		AllowOrigins:              []string{"http://localhost:5173"},
 		AllowMethods:              []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:              []string{"Origin", "Content-Type", "Authorization"},
 		ExposeHeaders:             []string{"Content-Length", "X-Total-Count"},
@@ -145,7 +145,8 @@ func (router *Router) SetupRoutes() *gin.Engine {
 		admin.POST("/users", router.adminUserController.CreateUser)
 		admin.PUT("/users/:id", router.adminUserController.UpdateUser)
 		admin.DELETE("/users/:id", router.adminUserController.DeleteUser)
-		admin.POST("/users/:id/suspend", router.adminUserController.DeleteUser)
+		admin.POST("/users/:id/suspend", router.adminUserController.SuspendUser)
+		admin.POST("/users/:id/unsuspend", router.adminUserController.UnsuspendUser)
 
 		admin.POST("/users/password/reset", router.authController.ForgotPassword)
 		admin.POST("/users/email/verify", router.authController.ResendValidationEmail)

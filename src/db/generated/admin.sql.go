@@ -117,7 +117,7 @@ func (q *Queries) AdminCreateActivity(ctx context.Context, arg AdminCreateActivi
 const adminCreateGroup = `-- name: AdminCreateGroup :one
 INSERT INTO groups (name, description, location, activity_id)
 VALUES ($1, $2, $3, $4)
-RETURNING id, name, description, location, activity_id, created_at
+RETURNING id, name, description, location, status, activity_id, created_at
 `
 
 type AdminCreateGroupParams struct {
@@ -140,6 +140,7 @@ func (q *Queries) AdminCreateGroup(ctx context.Context, arg AdminCreateGroupPara
 		&i.Name,
 		&i.Description,
 		&i.Location,
+		&i.Status,
 		&i.ActivityID,
 		&i.CreatedAt,
 	)
@@ -797,6 +798,18 @@ func (q *Queries) AdminSuspendUser(ctx context.Context, id int32) error {
 	return err
 }
 
+const adminUnsuspendUser = `-- name: AdminUnsuspendUser :exec
+UPDATE users
+SET is_suspended = false
+WHERE id = $1
+RETURNING id
+`
+
+func (q *Queries) AdminUnsuspendUser(ctx context.Context, id int32) error {
+	_, err := q.db.Exec(ctx, adminUnsuspendUser, id)
+	return err
+}
+
 const adminUpdateActivity = `-- name: AdminUpdateActivity :exec
 UPDATE activities
 SET name = $2, icon = $3, category = $4
@@ -827,7 +840,7 @@ SET name = $2,
     location = $4,
     activity_id = $5
 WHERE id = $1
-RETURNING id, name, description, location, activity_id, created_at
+RETURNING id, name, description, location, status, activity_id, created_at
 `
 
 type AdminUpdateGroupParams struct {
@@ -852,6 +865,7 @@ func (q *Queries) AdminUpdateGroup(ctx context.Context, arg AdminUpdateGroupPara
 		&i.Name,
 		&i.Description,
 		&i.Location,
+		&i.Status,
 		&i.ActivityID,
 		&i.CreatedAt,
 	)

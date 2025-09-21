@@ -50,6 +50,11 @@ WITH suspend AS (
 DELETE FROM group_members
 WHERE user_id IN (SELECT id FROM suspend);
 
+-- name: AdminUnsuspendUser :exec
+UPDATE users
+SET is_suspended = false
+WHERE id = $1
+RETURNING id;
 
 -- name: AdminCountUsers :one
 SELECT COUNT(*)

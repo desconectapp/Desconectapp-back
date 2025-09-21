@@ -6,14 +6,14 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type AdminUserController struct {
 	service *service.AdminUserService
 }
 
-func NewAdminUserController(conn *pgx.Conn) *AdminUserController {
+func NewAdminUserController(conn *pgxpool.Pool) *AdminUserController {
 	service := service.NewAdminUserService(conn)
 	return &AdminUserController{
 		service: service,
@@ -137,6 +137,15 @@ func (c *AdminUserController) DeleteUser(ctx *gin.Context) {
 func (c *AdminUserController) SuspendUser(ctx *gin.Context) {
 	id, _ := strconv.Atoi(ctx.Param("id"))
 	if err := c.service.SuspendUser(int32(id)); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "The server couldn't suspend the user"})
+		return
+	}
+	ctx.Status(http.StatusNoContent)
+}
+
+func (c *AdminUserController) UnsuspendUser(ctx *gin.Context) {
+	id, _ := strconv.Atoi(ctx.Param("id"))
+	if err := c.service.UnsuspendUser(int32(id)); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "The server couldn't suspend the user"})
 		return
 	}

@@ -4,7 +4,8 @@ import (
 	"context"
 
 	repository "gin/db/generated"
-	"github.com/jackc/pgx/v5"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type AdminUserService struct {
@@ -27,7 +28,7 @@ type AdminUser struct {
 	IsSuspended 	 bool	`json:"is_suspended"`
 }
 
-func NewAdminUserService(conn *pgx.Conn) *AdminUserService {
+func NewAdminUserService(conn *pgxpool.Pool) *AdminUserService {
 	queries := repository.New(conn)
 	ctx := context.Background()
 
@@ -150,3 +151,6 @@ func (s *AdminUserService) SuspendUser(id int32) any {
 	return s.queries.AdminSuspendUser(s.ctx, id)
 }
 
+func (s *AdminUserService) UnsuspendUser(id int32) any {
+	return s.queries.AdminUnsuspendUser(s.ctx, id)
+}

@@ -7,14 +7,14 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type AdminGroupController struct {
 	service *service.AdminGroupService
 }
 
-func NewAdminGroupController(conn *pgx.Conn) *AdminGroupController {
+func NewAdminGroupController(conn *pgxpool.Pool) *AdminGroupController {
 	svc := service.NewAdminGroupService(conn)
 	return &AdminGroupController{
 		service: svc,
