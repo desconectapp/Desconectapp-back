@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"fmt"
 	repository "gin/db/generated"
 	"gin/service"
 	"net/http"
@@ -40,7 +39,6 @@ type CreateActivityRequestInput struct {
 // For each day, hours are added as: day_offset + hour
 func parseSchedulesToWeekHours(schedules Schedules) []int32 {
 
-	fmt.Println("schedules", schedules)
 	dayOffsets := map[string]int32{
 		"monday":    0,
 		"tuesday":   24,
@@ -137,8 +135,6 @@ func validateActivityRequest(ctx *gin.Context, activityParams repository.CreateA
 		ErrorWithStatus(ctx, "Search radius must be between 1 and 100", http.StatusBadRequest)
 		return false
 	}
-
-	fmt.Println("activityParams", *activityParams.UserID, *activityParams.ActivityID, *activityParams.Latitude, *activityParams.Longitude, *activityParams.SearchRadius, *activityParams.ParticipantsNeeded, *activityParams.MaximumParticipants)
 
 	return true
 }
