@@ -148,11 +148,12 @@ func NewUser(t *testing.T, r *gin.Engine, emailStart string) (int32, string) {
 
 	var response controller.AuthResponse
 
-	log.Println(response)
-
+	
 	err = json.Unmarshal(w.Body.Bytes(), &response)
 	assert.Equal(t, err, nil, "Error should be nil")
-
+	
+	log.Println(response)
+	
 	_, _, err = service.ValidateSession(response.Token)
 	assert.Equal(t, err, nil, "Error should be nil")
 

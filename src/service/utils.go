@@ -93,8 +93,11 @@ func ValidateSession(tokenString string) (int32, bool, error) {
 		if time.Now().Unix() > exp {
 			return -2, false, errors.New("invalid token")
 		}
-
-		isAdmin := claims["is_admin"].(bool)
+		
+		var isAdmin bool = false
+        if claims["is_admin"] != nil {
+            isAdmin = claims["is_admin"].(bool)
+        }
 
 		return int32(claims["sub"].(float64)), isAdmin, nil
 	}

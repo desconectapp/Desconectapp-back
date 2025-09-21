@@ -103,7 +103,7 @@ CREATE TABLE groups (
     name TEXT,
     description TEXT,
     location TEXT,
-    status BOOLEAN,
+    status BOOLEAN DEFAULT false,
     activity_id INTEGER NOT NULL REFERENCES activities(id) ON DELETE CASCADE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );

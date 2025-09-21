@@ -91,10 +91,10 @@ func (s *AuthService) RefreshToken(refreshToken string) (*Session, error) {
 
 		userID := int32(claims["sub"].(float64))
 
-		isAdmin := claims["is_admin"].(bool)
-		if !isAdmin {
-			isAdmin = false
-		}
+		var isAdmin bool = false
+        if claims["is_admin"] != nil {
+            isAdmin = claims["is_admin"].(bool)
+        }
 
 		accesExpirationTime, refreshExpirationTime := Expirations()
 
