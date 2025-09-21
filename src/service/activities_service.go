@@ -36,6 +36,12 @@ func (s *ActivitiesRequestService) ListActivitiesRequests(params repository.List
 }
 
 func (s *ActivitiesRequestService) CreateActivityRequest(params repository.CreateActivityRequestParams) (repository.ActivityRequest, error) {
+	fmt.Printf("CreateActivityRequest called with UserID: *%v, ActivityID: *%v\n", params.UserID, params.ActivityID)
+	
+
+	if params.UserID == nil || params.ActivityID == nil {
+		return repository.ActivityRequest{}, fmt.Errorf("UserID and ActivityID cannot be nil")
+	}
 
 	existingActivityRequest, err := s.queries.GetActivityRequestByUserAndActivityID(s.ctx, repository.GetActivityRequestByUserAndActivityIDParams{
 		UserID:     params.UserID,

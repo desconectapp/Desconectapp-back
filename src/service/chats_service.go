@@ -32,9 +32,13 @@ func (s *ChatsService) GetToken(userID int32) (string, error) {
 		return "", fmt.Errorf("SUPABASE_JWT_SECRET not configured")
 	}
 
-	// Create claims — sub must be your user ID
+	user, err := s.queries.GetUserById(s.ctx, userID)
+	if err != nil {
+		return "", err
+	}
+
 	claims := jwt.MapClaims{
-		"sub":  fmt.Sprintf("%d", userID),               // auth.uid() will return this
+		"sub":  user.Uuid.String(),                      // auth.uid() will return this
 		"exp":  time.Now().Add(15 * time.Minute).Unix(), // short-lived for safety
 		"role": "authenticated",                         // optional but common for RLS policies
 	}

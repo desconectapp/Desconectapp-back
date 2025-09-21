@@ -3,7 +3,7 @@ SELECT * FROM profiles
 WHERE user_id = $1 LIMIT 1;
 
 -- name: GetUserById :one
-SELECT id, email, email_validated FROM users
+SELECT id, uuid, email, email_validated FROM users
 WHERE id = $1 LIMIT 1;
 
 -- name: ListUsers :many
@@ -16,7 +16,7 @@ INSERT INTO users (
 ) VALUES (
   $1, $2
 )
-RETURNING id, email;
+RETURNING id, uuid, email;
 
 -- name: UpdateUser :one
 UPDATE users
@@ -46,8 +46,12 @@ WHERE id = $1
 RETURNING id;
 
 -- name: GetUserByEmail :one
-SELECT * FROM users
+SELECT id, uuid, email, password, email_validated FROM users
 WHERE email = $1 LIMIT 1;
+
+-- name: GetUserByUUID :one
+SELECT id, uuid, email, email_validated FROM users
+WHERE uuid = $1 LIMIT 1;
 
 -- name: CreateEmailVerificationToken :exec
 INSERT INTO email_verification_codes  (

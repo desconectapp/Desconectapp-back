@@ -133,10 +133,11 @@ type Profile struct {
 }
 
 type User struct {
-	ID             int32  `json:"id"`
-	Email          string `json:"email"`
-	Password       string `json:"password"`
-	EmailValidated bool   `json:"email_validated"`
+	ID             int32       `json:"id"`
+	Uuid           pgtype.UUID `json:"uuid"`
+	Email          string      `json:"email"`
+	Password       string      `json:"password"`
+	EmailValidated bool        `json:"email_validated"`
 }
 
 type UsersPreference struct {
