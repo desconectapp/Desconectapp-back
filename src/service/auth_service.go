@@ -60,7 +60,7 @@ func (s *AuthService) Login(email, password string) (*Session, error) {
 
 	accesExpirationTime, refreshExpirationTime := Expirations()
 
-	accessTokenString, refreshTokenString, err := CreateAccessAndRefreshTokens(user.ID, accesExpirationTime, refreshExpirationTime)
+	accessTokenString, refreshTokenString, err := CreateAccessAndRefreshTokens(user.ID, user.IsAdmin, accesExpirationTime, refreshExpirationTime)
 
 	if err != nil {
 		return nil, err
@@ -91,9 +91,14 @@ func (s *AuthService) RefreshToken(refreshToken string) (*Session, error) {
 
 		userID := int32(claims["sub"].(float64))
 
+		isAdmin := claims["is_admin"].(bool)
+		if !isAdmin {
+			isAdmin = false
+		}
+
 		accesExpirationTime, refreshExpirationTime := Expirations()
 
-		newAccessTokenString, newRefreshToken, err := CreateAccessAndRefreshTokens(userID, accesExpirationTime, refreshExpirationTime)
+		newAccessTokenString, newRefreshToken, err := CreateAccessAndRefreshTokens(userID, isAdmin, accesExpirationTime, refreshExpirationTime)
 
 		if err != nil {
 			return nil, err
@@ -137,7 +142,7 @@ func (s *AuthService) Signup(name, email, password string) (*Session, error) {
 
 	accesExpirationTime, refreshExpirationTime := Expirations()
 
-	accessTokenString, refreshTokenString, err := CreateAccessAndRefreshTokens(user.ID, accesExpirationTime, refreshExpirationTime)
+	accessTokenString, refreshTokenString, err := CreateAccessAndRefreshTokens(user.ID, false, accesExpirationTime, refreshExpirationTime)
 
 	if err != nil {
 		return nil, err

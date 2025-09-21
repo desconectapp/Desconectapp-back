@@ -72,10 +72,10 @@ func TestLogIn(t *testing.T) {
 
 	assert.Equal(t, err, nil, "Error should be nil")
 
-	_, err = service.ValidateSession(response.Token)
+	_, _, err = service.ValidateSession(response.Token)
 	assert.Equal(t, err, nil, "Error should be nil")
 
-	_, err = service.ValidateSession(response.RefreshToken)
+	_, _, err = service.ValidateSession(response.RefreshToken)
 	assert.Equal(t, err, nil, "Error should be nil")
 	
 	assert.Equal(t, w.Code, http.StatusOK, "Status code should be 200")
@@ -105,10 +105,10 @@ func TestRefresh(t *testing.T) {
 
 	assert.Equal(t, err, nil, "Error should be nil")
 
-	_, err = service.ValidateSession(response.Token)
+	_, _, err = service.ValidateSession(response.Token)
 	assert.Equal(t, err, nil, "Invalid Token")
 
-	_, err = service.ValidateSession(response.RefreshToken)
+	_, _, err = service.ValidateSession(response.RefreshToken)
 	assert.Equal(t, err, nil, "Invalid Refresh Token")
 	
 	assert.Equal(t, w.Code, http.StatusOK, "Status code should be 200")
@@ -132,7 +132,7 @@ func TestRefresh(t *testing.T) {
 	err = json.Unmarshal(w_2.Body.Bytes(), &response_2)
 	assert.Equal(t, err, nil, "Error should be nil")
 
-	_, err = service.ValidateSession(response_2.Token)
+	_, _, err = service.ValidateSession(response_2.Token)
 	assert.Equal(t, err, nil, "Invalid Token")
 
 	assert.NotEqual(t, response.Token, response_2.Token)

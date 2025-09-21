@@ -150,10 +150,10 @@ func NewUser(t *testing.T, r *gin.Engine, emailStart string) (int32, string) {
 	err = json.Unmarshal(w.Body.Bytes(), &response)
 	assert.Equal(t, err, nil, "Error should be nil")
 
-	_, err = service.ValidateSession(response.Token)
+	_, _, err = service.ValidateSession(response.Token)
 	assert.Equal(t, err, nil, "Error should be nil")
 
-	_, err = service.ValidateSession(response.RefreshToken)
+	_, _, err = service.ValidateSession(response.RefreshToken)
 	assert.Equal(t, err, nil, "Error should be nil")
 
 	assert.Equal(t, w.Code, http.StatusCreated, "Status code should be 201")

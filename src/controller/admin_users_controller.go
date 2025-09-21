@@ -1,0 +1,158 @@
+package controller
+
+import (
+	"gin/service"
+	"log"
+	"net/http"
+	"strconv"
+
+	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5/pgxpool"
+)
+
+type AdminUserController struct {
+	service *service.AdminUserService
+}
+
+func NewAdminUserController(conn *pgxpool.Pool) *AdminUserController {
+	service := service.NewAdminUserService(conn)
+	return &AdminUserController{
+		service: service,
+	}
+}
+
+func (c *AdminUserController) GetMe(ctx *gin.Context) {
+	ctx.JSON(http.StatusOK, "")
+}
+
+func (c *AdminUserController) LogOut(ctx *gin.Context) {
+	ctx.SetCookie("session", "", -1, "/", "", false, true)
+	ctx.SetCookie("refresh", "", -1, "/", "", false, true)
+	ctx.JSON(http.StatusOK, "")
+}
+
+func (c *AdminUserController) ListUsers(ctx *gin.Context) {
+	limit, _ := strconv.Atoi(ctx.DefaultQuery("_end", "25"))
+	offset, _ := strconv.Atoi(ctx.DefaultQuery("_start", "0"))
+	email := ctx.Query("email")
+	name := ctx.Query("name")
+
+	if q := ctx.Query("q"); q != "" {
+		email = q
+	}
+
+	emailValidated := ctx.Query("email_validated")
+	var filterEmailValidated *bool
+	if emailValidated != "" {
+		val, err := strconv.ParseBool(emailValidated)
+		if err == nil {
+			filterEmailValidated = &val
+		}
+	}
+
+	users, err := c.service.ListUsers(int32(limit-offset), int32(offset), &email, &name, filterEmailValidated)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	total, err := c.service.CountUsers(&email, &name, nil)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.Header("X-Total-Count", strconv.Itoa(int(total)))
+
+	ctx.JSON(http.StatusOK, users)
+}
+
+func (c *AdminUserController) GetUser(ctx *gin.Context) {
+	id, _ := strconv.Atoi(ctx.Param("id"))
+	user, err := c.service.GetUser(int32(id))
+	if err != nil {
+		ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+	ctx.JSON(http.StatusOK, user)
+}
+
+func (c *AdminUserController) CreateUser(ctx *gin.Context) {
+	var req struct {
+		Email     string `json:"email"`
+		Password  string `json:"password"`
+		Validated bool   `json:"validated"`
+		Name      string `json:"name"`
+		Age       int32  `json:"age"`
+		City      string `json:"city"`
+		Situation string `json:"situation"`
+		Gender    string `json:"gender"`
+		IsAdmin   bool   `json:"is_admin"`
+	}
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	log.Println(req.IsAdmin)
+
+	user, err := c.service.CreateUserWithProfile(req.Email, req.Password, req.Validated, req.Name, req.Age, req.City, req.Situation, req.Gender, req.IsAdmin)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	ctx.JSON(http.StatusCreated, user)
+}
+
+func (c *AdminUserController) UpdateUser(ctx *gin.Context) {
+	id, _ := strconv.Atoi(ctx.Param("id"))
+	var req struct {
+		Email     string `json:"email"`
+		Validated bool   `json:"validated"`
+		Name      string `json:"name"`
+		Age       int32  `json:"age"`
+		City      string `json:"city"`
+		Situation string `json:"situation"`
+		Gender    string `json:"gender"`
+		Complete  bool   `json:"complete"`
+	}
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	updated, err := c.service.UpdateUserWithProfile(int32(id), req.Email, req.Validated, req.Name, req.Age, req.City, req.Situation, req.Gender, req.Complete)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, updated)
+}
+
+func (c *AdminUserController) DeleteUser(ctx *gin.Context) {
+	id, _ := strconv.Atoi(ctx.Param("id"))
+	if err := c.service.DeleteUser(int32(id)); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	ctx.Status(http.StatusNoContent)
+}
+
+func (c *AdminUserController) SuspendUser(ctx *gin.Context) {
+	id, _ := strconv.Atoi(ctx.Param("id"))
+	if err := c.service.SuspendUser(int32(id)); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "The server couldn't suspend the user"})
+		return
+	}
+	ctx.Status(http.StatusNoContent)
+}
+
+func (c *AdminUserController) UnsuspendUser(ctx *gin.Context) {
+	id, _ := strconv.Atoi(ctx.Param("id"))
+	if err := c.service.UnsuspendUser(int32(id)); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "The server couldn't suspend the user"})
+		return
+	}
+	ctx.Status(http.StatusNoContent)
+}

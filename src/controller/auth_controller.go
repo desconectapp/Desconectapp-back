@@ -41,6 +41,9 @@ func (c *AuthController) Login(ctx *gin.Context) {
 		return
 	}
 
+	ctx.SetCookie("session", session.Token, int(session.ExpiresAt.Sub(session.ExpiresAt).Seconds()), "/", "", false, true)
+	ctx.SetCookie("refresh", session.RefreshToken, int(session.RefreshExpiresAt.Sub(session.RefreshExpiresAt).Seconds()), "/", "", false, true)
+
 	ctx.JSON(http.StatusOK, AuthResponse{
 		UserId:           session.UserId,
 		Token:            session.Token,
@@ -66,6 +69,9 @@ func (c *AuthController) Refresh(ctx *gin.Context) {
 		return
 	}
 
+	ctx.SetCookie("session", session.Token, int(session.ExpiresAt.Sub(session.ExpiresAt).Seconds()), "/", "", false, true)
+	ctx.SetCookie("refresh", session.RefreshToken, int(session.RefreshExpiresAt.Sub(session.RefreshExpiresAt).Seconds()), "/", "", false, true)
+
 	ctx.JSON(http.StatusOK, AuthResponse{
 		UserId:           session.UserId,
 		Token:            session.Token,
@@ -88,7 +94,7 @@ func (c *AuthController) AuthMiddleware() gin.HandlerFunc {
 			token = token[7:]
 		}
 
-		userID, err := service.ValidateSession(token)
+		userID, _, err := service.ValidateSession(token)
 		if err != nil {
 			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
 			ctx.Abort()
@@ -97,6 +103,39 @@ func (c *AuthController) AuthMiddleware() gin.HandlerFunc {
 
 		ctx.Set("userID", userID)
 		ctx.Next()
+	}
+}
+
+func (c *AuthController) AdminMiddleware() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		token := ctx.GetHeader("Authorization")
+		if token == "" {
+			cookie, err := ctx.Cookie("session")
+			if err != nil || cookie == "" {
+				ctx.JSON(http.StatusUnauthorized, gin.H{"error": "No token provided"})
+				ctx.Abort()
+			}
+			token = cookie
+		} else {
+			if len(token) > 7 && token[:7] == "Bearer " {
+				token = token[7:]
+			}
+		}
+
+		userID, isAdmin, err := service.ValidateSession(token)
+		if err != nil {
+			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
+			ctx.Abort()
+			return
+		}
+
+		ctx.Set("adminID", userID)
+		ctx.Set("isAdmin", true)
+		if !isAdmin {
+			ctx.JSON(http.StatusForbidden, gin.H{"error": "Admin access required"})
+		} else {
+			ctx.Next()
+		}
 	}
 }
 
@@ -227,6 +266,7 @@ func (c *AuthController) ForgotPassword(ctx *gin.Context) {
 
 	userId, err := c.emailService.StartForgotPasswordFlow(forgotPasswordReq.Email)
 	if err != nil {
+		ctx.Status(400)
 		ctx.Error(gin.Error{
 			Err:  err,
 			Type: gin.ErrorTypePublic,

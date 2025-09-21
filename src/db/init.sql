@@ -4,7 +4,9 @@ CREATE TABLE users (
   id SERIAL PRIMARY KEY,
   email TEXT UNIQUE NOT NULL,
   password TEXT NOT NULL,
-  email_validated BOOLEAN NOT NULL DEFAULT false
+  is_admin BOOLEAN NOT NULL DEFAULT false,
+  email_validated BOOLEAN NOT NULL DEFAULT false,
+  is_suspended BOOLEAN NOT NULL DEFAULT false
 );
 
 DROP TABLE IF EXISTS email_verification_codes CASCADE;
@@ -118,7 +120,7 @@ COPY activities(name, icon, category)
 FROM '/activities.csv'
 WITH (FORMAT csv, HEADER true);
 
-COPY users(email, password)
+COPY users(email, password, is_admin)
 FROM '/users.csv'
 WITH (FORMAT csv, HEADER true);
 
