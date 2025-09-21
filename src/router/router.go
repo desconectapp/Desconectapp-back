@@ -16,13 +16,16 @@ import (
 )
 
 type Router struct {
-	controller            *controller.Controller
-	activitiesController  *controller.ActivitiesController
-	authController        *controller.AuthController
-	preferencesController *controller.PreferencesController
-	groupsController      *controller.GroupsController
-	chatsController       *controller.ChatsController
-	r                     *gin.Engine
+	controller              *controller.Controller
+	activitiesController    *controller.ActivitiesController
+	authController          *controller.AuthController
+	preferencesController   *controller.PreferencesController
+	groupsController        *controller.GroupsController
+	adminUserController     *controller.AdminUserController
+	adminActivityController *controller.AdminActivityController
+	adminGroupController    *controller.AdminGroupController
+	chatsController         *controller.ChatsController
+	r                       *gin.Engine
 }
 
 func NewRouter() *Router {
@@ -44,27 +47,34 @@ func NewRouter() *Router {
 	preferencesController := controller.NewPreferencesController(conn)
 
 	groupsController := controller.NewGroupsController(conn)
+	adminUserController := controller.NewAdminUserController(conn)
+	adminActivityController := controller.NewAdminActivityController(conn)
+	adminGroupController := controller.NewAdminGroupController(conn)
 
 	chatsController := controller.NewChatsController(conn)
 
 	r := gin.Default()
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"*"},
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
-		ExposeHeaders:    []string{"Content-Length"},
-		AllowCredentials: true,
-		MaxAge:           12 * time.Hour,
+		AllowOrigins:              []string{"http://localhost:5173"},
+		AllowMethods:              []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:              []string{"Origin", "Content-Type", "Authorization"},
+		ExposeHeaders:             []string{"Content-Length", "X-Total-Count"},
+		AllowCredentials:          true,
+		MaxAge:                    12 * time.Hour,
+		OptionsResponseStatusCode: 200,
 	}))
 	r.Use(middleware.ErrorHandler())
 	return &Router{
-		controller:            c,
-		activitiesController:  activitiesController,
-		authController:        authController,
-		preferencesController: preferencesController,
-		groupsController:      groupsController,
-		chatsController:       chatsController,
-		r:                     r,
+		controller:              c,
+		activitiesController:    activitiesController,
+		authController:          authController,
+		preferencesController:   preferencesController,
+		groupsController:        groupsController,
+		chatsController:         chatsController,
+		adminUserController:     adminUserController,
+		adminActivityController: adminActivityController,
+		adminGroupController:    adminGroupController,
+		r:                       r,
 	}
 }
 
@@ -128,11 +138,43 @@ func (router *Router) SetupRoutes() *gin.Engine {
 		groups.PUT("status/:groupId", router.groupsController.ChangeGroupStatus)
 		groups.GET("/open", router.groupsController.GetOpenGroups)
 	}
-
 	chats := router.r.Group("/chats")
 	chats.Use(router.authController.AuthMiddleware())
 	{
 		chats.GET("/token", router.chatsController.GetToken)
+	}
+
+	admin := router.r.Group("/admin")
+	admin.Use(router.authController.AdminMiddleware())
+	{
+		admin.POST("/logout", router.adminUserController.LogOut)
+		admin.GET("/me", router.adminUserController.GetMe)
+		admin.GET("/users", router.adminUserController.ListUsers)
+		admin.GET("/users/:id", router.adminUserController.GetUser)
+		admin.POST("/users", router.adminUserController.CreateUser)
+		admin.PUT("/users/:id", router.adminUserController.UpdateUser)
+		admin.DELETE("/users/:id", router.adminUserController.DeleteUser)
+		admin.POST("/users/:id/suspend", router.adminUserController.SuspendUser)
+		admin.POST("/users/:id/unsuspend", router.adminUserController.UnsuspendUser)
+
+		admin.POST("/users/password/reset", router.authController.ForgotPassword)
+		admin.POST("/users/email/verify", router.authController.ResendValidationEmail)
+
+		admin.GET("/activities", router.adminActivityController.ListActivities)
+		admin.GET("/activities/:id", router.adminActivityController.GetActivity)
+		admin.POST("/activities", router.adminActivityController.CreateActivity)
+		admin.PUT("/activities/:id", router.adminActivityController.UpdateActivity)
+		admin.DELETE("/activities/:id", router.adminActivityController.DeleteActivity)
+
+		admin.GET("/groups", router.adminGroupController.ListGroups)
+		admin.GET("/groups/:id", router.adminGroupController.GetGroup)
+		admin.POST("/groups", router.adminGroupController.CreateGroup)
+		admin.PUT("/groups/:id", router.adminGroupController.UpdateGroup)
+		admin.DELETE("/groups/:id", router.adminGroupController.DeleteGroup)
+		admin.GET("/groups/:id/members", router.adminGroupController.ListGroupMembers)
+		admin.POST("/groups/:id/members", router.adminGroupController.AddGroupMember)
+		admin.DELETE("/groups/:id/members/:memberId", router.adminGroupController.RemoveGroupMember)
+		admin.GET("/groups/many", router.adminGroupController.GetManyGroups)
 	}
 
 	return router.r

@@ -143,7 +143,7 @@ func (q *Queries) GetUser(ctx context.Context, userID int32) (Profile, error) {
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, uuid, email, password, email_validated FROM users
+SELECT id, uuid, email, password, is_admin, email_validated, is_suspended FROM users
 WHERE email = $1 LIMIT 1
 `
 
@@ -155,7 +155,9 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.Uuid,
 		&i.Email,
 		&i.Password,
+		&i.IsAdmin,
 		&i.EmailValidated,
+		&i.IsSuspended,
 	)
 	return i, err
 }

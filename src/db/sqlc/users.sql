@@ -46,7 +46,7 @@ WHERE id = $1
 RETURNING id;
 
 -- name: GetUserByEmail :one
-SELECT id, uuid, email, password, email_validated FROM users
+SELECT id, uuid, email, password, is_admin, email_validated, is_suspended FROM users
 WHERE email = $1 LIMIT 1;
 
 -- name: GetUserByUUID :one

@@ -40,6 +40,20 @@ func (s *ActivitiesRequestService) CreateActivityRequest(params repository.Creat
 		return repository.ActivityRequest{}, fmt.Errorf("UserID and ActivityID cannot be nil")
 	}
 
+	// Primero chequeamos si la actividad es nueva (id=-1)
+	if *params.ActivityID == -1 {
+		newActivity, err := GenerateActivity(s, *params.Description)
+		if err != nil {
+			return repository.ActivityRequest{}, err
+		}
+		params.ActivityID = &newActivity.ID
+		// Actualizamos la descripcion para que incluya el nombre de la actividad	
+		fmt.Printf("Old description: %v\n", *params.Description)
+		formattedDescription := fmt.Sprintf("%s %s", *newActivity.Icon, newActivity.Name)
+		params.Description = &formattedDescription
+		fmt.Printf("Updated description to: %v\n", *params.Description)
+	}
+
 	existingActivityRequest, err := s.queries.GetActivityRequestByUserAndActivityID(s.ctx, repository.GetActivityRequestByUserAndActivityIDParams{
 		UserID:     params.UserID,
 		ActivityID: params.ActivityID,
@@ -56,16 +70,24 @@ func (s *ActivitiesRequestService) CreateActivityRequest(params repository.Creat
 			ActivityID: existingActivityRequest.ActivityID,
 		})
 	}
+	// Cambio la descripcion para que sea el nombre de la actividad
+	activity, err := s.queries.GetActivityByID(s.ctx, *params.ActivityID)
+	if err != nil {
+		return repository.ActivityRequest{}, err
+	}
+	formattedDescription := fmt.Sprintf("%s %s", *activity.Icon, *params.Description)
+	params.Description = &formattedDescription
 
-	activity, err := s.queries.CreateActivityRequest(s.ctx, params)
+	// Armamos la ActivityRequest
+	activityReq, err := s.queries.CreateActivityRequest(s.ctx, params)
 	if err != nil {
 		return repository.ActivityRequest{}, err
 	}
-	err = s.matchingService.FindMatches(activity)
+	err = s.matchingService.FindMatches(activityReq)
 	if err != nil {
 		return repository.ActivityRequest{}, err
 	}
-	return activity, nil
+	return activityReq, nil
 }
 
 func (s *ActivitiesRequestService) GetActivities(params repository.GetActivitiesParams) ([]repository.Activity, error) {
@@ -85,3 +107,11 @@ func (s *ActivitiesRequestService) DeleteActivityRequest(requestId int) error {
 	}
 	return nil
 }
+
+// func (s *ActivitiesRequestService) CreateActivity(name string) (repository.Activity, error) {
+// 	activity, err := GenerateActivity(s, name)
+// 	if err != nil {
+// 		return repository.Activity{}, err
+// 	}
+// 	return activity, nil
+// }

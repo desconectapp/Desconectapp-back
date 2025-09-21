@@ -13,12 +13,11 @@ services:
       GIN_MODE: debug
     env_file:
       - .env
-    command: go run main.go
 
   postgres:
     image: postgres:16.4-alpine3.20
     ports:
-      - 5432:5432
+      - 5433:5432
     env_file:
       - .env
     volumes:

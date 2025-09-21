@@ -5,7 +5,9 @@ CREATE TABLE users (
   uuid UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
   email TEXT UNIQUE NOT NULL,
   password TEXT NOT NULL,
-  email_validated BOOLEAN NOT NULL DEFAULT false
+  is_admin BOOLEAN NOT NULL DEFAULT false,
+  email_validated BOOLEAN NOT NULL DEFAULT false,
+  is_suspended BOOLEAN NOT NULL DEFAULT false
 );
 
 DROP TABLE IF EXISTS email_verification_codes CASCADE;
@@ -102,7 +104,7 @@ CREATE TABLE groups (
     name TEXT,
     description TEXT,
     location TEXT,
-    status BOOLEAN,
+    status BOOLEAN DEFAULT false,
     activity_id INTEGER NOT NULL REFERENCES activities(id) ON DELETE CASCADE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
@@ -119,7 +121,7 @@ COPY activities(name, icon, category)
 FROM '/activities.csv'
 WITH (FORMAT csv, HEADER true);
 
-COPY users(email, password, uuid)
+COPY users(email, password, uuid, is_admin)
 FROM '/users.csv'
 WITH (FORMAT csv, HEADER true);
 

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"gin/controller"
 	"gin/service"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -69,11 +70,11 @@ type ActivityBatchStruct struct {
 }
 
 type NewDescription struct {
-	NewDesc    string `json:"description"`
+	NewDesc string `json:"description"`
 }
 
 type NewStatus struct {
-	NewStatus    bool `json:"status"`
+	NewStatus bool `json:"status"`
 }
 
 func SendActivityRequest(t *testing.T, r *gin.Engine, userId int32, activityId int32, participantsNeeded int32) ActivityRequest {
@@ -119,7 +120,6 @@ func SendActivityRequest(t *testing.T, r *gin.Engine, userId int32, activityId i
 
 	assert.Equal(t, *body.UserID, *response.UserID, "UserID should match")
 	assert.Equal(t, *body.ActivityID, *response.ActivityID, "ActivityID should match")
-	assert.Equal(t, *body.Description, *response.Description, "Description should match")
 	assert.Equal(t, *body.ParticipantsNeeded, *response.ParticipantsNeeded, "Participants Needed should match")
 	assert.Equal(t, *body.MaxParticipants, *response.MaximumParticipants, "Maximum Participants should match")
 	assert.Equal(t, *body.Latitude, *response.Latitude, "Latitude should match")
@@ -150,10 +150,12 @@ func NewUser(t *testing.T, r *gin.Engine, emailStart string) (int32, string) {
 	err = json.Unmarshal(w.Body.Bytes(), &response)
 	assert.Equal(t, err, nil, "Error should be nil")
 
-	_, err = service.ValidateSession(response.Token)
+	log.Println(response)
+
+	_, _, err = service.ValidateSession(response.Token)
 	assert.Equal(t, err, nil, "Error should be nil")
 
-	_, err = service.ValidateSession(response.RefreshToken)
+	_, _, err = service.ValidateSession(response.RefreshToken)
 	assert.Equal(t, err, nil, "Error should be nil")
 
 	assert.Equal(t, w.Code, http.StatusCreated, "Status code should be 201")
@@ -185,25 +187,23 @@ func AddPreference(t *testing.T, r *gin.Engine, activityId int32, token string) 
 }
 
 type GroupInfo struct {
-    Name        string  `json:"name"`
-    Description string  `json:"description"`
-    Location    string  `json:"location"`
-    ActivityID  int32   `json:"activity_id"`
-    MembersIds  []int32 `json:"user_ids"`
+	Name        string  `json:"name"`
+	Description string  `json:"description"`
+	Location    string  `json:"location"`
+	ActivityID  int32   `json:"activity_id"`
+	MembersIds  []int32 `json:"user_ids"`
 }
-
 
 func NewGroup(t *testing.T, r *gin.Engine, name string, location string, activityID int32, memberIds []int32, token string) int32 {
 	body := GroupInfo{
-		ActivityID: activityID,
-		Name: name,
-		Location: location,
-		MembersIds: memberIds,
+		ActivityID:  activityID,
+		Name:        name,
+		Location:    location,
+		MembersIds:  memberIds,
 		Description: "",
-
 	}
 	jsonBody, err := json.Marshal(body)
-	
+
 	assert.Equal(t, err, nil, "Error should be nil")
 
 	req := httptest.NewRequest("POST", "/groups", bytes.NewReader(jsonBody))
@@ -215,7 +215,7 @@ func NewGroup(t *testing.T, r *gin.Engine, name string, location string, activit
 	var response controller.NewGroup
 
 	err = json.Unmarshal(w.Body.Bytes(), &response)
-		
+
 	assert.Equal(t, err, nil, "Error should be nil")
 	assert.Equal(t, w.Code, http.StatusCreated, "Status code should be 201")
 	assert.Equal(t, body.ActivityID, response.ActivityID)
