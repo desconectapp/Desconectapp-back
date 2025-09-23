@@ -40,6 +40,17 @@ SET name = EXCLUDED.name,
     profile_complete = true
 RETURNING user_id, name, age, city, current_situation, gender;
 
+-- name: UpdateProfile :one
+UPDATE profiles
+SET name = $2,
+    age = $3,
+    city = $4,
+    current_situation = $5,
+    gender = $6,
+    profile_complete = true
+WHERE user_id = $1
+RETURNING user_id, name, age, city, current_situation, gender;
+
 -- name: DeleteUser :one
 DELETE FROM users
 WHERE id = $1

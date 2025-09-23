@@ -55,7 +55,7 @@ func NewRouter() *Router {
 
 	r := gin.Default()
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:              []string{"http://localhost:5173"},
+		AllowOrigins:              []string{"*"},
 		AllowMethods:              []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:              []string{"Origin", "Content-Type", "Authorization"},
 		ExposeHeaders:             []string{"Content-Length", "X-Total-Count"},
@@ -100,10 +100,10 @@ func (router *Router) SetupRoutes() *gin.Engine {
 	users.Use(router.authController.AuthMiddleware())
 	{
 		users.GET("", router.controller.ListUsers)
-		users.POST("/profile", router.controller.CreateProfile)
-		users.DELETE("", router.controller.DeleteUser)
 		users.GET("/user", router.controller.GetUser)
-		// users.PUT("/:userId", router.controller.UpdateUser)
+		users.DELETE("", router.controller.DeleteUser)
+		users.POST("/profile", router.controller.CreateProfile)
+		users.PUT("/profile", router.controller.UpdateProfile)
 	}
 
 	activities := router.r.Group("/activities")
