@@ -46,6 +46,7 @@ func (c *AuthController) Login(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, AuthResponse{
 		UserId:           session.UserId,
+		UserUuid:         session.UserUuid,
 		Token:            session.Token,
 		RefreshToken:     session.RefreshToken,
 		ExpiresAt:        session.ExpiresAt,
@@ -74,6 +75,7 @@ func (c *AuthController) Refresh(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, AuthResponse{
 		UserId:           session.UserId,
+		UserUuid:         session.UserUuid,
 		Token:            session.Token,
 		RefreshToken:     session.RefreshToken,
 		ExpiresAt:        session.ExpiresAt,
@@ -158,7 +160,7 @@ func (c *AuthController) Signup(ctx *gin.Context) {
 
 	session, err := c.authService.Signup(signupReq.Name, signupReq.Email, signupReq.Password)
 	if errors.Is(err, service.ErrUserExists) {
-    	ctx.Error(&gin.Error{
+		ctx.Error(&gin.Error{
 			Err:  err,
 			Type: gin.ErrorTypePublic,
 		}).SetMeta(map[string]any{
@@ -177,6 +179,7 @@ func (c *AuthController) Signup(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusCreated, AuthResponse{
 		UserId:           session.UserId,
+		UserUuid:         session.UserUuid,
 		Token:            session.Token,
 		RefreshToken:     session.RefreshToken,
 		ExpiresAt:        session.ExpiresAt,
