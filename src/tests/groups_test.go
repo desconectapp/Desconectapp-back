@@ -323,6 +323,9 @@ func TestGetStatusOpenListNoFilter(t *testing.T) {
 
 		var resp service.GroupWithMembers
 		err := json.Unmarshal(wGet.Body.Bytes(), &resp)
+
+		log.Println(resp)
+
 		assert.NoError(t, err)
 		assert.Equal(t, name, *resp.Name)
 		assert.Equal(t, location, *resp.Location)
@@ -360,6 +363,7 @@ func TestGetStatusOpenListNoFilter(t *testing.T) {
 
 	assert.Equal(t, location, *response.Groups[0].Location)
 	assert.Equal(t, name, *response.Groups[0].Name)
+	assert.Equal(t, int32(3), response.Groups[0].MemberCount)
 
 	checkStatus(false)
 }
@@ -430,4 +434,5 @@ func TestGetStatusOpenListWithFilter(t *testing.T) {
 
 	assert.Equal(t, location, *response.Groups[0].Location)
 	assert.Equal(t, name, *response.Groups[0].Name)
+	assert.Equal(t, int32(3), response.Groups[0].MemberCount)
 }

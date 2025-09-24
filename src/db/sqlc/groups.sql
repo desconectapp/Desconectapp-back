@@ -141,10 +141,12 @@ SELECT
     g.name,
     g.description,
     g.location,
-    a.name AS activity_name
+    a.name AS activity_name,
+    a.icon,
+    COUNT(gm.user_id) AS member_count
 FROM groups g
 JOIN activities a ON g.activity_id = a.id
-WHERE g.status = TRUE
+WHERE g.status = true
   AND g.activity_id = sqlc.narg('activity_id')::int
 LIMIT $1 OFFSET $2;
 
@@ -154,10 +156,15 @@ SELECT
     g.name,
     g.description,
     g.location,
-    a.name AS activity_name
+    a.name AS activity_name,
+    a.icon,
+    COUNT(gm.user_id) AS member_count
 FROM groups g
 JOIN activities a ON g.activity_id = a.id
-WHERE g.status = TRUE
+LEFT JOIN group_members gm ON g.id = gm.group_id
+WHERE g.status = true
+  AND (sqlc.narg('activity_id')::int IS NULL OR g.activity_id = sqlc.narg('activity_id')::int)
+GROUP BY g.id, g.name, g.description, g.location, a.name, a.icon
 LIMIT $1 OFFSET $2;
 
 -- name: GetPreferredGroups :many
@@ -172,12 +179,9 @@ SELECT g.id,
        a.name   AS activity_name,
        a.icon   AS activity_icon
 FROM groups g
-JOIN users_preference up
-  ON g.activity_id = up.activity_id
-LEFT JOIN group_members gm
-  ON g.id = gm.group_id
-JOIN activities a
-  ON g.activity_id = a.id
+JOIN users_preference up ON g.activity_id = up.activity_id
+LEFT JOIN group_members gm ON g.id = gm.group_id
+JOIN activities a ON g.activity_id = a.id
 WHERE up.user_id = $1
   AND g.status = true
   AND NOT EXISTS (

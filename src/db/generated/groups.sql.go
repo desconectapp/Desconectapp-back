@@ -260,12 +260,9 @@ SELECT g.id,
        a.name   AS activity_name,
        a.icon   AS activity_icon
 FROM groups g
-JOIN users_preference up
-  ON g.activity_id = up.activity_id
-LEFT JOIN group_members gm
-  ON g.id = gm.group_id
-JOIN activities a
-  ON g.activity_id = a.id
+JOIN users_preference up ON g.activity_id = up.activity_id
+LEFT JOIN group_members gm ON g.id = gm.group_id
+JOIN activities a ON g.activity_id = a.id
 WHERE up.user_id = $1
   AND g.status = true
   AND NOT EXISTS (
@@ -336,16 +333,22 @@ SELECT
     g.name,
     g.description,
     g.location,
-    a.name AS activity_name
+    a.name AS activity_name,
+    a.icon,
+    COUNT(gm.user_id) AS member_count
 FROM groups g
 JOIN activities a ON g.activity_id = a.id
-WHERE g.status = TRUE
+LEFT JOIN group_members gm ON g.id = gm.group_id
+WHERE g.status = true
+  AND ($3::int IS NULL OR g.activity_id = $3::int)
+GROUP BY g.id, g.name, g.description, g.location, a.name, a.icon
 LIMIT $1 OFFSET $2
 `
 
 type GetStatusOpenGroupsNoFilterParams struct {
-	Limit  int32 `json:"limit"`
-	Offset int32 `json:"offset"`
+	Limit      int32  `json:"limit"`
+	Offset     int32  `json:"offset"`
+	ActivityID *int32 `json:"activity_id"`
 }
 
 type GetStatusOpenGroupsNoFilterRow struct {
@@ -354,10 +357,12 @@ type GetStatusOpenGroupsNoFilterRow struct {
 	Description  *string `json:"description"`
 	Location     *string `json:"location"`
 	ActivityName string  `json:"activity_name"`
+	Icon         *string `json:"icon"`
+	MemberCount  int64   `json:"member_count"`
 }
 
 func (q *Queries) GetStatusOpenGroupsNoFilter(ctx context.Context, arg GetStatusOpenGroupsNoFilterParams) ([]GetStatusOpenGroupsNoFilterRow, error) {
-	rows, err := q.db.Query(ctx, getStatusOpenGroupsNoFilter, arg.Limit, arg.Offset)
+	rows, err := q.db.Query(ctx, getStatusOpenGroupsNoFilter, arg.Limit, arg.Offset, arg.ActivityID)
 	if err != nil {
 		return nil, err
 	}
@@ -371,6 +376,8 @@ func (q *Queries) GetStatusOpenGroupsNoFilter(ctx context.Context, arg GetStatus
 			&i.Description,
 			&i.Location,
 			&i.ActivityName,
+			&i.Icon,
+			&i.MemberCount,
 		); err != nil {
 			return nil, err
 		}
@@ -388,10 +395,12 @@ SELECT
     g.name,
     g.description,
     g.location,
-    a.name AS activity_name
+    a.name AS activity_name,
+    a.icon,
+    COUNT(gm.user_id) AS member_count
 FROM groups g
 JOIN activities a ON g.activity_id = a.id
-WHERE g.status = TRUE
+WHERE g.status = true
   AND g.activity_id = $3::int
 LIMIT $1 OFFSET $2
 `
@@ -408,6 +417,8 @@ type GetStatusOpenGroupsWithFilterRow struct {
 	Description  *string `json:"description"`
 	Location     *string `json:"location"`
 	ActivityName string  `json:"activity_name"`
+	Icon         *string `json:"icon"`
+	MemberCount  int64   `json:"member_count"`
 }
 
 func (q *Queries) GetStatusOpenGroupsWithFilter(ctx context.Context, arg GetStatusOpenGroupsWithFilterParams) ([]GetStatusOpenGroupsWithFilterRow, error) {
@@ -425,6 +436,8 @@ func (q *Queries) GetStatusOpenGroupsWithFilter(ctx context.Context, arg GetStat
 			&i.Description,
 			&i.Location,
 			&i.ActivityName,
+			&i.Icon,
+			&i.MemberCount,
 		); err != nil {
 			return nil, err
 		}

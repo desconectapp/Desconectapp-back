@@ -3,6 +3,8 @@ package service
 import (
 	"context"
 	repository "gin/db/generated"
+	"log"
+
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -24,6 +26,7 @@ type OpenGroup struct {
 	Location     *string `json:"location"`
 	ActivityName string  `json:"activity_name"`
 	MemberCount	int32 `json:"member_count"`
+	Photo	string	`json:"photo"`
 	// Time	[]int32	
 }
 
@@ -165,6 +168,8 @@ func (s *GroupsService) GetStatusOpenGroupsNoFilter(filter repository.GetStatusO
 		return nil, err
 	}
 
+	log.Println(groups)
+
 	var openGroups []OpenGroup
 
 	for _, group := range groups {
@@ -174,6 +179,8 @@ func (s *GroupsService) GetStatusOpenGroupsNoFilter(filter repository.GetStatusO
 			Location:     group.Location,
 			Description:  group.Description,
 			ActivityName: group.ActivityName,
+			MemberCount: int32(group.MemberCount),
+			Photo: *group.Icon,
 		})
 	}
 	return openGroups, err
@@ -195,6 +202,8 @@ func (s *GroupsService) GetStatusOpenGroupsWithFilter(filter repository.GetStatu
 			Location:     group.Location,
 			Description:  group.Description,
 			ActivityName: group.ActivityName,
+			// MemberCount: int32(group.MemberCount),
+			// Photo: *group.Icon,
 		})
 	}
 	return openGroups, err
@@ -217,6 +226,7 @@ func (s *GroupsService) GetUserRecommendations(filter repository.GetPreferredGro
 			Description:  group.Description,
 			ActivityName: group.ActivityName,
 			MemberCount: int32(group.MemberCount),
+			Photo: *group.ActivityIcon,
 		})
 	}
 	return openGroups, err
