@@ -264,3 +264,35 @@ func (c *GroupsController) GetOpenGroups(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, res)
 }
+
+func (c *GroupsController) GetUserRecommendations(ctx *gin.Context) {
+	var filter repository.GetPreferredGroupsParams
+
+	userToken, _ := ctx.Get("userID")
+	filter.UserID = userToken.(int32)
+
+	limit, offset := GetLimmitAndOffset(ctx)
+
+	filter.Limit = int32(limit) + 1
+	filter.Offset = int32(offset)
+
+	log.Println(filter)
+
+	groups, err := c.service.GetUserRecommendations(filter)
+
+	log.Println(groups)
+
+	hasMore := len(groups) == int(filter.Limit)
+	if hasMore {
+		groups = groups[:len(groups)-1]
+	}
+
+	if err != nil {
+		ErrorNoStatus(ctx, err)
+		return
+	}
+
+	res := PaginatedOpenGroup{Groups: groups, HasMore: hasMore}
+
+	ctx.JSON(http.StatusOK, res)
+}

@@ -159,3 +159,34 @@ FROM groups g
 JOIN activities a ON g.activity_id = a.id
 WHERE g.status = TRUE
 LIMIT $1 OFFSET $2;
+
+-- name: GetPreferredGroups :many
+SELECT g.id,
+       g.name,
+       g.description,
+       g.location,
+       g.status,
+       g.activity_id,
+       g.created_at,
+       COUNT(gm.user_id) AS member_count,
+       a.name   AS activity_name,
+       a.icon   AS activity_icon
+FROM groups g
+JOIN users_preference up
+  ON g.activity_id = up.activity_id
+LEFT JOIN group_members gm
+  ON g.id = gm.group_id
+JOIN activities a
+  ON g.activity_id = a.id
+WHERE up.user_id = $1
+  AND g.status = true
+  AND NOT EXISTS (
+      SELECT 1
+      FROM group_members gm2
+      WHERE gm2.group_id = g.id
+        AND gm2.user_id = $1
+  )
+GROUP BY g.id, g.name, g.description, g.location, g.status, g.activity_id, g.created_at,
+         a.name, a.icon
+ORDER BY member_count ASC, g.created_at DESC
+LIMIT $2 OFFSET $3;

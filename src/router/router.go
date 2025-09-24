@@ -137,6 +137,7 @@ func (router *Router) SetupRoutes() *gin.Engine {
 		groups.PUT("description/:groupId", router.groupsController.UpdateGroupDescription)
 		groups.PUT("status/:groupId", router.groupsController.ChangeGroupStatus)
 		groups.GET("/open", router.groupsController.GetOpenGroups)
+		groups.GET("/recommendations", router.groupsController.GetUserRecommendations)
 	}
 	chats := router.r.Group("/chats")
 	chats.Use(router.authController.AuthMiddleware())

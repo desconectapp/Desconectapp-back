@@ -248,6 +248,88 @@ func (q *Queries) GetGroupMembers(ctx context.Context, groupID int32) ([]GetGrou
 	return items, nil
 }
 
+const getPreferredGroups = `-- name: GetPreferredGroups :many
+SELECT g.id,
+       g.name,
+       g.description,
+       g.location,
+       g.status,
+       g.activity_id,
+       g.created_at,
+       COUNT(gm.user_id) AS member_count,
+       a.name   AS activity_name,
+       a.icon   AS activity_icon
+FROM groups g
+JOIN users_preference up
+  ON g.activity_id = up.activity_id
+LEFT JOIN group_members gm
+  ON g.id = gm.group_id
+JOIN activities a
+  ON g.activity_id = a.id
+WHERE up.user_id = $1
+  AND g.status = true
+  AND NOT EXISTS (
+      SELECT 1
+      FROM group_members gm2
+      WHERE gm2.group_id = g.id
+        AND gm2.user_id = $1
+  )
+GROUP BY g.id, g.name, g.description, g.location, g.status, g.activity_id, g.created_at,
+         a.name, a.icon
+ORDER BY member_count ASC, g.created_at DESC
+LIMIT $2 OFFSET $3
+`
+
+type GetPreferredGroupsParams struct {
+	UserID int32 `json:"user_id"`
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+}
+
+type GetPreferredGroupsRow struct {
+	ID           int32              `json:"id"`
+	Name         *string            `json:"name"`
+	Description  *string            `json:"description"`
+	Location     *string            `json:"location"`
+	Status       *bool              `json:"status"`
+	ActivityID   int32              `json:"activity_id"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	MemberCount  int64              `json:"member_count"`
+	ActivityName string             `json:"activity_name"`
+	ActivityIcon *string            `json:"activity_icon"`
+}
+
+func (q *Queries) GetPreferredGroups(ctx context.Context, arg GetPreferredGroupsParams) ([]GetPreferredGroupsRow, error) {
+	rows, err := q.db.Query(ctx, getPreferredGroups, arg.UserID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetPreferredGroupsRow{}
+	for rows.Next() {
+		var i GetPreferredGroupsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Description,
+			&i.Location,
+			&i.Status,
+			&i.ActivityID,
+			&i.CreatedAt,
+			&i.MemberCount,
+			&i.ActivityName,
+			&i.ActivityIcon,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getStatusOpenGroupsNoFilter = `-- name: GetStatusOpenGroupsNoFilter :many
 SELECT 
     g.id,
