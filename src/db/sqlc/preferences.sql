@@ -1,5 +1,5 @@
 -- name: GetUserPreferences :many
-SELECT a.id, a.name FROM activities a
+SELECT a.id, a.name, a.icon FROM activities a
 JOIN users_preference up ON a.id = up.activity_id
 WHERE up.user_id = $1
 LIMIT $2 OFFSET $3;

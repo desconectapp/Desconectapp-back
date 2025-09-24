@@ -55,7 +55,7 @@ func NewRouter() *Router {
 
 	r := gin.Default()
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:              []string{"*"},
+		AllowOrigins:              []string{"http://localhost:8081", "http://localhost:5173", "https://hoppscotch.io"},
 		AllowMethods:              []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:              []string{"Origin", "Content-Type", "Authorization"},
 		ExposeHeaders:             []string{"Content-Length", "X-Total-Count"},
