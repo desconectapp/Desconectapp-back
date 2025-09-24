@@ -276,11 +276,7 @@ func (c *GroupsController) GetUserRecommendations(ctx *gin.Context) {
 	filter.Limit = int32(limit) + 1
 	filter.Offset = int32(offset)
 
-	log.Println(filter)
-
 	groups, err := c.service.GetUserRecommendations(filter)
-
-	log.Println(groups)
 
 	hasMore := len(groups) == int(filter.Limit)
 	if hasMore {

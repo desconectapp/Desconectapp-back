@@ -3,8 +3,6 @@ package service
 import (
 	"context"
 	repository "gin/db/generated"
-	"log"
-
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -208,8 +206,6 @@ func (s *GroupsService) GetUserRecommendations(filter repository.GetPreferredGro
 	if err != nil {
 		return nil, err
 	}
-
-	log.Println(groups)
 
 	var openGroups []OpenGroup
 
