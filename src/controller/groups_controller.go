@@ -207,6 +207,32 @@ func (c *GroupsController) UpdateGroupDescription(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{})
 }
 
+func (c *GroupsController) UpdateGroupName(ctx *gin.Context) {
+	var descriptionParams repository.ChangeGroupNameParams
+
+	if err := ctx.ShouldBind(&descriptionParams); err != nil {
+		ErrorWithStatus(ctx, "Could not bind", http.StatusBadRequest)
+		return
+	}
+
+	groupIdStr := ctx.Param("groupId")
+	groupId, err := strconv.Atoi(groupIdStr)
+	if err != nil {
+		ErrorNoStatus(ctx, err)
+		return
+	}
+	descriptionParams.ID = int32(groupId)
+
+	err = c.service.ChangeGroupName(descriptionParams)
+
+	if err != nil {
+		ErrorNoStatus(ctx, err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{})
+}
+
 func (c *GroupsController) ChangeGroupStatus(ctx *gin.Context) {
 	var descriptionParams repository.ChangeGroupStatusParams
 
