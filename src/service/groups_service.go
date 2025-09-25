@@ -144,6 +144,13 @@ func (s *GroupsService) ChangeGroupName(params repository.ChangeGroupNameParams)
 	return err
 }
 
+func (s *GroupsService) ChangeGroupLocation(params repository.ChangeGroupLocationParams) error {
+
+	err := s.queries.ChangeGroupLocation(s.ctx, params)
+
+	return err
+}
+
 func (s *GroupsService) GetStatusOpenGroups(filter ActivityFilter) ([]OpenGroup, error) {
 	var openGroups []OpenGroup
 	var err error

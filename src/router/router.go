@@ -137,6 +137,7 @@ func (router *Router) SetupRoutes() *gin.Engine {
 		groups.PUT("description/:groupId", router.groupsController.UpdateGroupDescription)
 		groups.PUT("status/:groupId", router.groupsController.ChangeGroupStatus)
 		groups.PUT("name/:groupId", router.groupsController.UpdateGroupName)
+		groups.PUT("location/:groupId", router.groupsController.UpdateGroupLocation)
 		groups.GET("/open", router.groupsController.GetOpenGroups)
 		groups.GET("/recommendations", router.groupsController.GetUserRecommendations)
 	}

@@ -140,6 +140,11 @@ UPDATE groups
 SET name = $2
 WHERE id = $1;
 
+-- name: ChangeGroupLocation :exec
+UPDATE groups
+SET location = $2
+WHERE id = $1;
+
 -- name: GetStatusOpenGroupsWithFilter :many
 SELECT 
     g.id,

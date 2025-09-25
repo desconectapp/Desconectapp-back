@@ -47,6 +47,22 @@ func (q *Queries) BatchAddUserToGroup(ctx context.Context, arg BatchAddUserToGro
 	return err
 }
 
+const changeGroupLocation = `-- name: ChangeGroupLocation :exec
+UPDATE groups
+SET location = $2
+WHERE id = $1
+`
+
+type ChangeGroupLocationParams struct {
+	ID       int32   `json:"id"`
+	Location *string `json:"location"`
+}
+
+func (q *Queries) ChangeGroupLocation(ctx context.Context, arg ChangeGroupLocationParams) error {
+	_, err := q.db.Exec(ctx, changeGroupLocation, arg.ID, arg.Location)
+	return err
+}
+
 const changeGroupName = `-- name: ChangeGroupName :exec
 UPDATE groups
 SET name = $2
