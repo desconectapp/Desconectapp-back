@@ -28,6 +28,8 @@ services:
       - ./src/db/files/activity_requests.csv:/activity_requests.csv
       - ./src/db/files/users_preference.csv:/users_preference.csv
       - ./src/db/files/profiles.csv:/profiles.csv
+      - ./src/db/files/groups.csv:/groups.csv
+      - ./src/db/files/group_members.csv:/group_members.csv
 
   pgadmin:
     image: dpage/pgadmin4:7.5
