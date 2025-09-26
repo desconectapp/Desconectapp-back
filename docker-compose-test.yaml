@@ -13,6 +13,8 @@ services:
       - ./src/db/files/activity_requests.csv:/activity_requests.csv
       - ./src/db/files/users_preference_test.csv:/users_preference.csv
       - ./src/db/files/profiles_test.csv:/profiles.csv
+      - ./src/db/files/groups_test.csv:/groups.csv
+      - ./src/db/files/group_members_test.csv:/group_members.csv
 
   test:
     build:

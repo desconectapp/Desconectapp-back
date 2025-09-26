@@ -217,15 +217,16 @@ func (q *Queries) GetGroup(ctx context.Context, id int32) (GetGroupRow, error) {
 }
 
 const getGroupMembers = `-- name: GetGroupMembers :many
-SELECT u.id, p.name FROM users u
+SELECT u.id, u.uuid, p.name FROM users u
 	JOIN profiles p ON u.id = p.user_id
 	JOIN group_members gm ON u.id = gm.user_id
 	WHERE gm.group_id = $1
 `
 
 type GetGroupMembersRow struct {
-	ID   int32  `json:"id"`
-	Name string `json:"name"`
+	ID   int32       `json:"id"`
+	Uuid pgtype.UUID `json:"uuid"`
+	Name string      `json:"name"`
 }
 
 func (q *Queries) GetGroupMembers(ctx context.Context, groupID int32) ([]GetGroupMembersRow, error) {
@@ -237,7 +238,7 @@ func (q *Queries) GetGroupMembers(ctx context.Context, groupID int32) ([]GetGrou
 	items := []GetGroupMembersRow{}
 	for rows.Next() {
 		var i GetGroupMembersRow
-		if err := rows.Scan(&i.ID, &i.Name); err != nil {
+		if err := rows.Scan(&i.ID, &i.Uuid, &i.Name); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

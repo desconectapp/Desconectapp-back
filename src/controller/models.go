@@ -2,35 +2,35 @@ package controller
 
 import (
 	gen "gin/db/generated"
-	"time"
-	"github.com/jackc/pgx/pgtype"
 	s "gin/service"
+	"time"
+
+	"github.com/jackc/pgx/pgtype"
 )
 
 type PaginatedUsers struct {
-	Users	[]gen.Profile `json:"users"`
-	HasMore	bool	`json:"has_more"`
+	Users   []gen.Profile `json:"users"`
+	HasMore bool          `json:"has_more"`
 }
 
 type PaginatedGroups struct {
-	Groups []gen.ListGroupsRow `json:"groups"`
-	HasMore	bool	`json:"has_more"`
+	Groups  []gen.ListGroupsRow `json:"groups"`
+	HasMore bool                `json:"has_more"`
 }
 
 type PaginatedUserGroup struct {
-	Groups []gen.ListUserGroupsRow `json:"groups"`
-	HasMore bool	`json:"has_more"`
+	Groups  []gen.ListUserGroupsRow `json:"groups"`
+	HasMore bool                    `json:"has_more"`
 }
 
 type PaginatedPreferences struct {
 	Preferences []gen.GetUserPreferencesRow `json:"preferences"`
-	HasMore bool	`json:"has_more"`
+	HasMore     bool                        `json:"has_more"`
 }
 
-
 type PaginatedOpenGroup struct {
-	Groups []s.OpenGroup `json:"groups"`
-	HasMore bool	`json:"has_more"`
+	Groups  []s.OpenGroup `json:"groups"`
+	HasMore bool          `json:"has_more"`
 }
 
 type LoginRequest struct {
@@ -43,7 +43,8 @@ type RefreshRequest struct {
 }
 
 type AuthResponse struct {
-	UserId			int32		`json:"user_id"`
+	UserId           int32     `json:"user_id"`
+	UserUuid         string    `json:"user_uuid"`
 	Token            string    `json:"token"`
 	RefreshToken     string    `json:"refresh_token"`
 	ExpiresAt        time.Time `json:"expires_at"`
@@ -60,35 +61,35 @@ type UserUpdateInfo struct {
 }
 
 type UserDeletedResponse struct {
-	DeletedUserID	int32	`json:"deleted"`
+	DeletedUserID int32 `json:"deleted"`
 }
 
 type UserProfileCreatedResponse struct {
-	ProfileUserID	int32	`json:"updated"`
+	ProfileUserID int32 `json:"updated"`
 }
 
 type ActivityIdResponse struct {
-	ActivityPreferenseID	int32	`json:"activity"`
+	ActivityPreferenseID int32 `json:"activity"`
 }
 
 type GroupIdResponse struct {
-	GroupId	int32	`json:"group_id"`
+	GroupId int32 `json:"group_id"`
 }
 
 type NewGroup struct {
-	ID          int32              `json:"id"`
-	Name        *string            `json:"name"`
-	Description *string            `json:"description"`
-	Location    *string            `json:"location"`
-	ActivityID  int32              `json:"activity_id"`
-	Members     []int32        `json:"members"`
-	ActivityName string             `json:"activity_name"`
-	ActivityIcon *string            `json:"activity_icon"`
-	Status	*bool	`json:"status"`
+	ID           int32   `json:"id"`
+	Name         *string `json:"name"`
+	Description  *string `json:"description"`
+	Location     *string `json:"location"`
+	ActivityID   int32   `json:"activity_id"`
+	Members      []int32 `json:"members"`
+	ActivityName string  `json:"activity_name"`
+	ActivityIcon *string `json:"activity_icon"`
+	Status       *bool   `json:"status"`
 }
 
 type ActivityIdBatchResponse struct {
-	ActivityIdBatchIDs	[]int32	`json:"activities"`
+	ActivityIdBatchIDs []int32 `json:"activities"`
 }
 
 type Profile struct {

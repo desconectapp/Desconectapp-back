@@ -41,6 +41,7 @@ func (s *ChatsService) GetToken(userID int32) (string, error) {
 		"sub":  user.Uuid.String(),                      // auth.uid() will return this
 		"exp":  time.Now().Add(15 * time.Minute).Unix(), // short-lived for safety
 		"role": "authenticated",                         // optional but common for RLS policies
+		"iat":  time.Now().Unix(),
 	}
 
 	// Sign the token
