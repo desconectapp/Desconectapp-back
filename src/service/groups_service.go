@@ -16,7 +16,7 @@ type GroupWithMembers struct {
 	Icon        *string                         `json:"icon"`
 	Location    *string                         `json:"location"`
 	Members     []repository.GetGroupMembersRow `json:"members"`
-	Status      bool                            `json:"status"`
+	Public      bool                            `json:"public"`
 }
 
 type OpenGroup struct {
@@ -100,6 +100,8 @@ func (s *GroupsService) GetGroup(groupId int32) (GroupWithMembers, error) {
 		return groupWithMembers, err
 	}
 
+	log.Println(*group.Public)
+
 	return addMembers(group, members), err
 
 }
@@ -113,7 +115,7 @@ func addMembers(group repository.GetGroupRow, members []repository.GetGroupMembe
 		Location:    group.Location,
 		Icon:        group.Icon,
 		Members:     members,
-		Status:      *group.Status,
+		Public:      *group.Public,
 	}
 }
 
@@ -135,9 +137,9 @@ func (s *GroupsService) UpdateGroupDescription(params repository.UpdateGroupDesc
 	return err
 }
 
-func (s *GroupsService) ChangeGroupStatus(params repository.ChangeGroupStatusParams) error {
+func (s *GroupsService) ChangeGroupPublic(params repository.ChangeGroupPublicParams) error {
 
-	err := s.queries.ChangeGroupStatus(s.ctx, params)
+	err := s.queries.ChangeGroupPublic(s.ctx, params)
 
 	return err
 }
@@ -156,20 +158,20 @@ func (s *GroupsService) ChangeGroupLocation(params repository.ChangeGroupLocatio
 	return err
 }
 
-func (s *GroupsService) GetStatusOpenGroups(filter ActivityFilter) ([]OpenGroup, error) {
+func (s *GroupsService) GetOpenGroups(filter ActivityFilter) ([]OpenGroup, error) {
 	var openGroups []OpenGroup
 	var err error
 
 	if filter.ActivityId == 0 {
-		openGroups, err = s.GetStatusOpenGroupsNoFilter(
-			repository.GetStatusOpenGroupsNoFilterParams{
+		openGroups, err = s.GetOpenGroupsNoFilter(
+			repository.GetOpenGroupsNoFilterParams{
 				Limit:  filter.Limit,
 				Offset: filter.Offset,
 			},
 		)
 	} else {
-		openGroups, err = s.GetStatusOpenGroupsWithFilter(
-			repository.GetStatusOpenGroupsWithFilterParams{
+		openGroups, err = s.GetPublicOpenGroupsWithFilter(
+			repository.GetOpenGroupsWithFilterParams{
 				Limit:      filter.Limit,
 				Offset:     filter.Offset,
 				ActivityID: &filter.ActivityId,
@@ -180,8 +182,8 @@ func (s *GroupsService) GetStatusOpenGroups(filter ActivityFilter) ([]OpenGroup,
 	return openGroups, err
 }
 
-func (s *GroupsService) GetStatusOpenGroupsNoFilter(filter repository.GetStatusOpenGroupsNoFilterParams) ([]OpenGroup, error) {
-	groups, err := s.queries.GetStatusOpenGroupsNoFilter(s.ctx, filter)
+func (s *GroupsService) GetOpenGroupsNoFilter(filter repository.GetOpenGroupsNoFilterParams) ([]OpenGroup, error) {
+	groups, err := s.queries.GetOpenGroupsNoFilter(s.ctx, filter)
 
 	if err != nil {
 		return nil, err
@@ -205,8 +207,8 @@ func (s *GroupsService) GetStatusOpenGroupsNoFilter(filter repository.GetStatusO
 	return openGroups, err
 }
 
-func (s *GroupsService) GetStatusOpenGroupsWithFilter(filter repository.GetStatusOpenGroupsWithFilterParams) ([]OpenGroup, error) {
-	groups, err := s.queries.GetStatusOpenGroupsWithFilter(s.ctx, filter)
+func (s *GroupsService) GetPublicOpenGroupsWithFilter(filter repository.GetOpenGroupsWithFilterParams) ([]OpenGroup, error) {
+	groups, err := s.queries.GetOpenGroupsWithFilter(s.ctx, filter)
 
 	if err != nil {
 		return nil, err

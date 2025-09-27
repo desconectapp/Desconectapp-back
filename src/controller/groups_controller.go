@@ -130,7 +130,7 @@ func (c *GroupsController) CreateGroup(ctx *gin.Context) {
 		ActivityName: group.ActivityName,
 		ActivityIcon: group.ActivityIcon,
 		Members:      group.Members,
-		Status:       group.Status,
+		Public:       group.Public,
 	}
 
 	ctx.JSON(http.StatusCreated, res)
@@ -287,22 +287,28 @@ func (c *GroupsController) UpdateGroupLocation(ctx *gin.Context) {
 }
 
 func (c *GroupsController) ChangeGroupStatus(ctx *gin.Context) {
-	var descriptionParams repository.ChangeGroupStatusParams
-
-	if err := ctx.ShouldBind(&descriptionParams); err != nil {
+	var publicParam struct {
+        PublicG *bool `json:"public_g" binding:"required"`
+    }
+	
+	if err := ctx.ShouldBind(&publicParam); err != nil {
 		ErrorWithStatus(ctx, "Could not bind", http.StatusBadRequest)
 		return
 	}
-
+	
+	var descriptionParams repository.ChangeGroupPublicParams
+	
 	groupIdStr := ctx.Param("groupId")
 	groupId, err := strconv.Atoi(groupIdStr)
 	if err != nil {
 		ErrorNoStatus(ctx, err)
 		return
 	}
-	descriptionParams.ID = int32(groupId)
 
-	err = c.service.ChangeGroupStatus(descriptionParams)
+	descriptionParams.ID = int32(groupId)
+	descriptionParams.Public = publicParam.PublicG
+
+	err = c.service.ChangeGroupPublic(descriptionParams)
 
 	if err != nil {
 		ErrorNoStatus(ctx, err)
@@ -325,7 +331,7 @@ func (c *GroupsController) GetOpenGroups(ctx *gin.Context) {
 	filter.Limit = int32(limit) + 1
 	filter.Offset = int32(offset)
 
-	groups, err := c.service.GetStatusOpenGroups(filter)
+	groups, err := c.service.GetOpenGroups(filter)
 
 	log.Println(groups)
 

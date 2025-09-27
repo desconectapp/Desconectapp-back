@@ -270,7 +270,7 @@ func TestChangeGroupStatusToTrueThenFalse(t *testing.T) {
 
 	checkStatus := func(status bool) {
 		body, _ := json.Marshal(NewStatus{NewStatus: status})
-		req := httptest.NewRequest("PUT", "/groups/status/"+strconv.Itoa(int(group)), bytes.NewReader(body))
+		req := httptest.NewRequest("PUT", "/groups/public/"+strconv.Itoa(int(group)), bytes.NewReader(body))
 		req.Header.Add("content-type", "application/json")
 		req.Header.Add("Authorization", "Bearer "+token)
 		w := httptest.NewRecorder()
@@ -286,7 +286,7 @@ func TestChangeGroupStatusToTrueThenFalse(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, "HuntrixsFans", *resp.Name)
 		assert.Equal(t, "Seoul", *resp.Location)
-		assert.Equal(t, status, resp.Status)
+		assert.Equal(t, status, resp.Public)
 		assert.NotEmpty(t, resp.Members)
 	}
 
@@ -310,7 +310,7 @@ func TestGetStatusOpenListNoFilter(t *testing.T) {
 
 	checkStatus := func(status bool) {
 		body, _ := json.Marshal(NewStatus{NewStatus: status})
-		req := httptest.NewRequest("PUT", "/groups/status/"+strconv.Itoa(int(group)), bytes.NewReader(body))
+		req := httptest.NewRequest("PUT", "/groups/public/"+strconv.Itoa(int(group)), bytes.NewReader(body))
 		req.Header.Add("content-type", "application/json")
 		req.Header.Add("Authorization", "Bearer "+token)
 		w := httptest.NewRecorder()
@@ -329,7 +329,7 @@ func TestGetStatusOpenListNoFilter(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, name, *resp.Name)
 		assert.Equal(t, location, *resp.Location)
-		assert.Equal(t, status, resp.Status)
+		assert.Equal(t, status, resp.Public)
 		assert.NotEmpty(t, resp.Members)
 	}
 
@@ -384,7 +384,7 @@ func TestGetStatusOpenListWithFilter(t *testing.T) {
 
 	checkStatus := func(status bool) {
 		body, _ := json.Marshal(NewStatus{NewStatus: status})
-		req := httptest.NewRequest("PUT", "/groups/status/"+strconv.Itoa(int(group)), bytes.NewReader(body))
+		req := httptest.NewRequest("PUT", "/groups/public/"+strconv.Itoa(int(group)), bytes.NewReader(body))
 		req.Header.Add("content-type", "application/json")
 		req.Header.Add("Authorization", "Bearer "+token)
 		w := httptest.NewRecorder()
@@ -400,7 +400,7 @@ func TestGetStatusOpenListWithFilter(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, name, *resp.Name)
 		assert.Equal(t, location, *resp.Location)
-		assert.Equal(t, status, resp.Status)
+		assert.Equal(t, status, resp.Public)
 		assert.NotEmpty(t, resp.Members)
 	}
 

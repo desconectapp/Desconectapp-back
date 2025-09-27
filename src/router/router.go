@@ -135,7 +135,7 @@ func (router *Router) SetupRoutes() *gin.Engine {
 		groups.DELETE("/:groupId", router.groupsController.DeleteGroup)
 		groups.DELETE("/user-from-group/:groupId", router.groupsController.ExitGroup)
 		groups.PUT("description/:groupId", router.groupsController.UpdateGroupDescription)
-		groups.PUT("status/:groupId", router.groupsController.ChangeGroupStatus)
+		groups.PUT("public/:groupId", router.groupsController.ChangeGroupStatus)
 		groups.PUT("name/:groupId", router.groupsController.UpdateGroupName)
 		groups.PUT("location/:groupId", router.groupsController.UpdateGroupLocation)
 		groups.PUT("add-user/:groupId", router.groupsController.JoinGroup)

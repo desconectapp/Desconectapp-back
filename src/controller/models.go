@@ -84,7 +84,7 @@ type NewGroup struct {
 	Members     []int32        `json:"members"`
 	ActivityName string             `json:"activity_name"`
 	ActivityIcon *string            `json:"activity_icon"`
-	Status	*bool	`json:"status"`
+	Public	*bool	`json:"public"`
 }
 
 type ActivityIdBatchResponse struct {

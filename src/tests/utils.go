@@ -79,7 +79,7 @@ type NewDescription struct {
 }
 
 type NewStatus struct {
-	NewStatus bool `json:"status"`
+	NewStatus bool `json:"public_g"`
 }
 
 func SendActivityRequest(t *testing.T, r *gin.Engine, userId int32, activityId int32, participantsNeeded int32) ActivityRequest {
@@ -238,7 +238,7 @@ func NewGroup(t *testing.T, r *gin.Engine, name string, location string, activit
 	assert.Equal(t, body.Name, *response.Name)
 	assert.Equal(t, body.Location, *response.Location)
 	assert.Equal(t, body.MembersIds, response.Members)
-	assert.Equal(t, false, *response.Status)
+	assert.Equal(t, false, *response.Public)
 
 	return response.ID
 }

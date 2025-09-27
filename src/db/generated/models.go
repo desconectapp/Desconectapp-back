@@ -91,7 +91,7 @@ type Group struct {
 	Name        *string            `json:"name"`
 	Description *string            `json:"description"`
 	Location    *string            `json:"location"`
-	Status      *bool              `json:"status"`
+	Public      *bool              `json:"public"`
 	ActivityID  int32              `json:"activity_id"`
 	CreatedAt   pgtype.Timestamptz `json:"created_at"`
 }

@@ -1,6 +1,6 @@
 -- name: CreateGroup :one
 WITH inserted_group AS (
-  INSERT INTO groups (name, description, location, activity_id, status)
+  INSERT INTO groups (name, description, location, activity_id, public)
   VALUES ($1, $2, $3, $4, false)
   RETURNING *
 ), inserted_members AS (
@@ -19,7 +19,7 @@ SELECT
   g.location,
   g.activity_id,
   g.created_at,
-  g.status,
+  g.public,
   CAST(
     COALESCE(
       array_agg(m.user_id) FILTER (WHERE m.user_id IS NOT NULL),
@@ -31,7 +31,7 @@ SELECT
 FROM inserted_group g
 LEFT JOIN inserted_members m ON g.id = m.group_id
 JOIN activities a ON g.activity_id = a.id
-GROUP BY g.id, g.name, g.description, g.location, g.activity_id, g.created_at, a.name, a.icon, g.status;
+GROUP BY g.id, g.name, g.description, g.location, g.activity_id, g.created_at, a.name, a.icon, g.public;
 
 -- name: ListGroups :many
 WITH selected_groups AS (
@@ -64,13 +64,13 @@ SELECT
   a.name AS activity,
   a.icon,
   g.location,
-  g.status
+  g.public
 FROM groups g
 JOIN activities a ON g.activity_id = a.id
 LEFT JOIN group_members gm ON gm.group_id = g.id
 LEFT JOIN users u ON gm.user_id = u.id
 WHERE g.id = $1
-GROUP BY g.id, g.name, g.description, g.created_at, a.name, a.icon, g.location, g.status;
+GROUP BY g.id, g.name, g.description, g.created_at, a.name, a.icon, g.location, g.public;
 
 -- name: DeleteGroup :one
 DELETE FROM groups
@@ -130,9 +130,9 @@ UPDATE groups
 SET description = $2
 WHERE id = $1;
 
--- name: ChangeGroupStatus :exec
+-- name: ChangeGroupPublic :exec
 UPDATE groups
-SET status = $2
+SET public = $2
 WHERE id = $1;
 
 -- name: ChangeGroupName :exec
@@ -145,7 +145,7 @@ UPDATE groups
 SET location = $2
 WHERE id = $1;
 
--- name: GetStatusOpenGroupsWithFilter :many
+-- name: GetOpenGroupsWithFilter :many
 SELECT 
     g.id,
     g.name,
@@ -156,11 +156,11 @@ SELECT
     COUNT(gm.user_id) AS member_count
 FROM groups g
 JOIN activities a ON g.activity_id = a.id
-WHERE g.status = true
+WHERE g.public = true
   AND g.activity_id = sqlc.narg('activity_id')::int
 LIMIT $1 OFFSET $2;
 
--- name: GetStatusOpenGroupsNoFilter :many
+-- name: GetOpenGroupsNoFilter :many
 SELECT 
     g.id,
     g.name,
@@ -172,7 +172,7 @@ SELECT
 FROM groups g
 JOIN activities a ON g.activity_id = a.id
 LEFT JOIN group_members gm ON g.id = gm.group_id
-WHERE g.status = true
+WHERE g.public = true
   AND (sqlc.narg('activity_id')::int IS NULL OR g.activity_id = sqlc.narg('activity_id')::int)
 GROUP BY g.id, g.name, g.description, g.location, a.name, a.icon
 LIMIT $1 OFFSET $2;
@@ -182,7 +182,7 @@ SELECT g.id,
        g.name,
        g.description,
        g.location,
-       g.status,
+       g.public,
        g.activity_id,
        g.created_at,
        COUNT(gm.user_id) AS member_count,
@@ -193,14 +193,14 @@ JOIN users_preference up ON g.activity_id = up.activity_id
 LEFT JOIN group_members gm ON g.id = gm.group_id
 JOIN activities a ON g.activity_id = a.id
 WHERE up.user_id = $1
-  AND g.status = true
+  AND g.public = true
   AND NOT EXISTS (
       SELECT 1
       FROM group_members gm2
       WHERE gm2.group_id = g.id
         AND gm2.user_id = $1
   )
-GROUP BY g.id, g.name, g.description, g.location, g.status, g.activity_id, g.created_at,
+GROUP BY g.id, g.name, g.description, g.location, g.public, g.activity_id, g.created_at,
          a.name, a.icon
 ORDER BY member_count ASC, g.created_at DESC
 LIMIT $2 OFFSET $3;

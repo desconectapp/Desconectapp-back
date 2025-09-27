@@ -79,27 +79,27 @@ func (q *Queries) ChangeGroupName(ctx context.Context, arg ChangeGroupNameParams
 	return err
 }
 
-const changeGroupStatus = `-- name: ChangeGroupStatus :exec
+const changeGroupPublic = `-- name: ChangeGroupPublic :exec
 UPDATE groups
-SET status = $2
+SET public = $2
 WHERE id = $1
 `
 
-type ChangeGroupStatusParams struct {
+type ChangeGroupPublicParams struct {
 	ID     int32 `json:"id"`
-	Status *bool `json:"status"`
+	Public *bool `json:"public"`
 }
 
-func (q *Queries) ChangeGroupStatus(ctx context.Context, arg ChangeGroupStatusParams) error {
-	_, err := q.db.Exec(ctx, changeGroupStatus, arg.ID, arg.Status)
+func (q *Queries) ChangeGroupPublic(ctx context.Context, arg ChangeGroupPublicParams) error {
+	_, err := q.db.Exec(ctx, changeGroupPublic, arg.ID, arg.Public)
 	return err
 }
 
 const createGroup = `-- name: CreateGroup :one
 WITH inserted_group AS (
-  INSERT INTO groups (name, description, location, activity_id, status)
+  INSERT INTO groups (name, description, location, activity_id, public)
   VALUES ($1, $2, $3, $4, false)
-  RETURNING id, name, description, location, status, activity_id, created_at
+  RETURNING id, name, description, location, public, activity_id, created_at
 ), inserted_members AS (
   INSERT INTO group_members (user_id, group_id)
   SELECT u.id, g.id
@@ -116,7 +116,7 @@ SELECT
   g.location,
   g.activity_id,
   g.created_at,
-  g.status,
+  g.public,
   CAST(
     COALESCE(
       array_agg(m.user_id) FILTER (WHERE m.user_id IS NOT NULL),
@@ -128,7 +128,7 @@ SELECT
 FROM inserted_group g
 LEFT JOIN inserted_members m ON g.id = m.group_id
 JOIN activities a ON g.activity_id = a.id
-GROUP BY g.id, g.name, g.description, g.location, g.activity_id, g.created_at, a.name, a.icon, g.status
+GROUP BY g.id, g.name, g.description, g.location, g.activity_id, g.created_at, a.name, a.icon, g.public
 `
 
 type CreateGroupParams struct {
@@ -146,7 +146,7 @@ type CreateGroupRow struct {
 	Location     *string            `json:"location"`
 	ActivityID   int32              `json:"activity_id"`
 	CreatedAt    pgtype.Timestamptz `json:"created_at"`
-	Status       *bool              `json:"status"`
+	Public       *bool              `json:"public"`
 	Members      []int32            `json:"members"`
 	ActivityName string             `json:"activity_name"`
 	ActivityIcon *string            `json:"activity_icon"`
@@ -168,7 +168,7 @@ func (q *Queries) CreateGroup(ctx context.Context, arg CreateGroupParams) (Creat
 		&i.Location,
 		&i.ActivityID,
 		&i.CreatedAt,
-		&i.Status,
+		&i.Public,
 		&i.Members,
 		&i.ActivityName,
 		&i.ActivityIcon,
@@ -212,13 +212,13 @@ SELECT
   a.name AS activity,
   a.icon,
   g.location,
-  g.status
+  g.public
 FROM groups g
 JOIN activities a ON g.activity_id = a.id
 LEFT JOIN group_members gm ON gm.group_id = g.id
 LEFT JOIN users u ON gm.user_id = u.id
 WHERE g.id = $1
-GROUP BY g.id, g.name, g.description, g.created_at, a.name, a.icon, g.location, g.status
+GROUP BY g.id, g.name, g.description, g.created_at, a.name, a.icon, g.location, g.public
 `
 
 type GetGroupRow struct {
@@ -229,7 +229,7 @@ type GetGroupRow struct {
 	Activity    string             `json:"activity"`
 	Icon        *string            `json:"icon"`
 	Location    *string            `json:"location"`
-	Status      *bool              `json:"status"`
+	Public      *bool              `json:"public"`
 }
 
 func (q *Queries) GetGroup(ctx context.Context, id int32) (GetGroupRow, error) {
@@ -243,7 +243,7 @@ func (q *Queries) GetGroup(ctx context.Context, id int32) (GetGroupRow, error) {
 		&i.Activity,
 		&i.Icon,
 		&i.Location,
-		&i.Status,
+		&i.Public,
 	)
 	return i, err
 }
@@ -280,12 +280,134 @@ func (q *Queries) GetGroupMembers(ctx context.Context, groupID int32) ([]GetGrou
 	return items, nil
 }
 
+const getOpenGroupsNoFilter = `-- name: GetOpenGroupsNoFilter :many
+SELECT 
+    g.id,
+    g.name,
+    g.description,
+    g.location,
+    a.name AS activity_name,
+    a.icon,
+    COUNT(gm.user_id) AS member_count
+FROM groups g
+JOIN activities a ON g.activity_id = a.id
+LEFT JOIN group_members gm ON g.id = gm.group_id
+WHERE g.public = true
+  AND ($3::int IS NULL OR g.activity_id = $3::int)
+GROUP BY g.id, g.name, g.description, g.location, a.name, a.icon
+LIMIT $1 OFFSET $2
+`
+
+type GetOpenGroupsNoFilterParams struct {
+	Limit      int32  `json:"limit"`
+	Offset     int32  `json:"offset"`
+	ActivityID *int32 `json:"activity_id"`
+}
+
+type GetOpenGroupsNoFilterRow struct {
+	ID           int32   `json:"id"`
+	Name         *string `json:"name"`
+	Description  *string `json:"description"`
+	Location     *string `json:"location"`
+	ActivityName string  `json:"activity_name"`
+	Icon         *string `json:"icon"`
+	MemberCount  int64   `json:"member_count"`
+}
+
+func (q *Queries) GetOpenGroupsNoFilter(ctx context.Context, arg GetOpenGroupsNoFilterParams) ([]GetOpenGroupsNoFilterRow, error) {
+	rows, err := q.db.Query(ctx, getOpenGroupsNoFilter, arg.Limit, arg.Offset, arg.ActivityID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetOpenGroupsNoFilterRow{}
+	for rows.Next() {
+		var i GetOpenGroupsNoFilterRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Description,
+			&i.Location,
+			&i.ActivityName,
+			&i.Icon,
+			&i.MemberCount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getOpenGroupsWithFilter = `-- name: GetOpenGroupsWithFilter :many
+SELECT 
+    g.id,
+    g.name,
+    g.description,
+    g.location,
+    a.name AS activity_name,
+    a.icon,
+    COUNT(gm.user_id) AS member_count
+FROM groups g
+JOIN activities a ON g.activity_id = a.id
+WHERE g.public = true
+  AND g.activity_id = $3::int
+LIMIT $1 OFFSET $2
+`
+
+type GetOpenGroupsWithFilterParams struct {
+	Limit      int32  `json:"limit"`
+	Offset     int32  `json:"offset"`
+	ActivityID *int32 `json:"activity_id"`
+}
+
+type GetOpenGroupsWithFilterRow struct {
+	ID           int32   `json:"id"`
+	Name         *string `json:"name"`
+	Description  *string `json:"description"`
+	Location     *string `json:"location"`
+	ActivityName string  `json:"activity_name"`
+	Icon         *string `json:"icon"`
+	MemberCount  int64   `json:"member_count"`
+}
+
+func (q *Queries) GetOpenGroupsWithFilter(ctx context.Context, arg GetOpenGroupsWithFilterParams) ([]GetOpenGroupsWithFilterRow, error) {
+	rows, err := q.db.Query(ctx, getOpenGroupsWithFilter, arg.Limit, arg.Offset, arg.ActivityID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetOpenGroupsWithFilterRow{}
+	for rows.Next() {
+		var i GetOpenGroupsWithFilterRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Description,
+			&i.Location,
+			&i.ActivityName,
+			&i.Icon,
+			&i.MemberCount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getPreferredGroups = `-- name: GetPreferredGroups :many
 SELECT g.id,
        g.name,
        g.description,
        g.location,
-       g.status,
+       g.public,
        g.activity_id,
        g.created_at,
        COUNT(gm.user_id) AS member_count,
@@ -296,14 +418,14 @@ JOIN users_preference up ON g.activity_id = up.activity_id
 LEFT JOIN group_members gm ON g.id = gm.group_id
 JOIN activities a ON g.activity_id = a.id
 WHERE up.user_id = $1
-  AND g.status = true
+  AND g.public = true
   AND NOT EXISTS (
       SELECT 1
       FROM group_members gm2
       WHERE gm2.group_id = g.id
         AND gm2.user_id = $1
   )
-GROUP BY g.id, g.name, g.description, g.location, g.status, g.activity_id, g.created_at,
+GROUP BY g.id, g.name, g.description, g.location, g.public, g.activity_id, g.created_at,
          a.name, a.icon
 ORDER BY member_count ASC, g.created_at DESC
 LIMIT $2 OFFSET $3
@@ -320,7 +442,7 @@ type GetPreferredGroupsRow struct {
 	Name         *string            `json:"name"`
 	Description  *string            `json:"description"`
 	Location     *string            `json:"location"`
-	Status       *bool              `json:"status"`
+	Public       *bool              `json:"public"`
 	ActivityID   int32              `json:"activity_id"`
 	CreatedAt    pgtype.Timestamptz `json:"created_at"`
 	MemberCount  int64              `json:"member_count"`
@@ -342,7 +464,7 @@ func (q *Queries) GetPreferredGroups(ctx context.Context, arg GetPreferredGroups
 			&i.Name,
 			&i.Description,
 			&i.Location,
-			&i.Status,
+			&i.Public,
 			&i.ActivityID,
 			&i.CreatedAt,
 			&i.MemberCount,
@@ -359,131 +481,9 @@ func (q *Queries) GetPreferredGroups(ctx context.Context, arg GetPreferredGroups
 	return items, nil
 }
 
-const getStatusOpenGroupsNoFilter = `-- name: GetStatusOpenGroupsNoFilter :many
-SELECT 
-    g.id,
-    g.name,
-    g.description,
-    g.location,
-    a.name AS activity_name,
-    a.icon,
-    COUNT(gm.user_id) AS member_count
-FROM groups g
-JOIN activities a ON g.activity_id = a.id
-LEFT JOIN group_members gm ON g.id = gm.group_id
-WHERE g.status = true
-  AND ($3::int IS NULL OR g.activity_id = $3::int)
-GROUP BY g.id, g.name, g.description, g.location, a.name, a.icon
-LIMIT $1 OFFSET $2
-`
-
-type GetStatusOpenGroupsNoFilterParams struct {
-	Limit      int32  `json:"limit"`
-	Offset     int32  `json:"offset"`
-	ActivityID *int32 `json:"activity_id"`
-}
-
-type GetStatusOpenGroupsNoFilterRow struct {
-	ID           int32   `json:"id"`
-	Name         *string `json:"name"`
-	Description  *string `json:"description"`
-	Location     *string `json:"location"`
-	ActivityName string  `json:"activity_name"`
-	Icon         *string `json:"icon"`
-	MemberCount  int64   `json:"member_count"`
-}
-
-func (q *Queries) GetStatusOpenGroupsNoFilter(ctx context.Context, arg GetStatusOpenGroupsNoFilterParams) ([]GetStatusOpenGroupsNoFilterRow, error) {
-	rows, err := q.db.Query(ctx, getStatusOpenGroupsNoFilter, arg.Limit, arg.Offset, arg.ActivityID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []GetStatusOpenGroupsNoFilterRow{}
-	for rows.Next() {
-		var i GetStatusOpenGroupsNoFilterRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.Name,
-			&i.Description,
-			&i.Location,
-			&i.ActivityName,
-			&i.Icon,
-			&i.MemberCount,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getStatusOpenGroupsWithFilter = `-- name: GetStatusOpenGroupsWithFilter :many
-SELECT 
-    g.id,
-    g.name,
-    g.description,
-    g.location,
-    a.name AS activity_name,
-    a.icon,
-    COUNT(gm.user_id) AS member_count
-FROM groups g
-JOIN activities a ON g.activity_id = a.id
-WHERE g.status = true
-  AND g.activity_id = $3::int
-LIMIT $1 OFFSET $2
-`
-
-type GetStatusOpenGroupsWithFilterParams struct {
-	Limit      int32  `json:"limit"`
-	Offset     int32  `json:"offset"`
-	ActivityID *int32 `json:"activity_id"`
-}
-
-type GetStatusOpenGroupsWithFilterRow struct {
-	ID           int32   `json:"id"`
-	Name         *string `json:"name"`
-	Description  *string `json:"description"`
-	Location     *string `json:"location"`
-	ActivityName string  `json:"activity_name"`
-	Icon         *string `json:"icon"`
-	MemberCount  int64   `json:"member_count"`
-}
-
-func (q *Queries) GetStatusOpenGroupsWithFilter(ctx context.Context, arg GetStatusOpenGroupsWithFilterParams) ([]GetStatusOpenGroupsWithFilterRow, error) {
-	rows, err := q.db.Query(ctx, getStatusOpenGroupsWithFilter, arg.Limit, arg.Offset, arg.ActivityID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []GetStatusOpenGroupsWithFilterRow{}
-	for rows.Next() {
-		var i GetStatusOpenGroupsWithFilterRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.Name,
-			&i.Description,
-			&i.Location,
-			&i.ActivityName,
-			&i.Icon,
-			&i.MemberCount,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const listGroups = `-- name: ListGroups :many
 WITH selected_groups AS (
-  SELECT id, name, description, location, status, activity_id, created_at
+  SELECT id, name, description, location, public, activity_id, created_at
   FROM groups
   ORDER BY created_at DESC
   LIMIT $1 OFFSET $2
@@ -551,7 +551,7 @@ func (q *Queries) ListGroups(ctx context.Context, arg ListGroupsParams) ([]ListG
 
 const listUserGroups = `-- name: ListUserGroups :many
 WITH user_groups AS (
-  SELECT g.id, g.name, g.description, g.location, g.status, g.activity_id, g.created_at
+  SELECT g.id, g.name, g.description, g.location, g.public, g.activity_id, g.created_at
   FROM groups g
   JOIN group_members gm ON g.id = gm.group_id
   WHERE gm.user_id = $3
