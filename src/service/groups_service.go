@@ -17,6 +17,7 @@ type GroupWithMembers struct {
 	Location    *string                         `json:"location"`
 	Members     []repository.GetGroupMembersRow `json:"members"`
 	Public      bool                            `json:"public"`
+	Time	string	`json:"created_at"`
 }
 
 type OpenGroup struct {
@@ -27,7 +28,7 @@ type OpenGroup struct {
 	ActivityName string  `json:"activity_name"`
 	MemberCount	int32 `json:"member_count"`
 	Photo	string	`json:"photo"`
-	// Time	[]int32	
+	Time	string	`json:"created_at"`
 }
 
 type ActivityFilter struct {
@@ -116,6 +117,7 @@ func addMembers(group repository.GetGroupRow, members []repository.GetGroupMembe
 		Icon:        group.Icon,
 		Members:     members,
 		Public:      *group.Public,
+		Time:	group.CreatedAt.Time.String(),
 	}
 }
 
@@ -248,6 +250,7 @@ func (s *GroupsService) GetUserRecommendations(filter repository.GetPreferredGro
 			ActivityName: group.ActivityName,
 			MemberCount: int32(group.MemberCount),
 			Photo: *group.ActivityIcon,
+			Time:	group.CreatedAt.Time.String(),
 		})
 	}
 	return openGroups, err
