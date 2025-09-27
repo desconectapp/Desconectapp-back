@@ -24,6 +24,7 @@ type AuthService struct {
 
 type Session struct {
 	UserId           int32
+	UserUuid         string
 	Token            string
 	RefreshToken     string
 	ExpiresAt        time.Time
@@ -68,6 +69,7 @@ func (s *AuthService) Login(email, password string) (*Session, error) {
 
 	return &Session{
 		UserId:           user.ID,
+		UserUuid:         user.Uuid.String(),
 		Token:            accessTokenString,
 		RefreshToken:     refreshTokenString,
 		ExpiresAt:        s.expirationsTime(accesExpirationTime),
@@ -92,9 +94,9 @@ func (s *AuthService) RefreshToken(refreshToken string) (*Session, error) {
 		userID := int32(claims["sub"].(float64))
 
 		var isAdmin bool = false
-        if claims["is_admin"] != nil {
-            isAdmin = claims["is_admin"].(bool)
-        }
+		if claims["is_admin"] != nil {
+			isAdmin = claims["is_admin"].(bool)
+		}
 
 		accesExpirationTime, refreshExpirationTime := Expirations()
 
@@ -103,9 +105,14 @@ func (s *AuthService) RefreshToken(refreshToken string) (*Session, error) {
 		if err != nil {
 			return nil, err
 		}
+		user_uuid, err := s.queries.GetUserById(s.ctx, userID)
+		if err != nil {
+			return nil, err
+		}
 
 		return &Session{
 			UserId:           userID,
+			UserUuid:         user_uuid.Uuid.String(),
 			Token:            newAccessTokenString,
 			RefreshToken:     newRefreshToken,
 			ExpiresAt:        s.expirationsTime(accesExpirationTime),
@@ -150,6 +157,7 @@ func (s *AuthService) Signup(name, email, password string) (*Session, error) {
 
 	return &Session{
 		UserId:           user.ID,
+		UserUuid:         user.Uuid.String(),
 		Token:            accessTokenString,
 		RefreshToken:     refreshTokenString,
 		ExpiresAt:        s.expirationsTime(accesExpirationTime),

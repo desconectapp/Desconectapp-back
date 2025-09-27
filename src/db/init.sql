@@ -132,3 +132,11 @@ WITH (FORMAT csv, HEADER true);
 COPY users_preference(user_id, activity_id)
 FROM '/users_preference.csv'
 WITH (FORMAT csv, HEADER true);
+
+COPY groups(name, description, location, public, activity_id)
+FROM '/groups.csv'
+WITH (FORMAT csv, HEADER true);
+
+COPY group_members(group_id, user_id)
+FROM '/group_members.csv'
+WITH (FORMAT csv, HEADER true);
