@@ -163,6 +163,33 @@ func (c *GroupsController) ExitGroup(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, res)
 }
 
+func (c *GroupsController) JoinGroup(ctx *gin.Context) {
+	var joinParams repository.AddUserToGroupParams
+
+	log.Printf("Called")
+
+	groupIdStr := ctx.Param("groupId")
+	groupId, err := strconv.Atoi(groupIdStr)
+	if err != nil {
+		ErrorNoStatus(ctx, err)
+		return
+	}
+	joinParams.GroupID = int32(groupId)
+
+	userToken, _ := ctx.Get("userID")
+	joinParams.UserID = userToken.(int32)
+
+	err = c.service.JoinGroup(joinParams)
+	if err != nil {
+		ErrorNoStatus(ctx, err)
+		return
+	}
+
+	res := GroupIdResponse{GroupId: joinParams.GroupID}
+
+	ctx.JSON(http.StatusOK, res)
+}
+
 func (c *GroupsController) DeleteGroup(ctx *gin.Context) {
 	groupIdStr := ctx.Param("groupId")
 	groupId, err := strconv.Atoi(groupIdStr)

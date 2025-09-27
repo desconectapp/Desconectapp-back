@@ -80,6 +80,11 @@ func (s *GroupsService) ExitGroup(exitParams repository.ExitGroupParams) error {
 	return err
 }
 
+func (s *GroupsService) JoinGroup(joinParams repository.AddUserToGroupParams) error {
+	err := s.queries.AddUserToGroup(s.ctx, joinParams)
+	return err
+}
+
 func (s *GroupsService) GetGroup(groupId int32) (GroupWithMembers, error) {
 	var groupWithMembers GroupWithMembers
 
@@ -216,8 +221,8 @@ func (s *GroupsService) GetStatusOpenGroupsWithFilter(filter repository.GetStatu
 			Location:     group.Location,
 			Description:  group.Description,
 			ActivityName: group.ActivityName,
-			// MemberCount: int32(group.MemberCount),
-			// Photo: *group.Icon,
+			MemberCount: int32(group.MemberCount),
+			Photo: *group.Icon,
 		})
 	}
 	return openGroups, err
