@@ -38,6 +38,14 @@ func (s *Service) CreateProfile(profile repository.CreateProfileParams) (reposit
 	return user, nil
 }
 
+func (s *Service) UpdateProfile(profile repository.UpdateProfileParams) (repository.UpdateProfileRow, error) {
+	user, err := s.queries.UpdateProfile(s.ctx, profile)
+	if err != nil {
+		return repository.UpdateProfileRow{}, err
+	}
+	return user, nil
+}
+
 func (s *Service) GetUser(userId int32) (repository.Profile, error) {
 	user, err := s.queries.GetUser(s.ctx, userId)
 	if err != nil {

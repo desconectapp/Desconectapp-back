@@ -19,6 +19,7 @@ LIMIT $1 OFFSET $2;
 
 -- name: GetActivities :many
 SELECT * FROM activities
+WHERE (sqlc.narg('search')::text IS NULL OR name ILIKE '%' || sqlc.narg('search')::text || '%')
 ORDER BY category, id DESC
 LIMIT $1 OFFSET $2;
 
