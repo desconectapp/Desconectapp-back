@@ -103,17 +103,19 @@ func (q *Queries) DeleteActivityRequest(ctx context.Context, id int32) error {
 
 const getActivities = `-- name: GetActivities :many
 SELECT id, name, icon, created_at, category FROM activities
+WHERE ($3::text IS NULL OR name ILIKE '%' || $3::text || '%')
 ORDER BY category, id DESC
 LIMIT $1 OFFSET $2
 `
 
 type GetActivitiesParams struct {
-	Limit  int32 `json:"limit"`
-	Offset int32 `json:"offset"`
+	Limit  int32   `json:"limit"`
+	Offset int32   `json:"offset"`
+	Search *string `json:"search"`
 }
 
 func (q *Queries) GetActivities(ctx context.Context, arg GetActivitiesParams) ([]Activity, error) {
-	rows, err := q.db.Query(ctx, getActivities, arg.Limit, arg.Offset)
+	rows, err := q.db.Query(ctx, getActivities, arg.Limit, arg.Offset, arg.Search)
 	if err != nil {
 		return nil, err
 	}

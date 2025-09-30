@@ -181,6 +181,8 @@ func (c *ActivitiesController) GetActivities(ctx *gin.Context) {
 	var activityParams repository.GetActivitiesParams
 
 	limit, offset := GetLimmitAndOffset(ctx)
+	query := ctx.Query("q")
+	activityParams.Search = &query
 
 	activityParams.Limit = int32(limit)
 	activityParams.Offset = int32(offset)

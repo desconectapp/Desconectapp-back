@@ -117,7 +117,6 @@ func (router *Router) SetupRoutes() *gin.Engine {
 
 	preferences := router.r.Group("/preferences")
 	preferences.Use(router.authController.AuthMiddleware())
-
 	{
 		preferences.GET("", router.preferencesController.GetUserPreferences)
 		preferences.POST("", router.preferencesController.AddPreference)
