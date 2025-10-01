@@ -19,20 +19,14 @@ func TestListGroups(t *testing.T){
 router := router.NewRouter()
 	r :=  router.SetupRoutes()
 	
-	user1, token := NewUserWithProfile(t, r, "bokuto", CreateProfile{Name: "bokuto", Age: 17, City: "Tokyo", CurrentSituation: "WORKING", Gender: "Male"})
-	user2, _ := NewUserWithProfile(t, r, "akaashi", CreateProfile{Name: "akaashi", Age: 16, City: "Tokyo", CurrentSituation: "WORKING", Gender: "Male"})
-	user3, _ := NewUserWithProfile(t, r, "konoha", CreateProfile{Name: "konoha", Age: 16, City: "Tokyo", CurrentSituation: "WORKING", Gender: "Male"})
-		
-	activityId := int32(4)
+	token, err := service.NewTestToken(1)
+	assert.Equal(t, err, nil, "Error should be nil")
 
-	members := []int32{user1, user2, user3}
-
-	name := "Fukurodani"
-	location := "Tokyo"
+	name := "Karasuno"
+	location := "Miyagi"
+	members := 4
 	
-	NewGroup(t, r, name, location, activityId, members, token)
-
-	limit := "6"
+	limit := "9"
 	offset := "0"
 
 	req := httptest.NewRequest("GET", "/groups?limit="+limit+"&offset="+offset, nil)
@@ -42,14 +36,15 @@ router := router.NewRouter()
 
 	var response controller.PaginatedGroups
 
-	err := json.Unmarshal(w.Body.Bytes(), &response)
+	err = json.Unmarshal(w.Body.Bytes(), &response)
 	
 	assert.Equal(t, err, nil, "Error should be nil")
+	log.Println(response)
 
 	assert.LessOrEqual(t, strconv.Itoa(len(response.Groups)), limit)
 	assert.Equal(t, false, response.HasMore)
 
-	assert.Equal(t, len(members), int(response.Groups[0].MembersCount))
+	assert.Equal(t, members, int(response.Groups[0].MembersCount))
 	assert.Equal(t, location, *response.Groups[0].Location)
 	assert.Equal(t, name, *response.Groups[0].Name)
 }
@@ -75,32 +70,29 @@ func TestGetGroup(t *testing.T) {
 	router := router.NewRouter()
 	r :=  router.SetupRoutes()
 	
-	user1, token := NewUserWithProfile(t, r, "kuroo", CreateProfile{Name: "kuroo", Age: 17, City: "Tokyo", CurrentSituation: "WORKING", Gender: "Male"})
-	user2, _ := NewUserWithProfile(t, r, "kenma", CreateProfile{Name: "kenma", Age: 16, City: "Tokyo", CurrentSituation: "WORKING", Gender: "Male"})
-	user3, _ := NewUserWithProfile(t, r, "lev", CreateProfile{Name: "lev", Age: 15, City: "Tokyo", CurrentSituation: "WORKING", Gender: "Male"})
-		
-	activityId := int32(4)
+	token, err := service.NewTestToken(1)
+	assert.Equal(t, err, nil, "Error should be nil")
 
-	members := []int32{user1, user2, user3}
-
+	groupID := 2
 	name := "Nekoma"
 	location := "Tokyo"
+	members := 2
 	
-	group := NewGroup(t, r, name, location, activityId, members, token)
 
-	req := httptest.NewRequest("GET", "/groups/"+strconv.Itoa(int(group)), nil)
+	req := httptest.NewRequest("GET", "/groups/"+strconv.Itoa(groupID), nil)
 	req.Header.Add("Authorization", "Bearer "+token)
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
 	var response service.GroupWithMembers
-	err := json.Unmarshal(w.Body.Bytes(), &response)
+	err = json.Unmarshal(w.Body.Bytes(), &response)
+
+	log.Println(response.Members)
 	
 	assert.Equal(t, err, nil, "Error should be nil")
 	assert.Equal(t, name, *response.Name)
 	assert.Equal(t, location, *response.Location)
-
-	assert.NotEqual(t, 0, len(response.Members))
+	assert.Equal(t, members, len(response.Members))
 }
 
 // groups.DELETE("/:groupId", router.groupsController.DeleteGroup)
@@ -135,30 +127,16 @@ func TestUserGroups(t *testing.T){
 router := router.NewRouter()
 	r :=  router.SetupRoutes()
 	
-	user1, token := NewUserWithProfile(t, r, "oikawa", CreateProfile{Name: "oikawa", Age: 17, City: "Miyagi", CurrentSituation: "WORKING", Gender: "Male"})
-	user2, _ := NewUserWithProfile(t, r, "iwaizumi", CreateProfile{Name: "iwaizumi", Age: 17, City: "Miyagi", CurrentSituation: "WORKING", Gender: "Male"})
-	user3, _ := NewUserWithProfile(t, r, "kunimi", CreateProfile{Name: "kunimi", Age: 15, City: "Miyagi", CurrentSituation: "WORKING", Gender: "Male"})
-		
-	activityId := int32(4)
-
-	members := []int32{user1, user2, user3}
-
+	token, err := service.NewTestToken(23)
+	assert.Equal(t, err, nil, "Error should be nil")
+	
 	name := "Aoba Johsai"
 	location := "Miyagi"
-	
-	NewGroup(t, r, name, location, activityId, members, token)
-
-	user5, _:= NewUserWithProfile(t, r, "juan", CreateProfile{Name: "juan", Age: 26, City: "Buenos Airres", CurrentSituation: "WORKING", Gender: "Male"})
-	user6, _ := NewUserWithProfile(t, r, "nacho", CreateProfile{Name: "nacho", Age: 25, City: "Buenos Airres", CurrentSituation: "WORKING", Gender: "Male"})
-	user7, _ := NewUserWithProfile(t, r, "miguel", CreateProfile{Name: "miguel", Age: 25, City: "Buenos Airres", CurrentSituation: "WORKING", Gender: "Male"})
-	
-	members2 := []int32{user1, user5, user6, user7}
-
-	name2 := "Boca Juniors"
+	members := 3
+	members2 := 4
+	name2 := "Argentina"
 	location2 := "Buenos Aires"
 	
-	NewGroup(t, r, name2, location2, activityId, members2, token)
-
 	limit := "6"
 	offset := "0"
 
@@ -168,20 +146,18 @@ router := router.NewRouter()
 	r.ServeHTTP(w, req)
 
 	var response controller.PaginatedUserGroup
-
-	err := json.Unmarshal(w.Body.Bytes(), &response)
-	
+	err = json.Unmarshal(w.Body.Bytes(), &response)
 	assert.Equal(t, err, nil, "Error should be nil")
 
 	assert.LessOrEqual(t, strconv.Itoa(len(response.Groups)), limit)
 	assert.Equal(t, false, response.HasMore)
 
-	assert.Equal(t, len(members2), int(response.Groups[0].MembersCount))
-	assert.Equal(t, location2, *response.Groups[0].Location)
-	assert.Equal(t, name2, *response.Groups[0].Name)
-	assert.Equal(t, len(members), int(response.Groups[1].MembersCount))
-	assert.Equal(t, location, *response.Groups[1].Location)
-	assert.Equal(t, name, *response.Groups[1].Name)
+	assert.Equal(t, members2, int(response.Groups[1].MembersCount))
+	assert.Equal(t, location2, *response.Groups[1].Location)
+	assert.Equal(t, name2, *response.Groups[1].Name)
+	assert.Equal(t, members, int(response.Groups[0].MembersCount))
+	assert.Equal(t, location, *response.Groups[0].Location)
+	assert.Equal(t, name, *response.Groups[0].Name)
 }
 
 // groups.DELETE("/user-from-group/:groupId", router.groupsController.ExitGroup)
@@ -210,25 +186,17 @@ func TestDeleteUserFromGroup(t *testing.T) {
 	assert.Equal(t, group, response.GroupId)
 }
 
-
 func TestUpdateGroupDescription(t *testing.T) {
 	router := router.NewRouter()
 	r :=  router.SetupRoutes()
 	
-	user1, token := NewUserWithProfile(t, r, "zoey", CreateProfile{Name: "zoey", Age: 22, City: "Seoul", CurrentSituation: "WORKING", Gender: "Male"})
-	user2, _ := NewUserWithProfile(t, r, "rumi", CreateProfile{Name: "rumi", Age: 19, City: "Seoul", CurrentSituation: "WORKING", Gender: "Male"})
-	user3, _ := NewUserWithProfile(t, r, "mira", CreateProfile{Name: "mira", Age: 21, City: "Seoul", CurrentSituation: "WORKING", Gender: "Male"})
-		
-	activityId := int32(28)
-
-	members := []int32{user1, user2, user3}
+	token, err := service.NewTestToken(32)
+	assert.Equal(t, err, nil, "Error should be nil")
 
 	name := "Huntrix"
 	location := "Seoul"
-	
-	group := NewGroup(t, r, name, location, activityId, members, token)
-
 	desc := "New Description"
+	groupID := 7
 
 	body := NewDescription{
 		NewDesc: desc,
@@ -236,56 +204,59 @@ func TestUpdateGroupDescription(t *testing.T) {
 	jsonBody, err := json.Marshal(body)
 	assert.Equal(t, err, nil, "Error should be nil")
 
-	req := httptest.NewRequest("PUT", "/groups/description/"+strconv.Itoa(int(group)), bytes.NewReader(jsonBody))
+	req := httptest.NewRequest("PUT", "/groups/description/"+strconv.Itoa(int(groupID)), bytes.NewReader(jsonBody))
 	req.Header.Add("content-type", "application/json")
 	req.Header.Add("Authorization", "Bearer "+token)
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
-
-	req_2 := httptest.NewRequest("GET", "/groups/"+strconv.Itoa(int(group)), nil)
+	req_2 := httptest.NewRequest("GET", "/groups/"+strconv.Itoa(int(groupID)), nil)
 	req_2.Header.Add("Authorization", "Bearer "+token)
 	w_2 := httptest.NewRecorder()
 	r.ServeHTTP(w_2, req_2)
 
 	var response service.GroupWithMembers
 	err = json.Unmarshal(w_2.Body.Bytes(), &response)
-	
 	assert.Equal(t, err, nil, "Error should be nil")
+	
 	assert.Equal(t, name, *response.Name)
 	assert.Equal(t, location, *response.Location)
 	assert.Equal(t, desc, *response.Description)
-	assert.NotEqual(t, 0, len(response.Members))
+	assert.Equal(t, 3, len(response.Members))
 }
 
 func TestChangeGroupStatusToTrueThenFalse(t *testing.T) {
 	router := router.NewRouter()
 	r := router.SetupRoutes()
 
-	user1, token := NewUserWithProfile(t, r, "zoey_fan", CreateProfile{Name: "zoey_fan", Age: 22, City: "Seoul", CurrentSituation: "WORKING", Gender: "Male"})
-	user2, _ := NewUserWithProfile(t, r, "rumi_fan", CreateProfile{Name: "rumi_fan", Age: 19, City: "Seoul", CurrentSituation: "WORKING", Gender: "Male"})
-	user3, _ := NewUserWithProfile(t, r, "mira_fan", CreateProfile{Name: "mira_fan", Age: 21, City: "Seoul", CurrentSituation: "WORKING", Gender: "Male"})
+	token, err := service.NewTestToken(32)
+	assert.Equal(t, err, nil, "Error should be nil")
 
-	group := NewGroup(t, r, "HuntrixsFans", "Seoul", 28, []int32{user1, user2, user3}, token)
+	groupID := 5
+	groupName := "Shiratorizawa"
+	location := "Miyagi"
 
 	checkStatus := func(status bool) {
 		body, _ := json.Marshal(NewStatus{NewStatus: status})
-		req := httptest.NewRequest("PUT", "/groups/public/"+strconv.Itoa(int(group)), bytes.NewReader(body))
+		req := httptest.NewRequest("PUT", "/groups/public/"+strconv.Itoa(int(groupID)), bytes.NewReader(body))
 		req.Header.Add("content-type", "application/json")
 		req.Header.Add("Authorization", "Bearer "+token)
 		w := httptest.NewRecorder()
 		r.ServeHTTP(w, req)
 
-		reqGet := httptest.NewRequest("GET", "/groups/"+strconv.Itoa(int(group)), nil)
+		reqGet := httptest.NewRequest("GET", "/groups/"+strconv.Itoa(int(groupID)), nil)
 		reqGet.Header.Add("Authorization", "Bearer "+token)
 		wGet := httptest.NewRecorder()
 		r.ServeHTTP(wGet, reqGet)
 
 		var resp service.GroupWithMembers
 		err := json.Unmarshal(wGet.Body.Bytes(), &resp)
+
+		log.Println(resp.Members)
+
 		assert.NoError(t, err)
-		assert.Equal(t, "HuntrixsFans", *resp.Name)
-		assert.Equal(t, "Seoul", *resp.Location)
+		assert.Equal(t, groupName, *resp.Name)
+		assert.Equal(t, location, *resp.Location)
 		assert.Equal(t, status, resp.Public)
 		assert.NotEmpty(t, resp.Members)
 	}
@@ -298,25 +269,22 @@ func TestGetStatusOpenListNoFilter(t *testing.T) {
 	router := router.NewRouter()
 	r := router.SetupRoutes()
 
-	user1, token := NewUserWithProfile(t, r, "jinshi", CreateProfile{Name: "jinshi", Age: 30, City: "Seoul", CurrentSituation: "WORKING", Gender: "Male"})
-	user2, _ := NewUserWithProfile(t, r, "abby", CreateProfile{Name: "abby", Age: 30, City: "Seoul", CurrentSituation: "WORKING", Gender: "Male"})
-	user3, _ := NewUserWithProfile(t, r, "mystery", CreateProfile{Name: "mystery", Age: 30, City: "Seoul", CurrentSituation: "WORKING", Gender: "Male"})
+	token, err := service.NewTestToken(32)
+	assert.Equal(t, err, nil, "Error should be nil")
 
-	members := []int32{user1, user2, user3}
-	location := "Seoul"
-	name := "Saja Boys"
-
-	group := NewGroup(t, r, name, location, 28, members, token)
+	groupID := 5
+	groupName := "Shiratorizawa"
+	location := "Miyagi"
 
 	checkStatus := func(status bool) {
 		body, _ := json.Marshal(NewStatus{NewStatus: status})
-		req := httptest.NewRequest("PUT", "/groups/public/"+strconv.Itoa(int(group)), bytes.NewReader(body))
+		req := httptest.NewRequest("PUT", "/groups/public/"+strconv.Itoa(int(groupID)), bytes.NewReader(body))
 		req.Header.Add("content-type", "application/json")
 		req.Header.Add("Authorization", "Bearer "+token)
 		w := httptest.NewRecorder()
 		r.ServeHTTP(w, req)
 
-		reqGet := httptest.NewRequest("GET", "/groups/"+strconv.Itoa(int(group)), nil)
+		reqGet := httptest.NewRequest("GET", "/groups/"+strconv.Itoa(int(groupID)), nil)
 		reqGet.Header.Add("Authorization", "Bearer "+token)
 		wGet := httptest.NewRecorder()
 		r.ServeHTTP(wGet, reqGet)
@@ -327,7 +295,7 @@ func TestGetStatusOpenListNoFilter(t *testing.T) {
 		log.Println(resp)
 
 		assert.NoError(t, err)
-		assert.Equal(t, name, *resp.Name)
+		assert.Equal(t, groupName, *resp.Name)
 		assert.Equal(t, location, *resp.Location)
 		assert.Equal(t, status, resp.Public)
 		assert.NotEmpty(t, resp.Members)
@@ -362,7 +330,7 @@ func TestGetStatusOpenListNoFilter(t *testing.T) {
 	assert.Equal(t, false, response.HasMore)
 
 	assert.Equal(t, location, *response.Groups[0].Location)
-	assert.Equal(t, name, *response.Groups[0].Name)
+	assert.Equal(t, groupName, *response.Groups[0].Name)
 	assert.Equal(t, int32(3), response.Groups[0].MemberCount)
 
 	checkStatus(false)
@@ -372,15 +340,12 @@ func TestGetStatusOpenListWithFilter(t *testing.T) {
 	router := router.NewRouter()
 	r := router.SetupRoutes()
 
-	user1, token := NewUserWithProfile(t, r, "jinshi_fan", CreateProfile{Name: "jinshi_fan", Age: 30, City: "Seoul", CurrentSituation: "WORKING", Gender: "Male"})
-	user2, _ := NewUserWithProfile(t, r, "abby_fan", CreateProfile{Name: "abby_fan", Age: 30, City: "Seoul", CurrentSituation: "WORKING", Gender: "Male"})
-	user3, _ := NewUserWithProfile(t, r, "mystery_fan", CreateProfile{Name: "mystery_fan", Age: 30, City: "Seoul", CurrentSituation: "WORKING", Gender: "Male"})
+	token, err := service.NewTestToken(32)
+	assert.Equal(t, err, nil, "Error should be nil")
 
-	members := []int32{user1, user2, user3}
-	location := "Seoul"
-	name := "Saja Boys Fans"
-
-	group := NewGroup(t, r, name, location, 28, members, token)
+	group := 5
+	groupName := "Shiratorizawa"
+	location := "Miyagi"
 
 	checkStatus := func(status bool) {
 		body, _ := json.Marshal(NewStatus{NewStatus: status})
@@ -398,7 +363,7 @@ func TestGetStatusOpenListWithFilter(t *testing.T) {
 		var resp service.GroupWithMembers
 		err := json.Unmarshal(wGet.Body.Bytes(), &resp)
 		assert.NoError(t, err)
-		assert.Equal(t, name, *resp.Name)
+		assert.Equal(t, groupName, *resp.Name)
 		assert.Equal(t, location, *resp.Location)
 		assert.Equal(t, status, resp.Public)
 		assert.NotEmpty(t, resp.Members)
@@ -410,7 +375,7 @@ func TestGetStatusOpenListWithFilter(t *testing.T) {
 	offset := "0"
 	
 	body := ActivityIdStruct{
-		ActivityID: 28,
+		ActivityID: 4,
 	}
 	jsonBody, err := json.Marshal(body)
 	assert.Equal(t, err, nil, "Error should be nil")
@@ -433,6 +398,6 @@ func TestGetStatusOpenListWithFilter(t *testing.T) {
 	assert.Equal(t, false, response.HasMore)
 
 	assert.Equal(t, location, *response.Groups[0].Location)
-	assert.Equal(t, name, *response.Groups[0].Name)
+	assert.Equal(t, groupName, *response.Groups[0].Name)
 	assert.Equal(t, int32(3), response.Groups[0].MemberCount)
 }
