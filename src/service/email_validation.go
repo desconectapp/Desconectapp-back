@@ -208,16 +208,11 @@ func (s *EmailValidationService) UpdatePassword(userId int32, newPassword string
 	code, err := s.queries.GetVerificationCode(s.ctx, userId)
 	if err != nil {
 		log.Println("Error fetching verification code:", err)
-		return err
+		return fmt.Errorf("invalid verification code provided")
 	}
 
-	if *code.Code == strings.ToUpper(codeToValidate) {
-		err = s.queries.VerifyEmail(s.ctx, userId)
-		if err != nil {
-			log.Println("Invalidating verification code:", err)
-			return err
-		}
-		return nil
+	if len(codeToValidate) != 6 || *code.Code != strings.ToUpper(codeToValidate) {
+		return fmt.Errorf("invalid verification code provided")
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)

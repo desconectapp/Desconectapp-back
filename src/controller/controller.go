@@ -91,6 +91,39 @@ func (c *Controller) CreateProfile(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, res)
 }
 
+func (c *Controller) UpdateProfile(ctx *gin.Context) {
+	var profileData repository.UpdateProfileParams
+	if err := ctx.ShouldBind(&profileData); err != nil {
+		ErrorWithStatus(ctx, "Invalid json format", http.StatusBadRequest)
+		return
+	}
+
+	if profileData.Age < MIN_AGE || profileData.Age > MAX_AGE {
+		ErrorWithStatus(ctx, "Age must be between 15 and 100", http.StatusBadRequest)
+		return
+	}
+
+	userId, _ := ctx.Get("userID")
+	profileData.UserID = userId.(int32)
+
+	user, err := c.service.UpdateProfile(profileData)
+	if err != nil {
+		ErrorWithStatus(ctx, "An error ocurred updating the profile", http.StatusBadRequest)
+		return
+	}
+
+	res := Profile{
+		UserID:           user.UserID,
+		Age:              user.Age,
+		Name:             user.Name,
+		City:             user.City,
+		CurrentSituation: user.CurrentSituation,
+		Gender:           user.Gender,
+	}
+
+	ctx.JSON(http.StatusOK, res)
+}
+
 func (c *Controller) GetUser(ctx *gin.Context) {
 	userToken, _ := ctx.Get("userID")
 

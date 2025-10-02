@@ -28,6 +28,7 @@ func NewPreferencesController(conn *pgxpool.Pool) *PreferencesController {
 func (c *PreferencesController) GetUserPreferences(ctx *gin.Context) {
 	var preferencesParams repository.GetUserPreferencesParams
 
+
 	limit, offset := GetLimmitAndOffset(ctx)
 
 	preferencesParams.Limit = int32(limit) + 1
@@ -35,6 +36,8 @@ func (c *PreferencesController) GetUserPreferences(ctx *gin.Context) {
 
 	userToken, _ := ctx.Get("userID")
 	preferencesParams.UserID = userToken.(int32)
+
+	log.Println(preferencesParams)
 
 	preferences, err := c.service.GetUserPreferences(preferencesParams)
 
@@ -107,17 +110,21 @@ func (c *PreferencesController) DeletePreference(ctx *gin.Context) {
 }
 
 func (c *PreferencesController) BatchAddUserPreferences(ctx *gin.Context) {
-	var userPreferences repository.BatchAddPreferencesParams
+	var userPreferences []int32 
+	log.Println(ctx.Request.Body)
 
 	if err := ctx.ShouldBind(&userPreferences); err != nil {
-		ErrorWithStatus(ctx, "Could not bind", http.StatusBadRequest)
+		ErrorWithStatus(ctx, "Bad request", http.StatusBadRequest)
 		return
 	}
 
-	userToken, _ := ctx.Get("userID")
-	userPreferences.UserID = userToken.(int32)
+	var _userPreferences repository.BatchAddPreferencesParams
 
-	err := c.service.BatchAddPreferences(userPreferences)
+	userToken, _ := ctx.Get("userID")
+	_userPreferences.UserID = userToken.(int32)
+	_userPreferences.ActivityIds = userPreferences
+
+	err := c.service.BatchAddPreferences(_userPreferences)
 
 	log.Println(err)
 
@@ -127,7 +134,7 @@ func (c *PreferencesController) BatchAddUserPreferences(ctx *gin.Context) {
 	}
 
 	res := ActivityIdBatchResponse{
-		ActivityIdBatchIDs: userPreferences.ActivityIds,
+		ActivityIdBatchIDs: userPreferences,
 	}
 
 	ctx.JSON(http.StatusOK, res)
