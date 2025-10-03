@@ -32,9 +32,12 @@ type OpenGroup struct {
 }
 
 type ActivityFilter struct {
-	ActivityId int32 `json:"activity_id"`
-	Limit      int32 `json:"limit"`
-	Offset     int32 `json:"offset"`
+	ActivityId int32    `json:"activity_id"`
+	Limit      int32    `json:"limit"`
+	Offset     int32    `json:"offset"`
+	Latitude   *float64 `json:"latitude"`
+	Longitude  *float64 `json:"longitude"`
+	Radius     *float64 `json:"radius"`
 }
 
 type GroupsService struct {
@@ -164,11 +167,24 @@ func (s *GroupsService) GetOpenGroups(filter ActivityFilter) ([]OpenGroup, error
 	var openGroups []OpenGroup
 	var err error
 
-	if filter.ActivityId == 0 {
+	// If location parameters are provided, use location-based filtering
+	if filter.Latitude != nil && filter.Longitude != nil && filter.Radius != nil {
+		openGroups, err = s.GetOpenGroupsWithLocation(
+			repository.GetOpenGroupsWithLocationParams{
+				Limit:      filter.Limit,
+				Offset:     filter.Offset,
+				Latitude:   *filter.Latitude,
+				Longitude:  *filter.Longitude,
+				Radius:     *filter.Radius,
+				ActivityID: func() *int32 { if filter.ActivityId != 0 { return &filter.ActivityId } else { return nil } }(),
+			},
+		)
+	} else if filter.ActivityId == 0 {
 		openGroups, err = s.GetOpenGroupsNoFilter(
 			repository.GetOpenGroupsNoFilterParams{
-				Limit:  filter.Limit,
-				Offset: filter.Offset,
+				Limit:      filter.Limit,
+				Offset:     filter.Offset,
+				ActivityID: nil,
 			},
 		)
 	} else {
@@ -227,6 +243,28 @@ func (s *GroupsService) GetPublicOpenGroupsWithFilter(filter repository.GetOpenG
 			ActivityName: group.ActivityName,
 			MemberCount: int32(group.MemberCount),
 			Photo: *group.Icon,
+		})
+	}
+	return openGroups, err
+}
+
+func (s *GroupsService) GetOpenGroupsWithLocation(filter repository.GetOpenGroupsWithLocationParams) ([]OpenGroup, error) {
+	groups, err := s.queries.GetOpenGroupsWithLocation(s.ctx, filter)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var openGroups []OpenGroup
+	for _, group := range groups {
+		openGroups = append(openGroups, OpenGroup{
+			ID:           group.ID,
+			Name:         group.Name,
+			Location:     group.Location,
+			Description:  group.Description,
+			ActivityName: group.ActivityName,
+			MemberCount:  int32(group.MemberCount),
+			Photo:        *group.Icon,
 		})
 	}
 	return openGroups, err

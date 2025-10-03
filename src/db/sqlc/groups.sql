@@ -177,6 +177,40 @@ WHERE g.public = true
 GROUP BY g.id, g.name, g.description, g.location, a.name, a.icon
 LIMIT $1 OFFSET $2;
 
+-- name: GetOpenGroupsWithLocation :many
+SELECT 
+    g.id,
+    g.name,
+    g.description,
+    g.location,
+    a.name AS activity_name,
+    a.icon,
+    COUNT(gm.user_id) AS member_count,
+    (6371 * acos(
+        cos(radians(sqlc.arg('latitude')::float)) * 
+        cos(radians(CAST(split_part(g.location, ',', 1) AS float))) *
+        cos(radians(CAST(split_part(g.location, ',', 2) AS float)) - radians(sqlc.arg('longitude')::float)) +
+        sin(radians(sqlc.arg('latitude')::float)) * 
+        sin(radians(CAST(split_part(g.location, ',', 1) AS float)))
+    )) AS distance_km
+FROM groups g
+JOIN activities a ON g.activity_id = a.id
+LEFT JOIN group_members gm ON g.id = gm.group_id
+WHERE g.public = true
+  AND g.location IS NOT NULL
+  AND g.location != ''
+  AND (sqlc.narg('activity_id')::int IS NULL OR g.activity_id = sqlc.narg('activity_id')::int)
+  AND (6371 * acos(
+        cos(radians(sqlc.arg('latitude')::float)) * 
+        cos(radians(CAST(split_part(g.location, ',', 1) AS float))) *
+        cos(radians(CAST(split_part(g.location, ',', 2) AS float)) - radians(sqlc.arg('longitude')::float)) +
+        sin(radians(sqlc.arg('latitude')::float)) * 
+        sin(radians(CAST(split_part(g.location, ',', 1) AS float)))
+    )) <= sqlc.arg('radius')::float
+GROUP BY g.id, g.name, g.description, g.location, a.name, a.icon
+ORDER BY distance_km
+LIMIT $1 OFFSET $2;
+
 -- name: GetPreferredGroups :many
 SELECT g.id,
        g.name,

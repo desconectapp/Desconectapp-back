@@ -321,15 +321,42 @@ func (c *GroupsController) ChangeGroupStatus(ctx *gin.Context) {
 func (c *GroupsController) GetOpenGroups(ctx *gin.Context) {
 	var filter service.ActivityFilter
 
-	if err := ctx.ShouldBind(&filter); err != nil {
-		ErrorWithStatus(ctx, "Could not bind", http.StatusBadRequest)
-		return
-	}
-
 	limit, offset := GetLimmitAndOffset(ctx)
-
 	filter.Limit = int32(limit) + 1
 	filter.Offset = int32(offset)
+
+	// Parse activity_id from query params
+	if activityIdStr := ctx.Query("activity_id"); activityIdStr != "" {
+		if activityId, err := strconv.ParseInt(activityIdStr, 10, 32); err == nil {
+			filter.ActivityId = int32(activityId)
+		}
+	}
+
+	// Parse location parameters from query params
+	if latStr := ctx.Query("latitude"); latStr != "" {
+		if lat, err := strconv.ParseFloat(latStr, 64); err == nil {
+			filter.Latitude = &lat
+		}
+	}
+
+	if lngStr := ctx.Query("longitude"); lngStr != "" {
+		if lng, err := strconv.ParseFloat(lngStr, 64); err == nil {
+			filter.Longitude = &lng
+		}
+	}
+
+	if radiusStr := ctx.Query("radius"); radiusStr != "" {
+		if radius, err := strconv.ParseFloat(radiusStr, 64); err == nil {
+			filter.Radius = &radius
+		}
+	}
+
+	// Validate that if any location param is provided, all are provided
+	if (filter.Latitude != nil || filter.Longitude != nil || filter.Radius != nil) &&
+		(filter.Latitude == nil || filter.Longitude == nil || filter.Radius == nil) {
+		ErrorWithStatus(ctx, "latitude, longitude, and radius must all be provided together", http.StatusBadRequest)
+		return
+	}
 
 	groups, err := c.service.GetOpenGroups(filter)
 

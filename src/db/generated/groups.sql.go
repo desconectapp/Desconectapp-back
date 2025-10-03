@@ -403,6 +403,97 @@ func (q *Queries) GetOpenGroupsWithFilter(ctx context.Context, arg GetOpenGroups
 	return items, nil
 }
 
+const getOpenGroupsWithLocation = `-- name: GetOpenGroupsWithLocation :many
+SELECT 
+    g.id,
+    g.name,
+    g.description,
+    g.location,
+    a.name AS activity_name,
+    a.icon,
+    COUNT(gm.user_id) AS member_count,
+    (6371 * acos(
+        cos(radians($3::float)) * 
+        cos(radians(CAST(split_part(g.location, ',', 1) AS float))) *
+        cos(radians(CAST(split_part(g.location, ',', 2) AS float)) - radians($4::float)) +
+        sin(radians($3::float)) * 
+        sin(radians(CAST(split_part(g.location, ',', 1) AS float)))
+    )) AS distance_km
+FROM groups g
+JOIN activities a ON g.activity_id = a.id
+LEFT JOIN group_members gm ON g.id = gm.group_id
+WHERE g.public = true
+  AND g.location IS NOT NULL
+  AND g.location != ''
+  AND ($5::int IS NULL OR g.activity_id = $5::int)
+  AND (6371 * acos(
+        cos(radians($3::float)) * 
+        cos(radians(CAST(split_part(g.location, ',', 1) AS float))) *
+        cos(radians(CAST(split_part(g.location, ',', 2) AS float)) - radians($4::float)) +
+        sin(radians($3::float)) * 
+        sin(radians(CAST(split_part(g.location, ',', 1) AS float)))
+    )) <= $6::float
+GROUP BY g.id, g.name, g.description, g.location, a.name, a.icon
+ORDER BY distance_km
+LIMIT $1 OFFSET $2
+`
+
+type GetOpenGroupsWithLocationParams struct {
+	Limit      int32   `json:"limit"`
+	Offset     int32   `json:"offset"`
+	Latitude   float64 `json:"latitude"`
+	Longitude  float64 `json:"longitude"`
+	ActivityID *int32  `json:"activity_id"`
+	Radius     float64 `json:"radius"`
+}
+
+type GetOpenGroupsWithLocationRow struct {
+	ID           int32   `json:"id"`
+	Name         *string `json:"name"`
+	Description  *string `json:"description"`
+	Location     *string `json:"location"`
+	ActivityName string  `json:"activity_name"`
+	Icon         *string `json:"icon"`
+	MemberCount  int64   `json:"member_count"`
+	DistanceKm   int32   `json:"distance_km"`
+}
+
+func (q *Queries) GetOpenGroupsWithLocation(ctx context.Context, arg GetOpenGroupsWithLocationParams) ([]GetOpenGroupsWithLocationRow, error) {
+	rows, err := q.db.Query(ctx, getOpenGroupsWithLocation,
+		arg.Limit,
+		arg.Offset,
+		arg.Latitude,
+		arg.Longitude,
+		arg.ActivityID,
+		arg.Radius,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetOpenGroupsWithLocationRow{}
+	for rows.Next() {
+		var i GetOpenGroupsWithLocationRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Description,
+			&i.Location,
+			&i.ActivityName,
+			&i.Icon,
+			&i.MemberCount,
+			&i.DistanceKm,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getPreferredGroups = `-- name: GetPreferredGroups :many
 SELECT g.id,
        g.name,
