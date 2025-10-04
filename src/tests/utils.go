@@ -87,6 +87,12 @@ func SendActivityRequest(t *testing.T, r *gin.Engine, userId int32, activityId i
 	float64Ptr := func(f float64) *float64 { return &f }
 	strPtr := func(s string) *string { return &s }
 
+	// Convert time ranges to half-hour timeslots
+	// Monday 9-11: timeslots 19-22 (9*2+1 to 11*2)
+	// Monday 14-16: timeslots 29-32 (14*2+1 to 16*2)  
+	// Wednesday 10-12: timeslots 67-71 (48+10*2+1 to 48+12*2)
+	timeslots := []uint16{19, 20, 21, 22, 29, 30, 31, 32, 67, 68, 69, 70, 71}
+
 	body := CreateActivityRequestInput{
 		UserID:             int32Ptr(userId),
 		ActivityID:         int32Ptr(activityId),
@@ -96,10 +102,7 @@ func SendActivityRequest(t *testing.T, r *gin.Engine, userId int32, activityId i
 		Latitude:           float64Ptr(37.7749),
 		Longitude:          float64Ptr(-122.4194),
 		SearchRadius:       int32Ptr(10),
-		Schedules: Schedules{
-			"monday":    {{Start: 9, End: 11}, {Start: 14, End: 16}},
-			"wednesday": {{Start: 10, End: 12}},
-		},
+		Timeslots:          timeslots,
 	}
 
 	jsonBody, err := json.Marshal(body)
