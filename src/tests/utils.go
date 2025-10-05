@@ -34,11 +34,7 @@ type CreateProfile struct {
 	Gender           string `json:"gender"`
 }
 
-type TimeSlot struct {
-	Start int `json:"start"`
-	End   int `json:"end"`
-}
-type Schedules map[string][]TimeSlot
+type TimeSlot struct{}
 
 type CreateActivityRequestInput struct {
 	UserID             *int32    `json:"user_id"`
@@ -49,7 +45,7 @@ type CreateActivityRequestInput struct {
 	SearchRadius       *int32    `json:"search_radius"`
 	MaxParticipants    *int32    `json:"max_participants"`
 	ParticipantsNeeded *int32    `json:"participants_needed"`
-	Schedules          Schedules `json:"schedules"`
+	Timeslots          []uint16  `json:"timeslots"`
 }
 
 type ActivityRequest struct {
@@ -123,8 +119,8 @@ func SendActivityRequest(t *testing.T, r *gin.Engine, userId int32, activityId i
 	}
 
 	var response ActivityRequest
-	err = json.Unmarshal(w.Body.Bytes(), &response)
-	assert.Equal(t, err, nil, "Error should be nil")
+    err = json.Unmarshal(w.Body.Bytes(), &response)
+    assert.NoError(t, err, "Error should be nil")
 
 	activity, err := GetActivityByID(activityId)
 	assert.Equal(t, err, nil, "Error should be nil")
@@ -171,13 +167,13 @@ func NewUser(t *testing.T, r *gin.Engine, emailStart string) (int32, string) {
 
 	log.Println(response)
 
-	_, _, err = service.ValidateSession(response.Token)
-	assert.Equal(t, err, nil, "Error should be nil")
+    _, _, err = service.ValidateSession(response.Token)
+    assert.NoError(t, err, "Error should be nil")
 
-	_, _, err = service.ValidateSession(response.RefreshToken)
-	assert.Equal(t, err, nil, "Error should be nil")
+    _, _, err = service.ValidateSession(response.RefreshToken)
+    assert.NoError(t, err, "Error should be nil")
 
-	assert.Equal(t, w.Code, http.StatusCreated, "Status code should be 201")
+    assert.Equal(t, http.StatusCreated, w.Code, "Status code should be 201")
 
 	return response.UserId, response.Token
 }
