@@ -73,3 +73,11 @@ func (s *Service) UpdateUser(userParams repository.UpdateUserParams, userPrefere
 	}
 	return id, nil
 }
+
+func (s *Service) UpdateProfileAvatar(params repository.UpdateProfileAvatarParams) error {
+    err := s.queries.UpdateProfileAvatar(s.ctx, params)
+    if err != nil {
+        return err
+    }
+    return nil
+}

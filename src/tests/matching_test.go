@@ -116,7 +116,7 @@ func TestCantCreateWithInvalidAmountOfParticipants(t *testing.T) {
 		Latitude:           float64Ptr(37.7749),
 		Longitude:          float64Ptr(-122.4194),
 		SearchRadius:       int32Ptr(10),
-		Schedules:          Schedules{},
+		Timeslots:          []uint16{},
 	}
 
 	jsonBody, err := json.Marshal(body)
@@ -144,7 +144,7 @@ func TestCantCreateWithInvalidAmountOfParticipants(t *testing.T) {
 		Latitude:           float64Ptr(37.7749),
 		Longitude:          float64Ptr(-122.4194),
 		SearchRadius:       int32Ptr(10),
-		Schedules:          Schedules{},
+		Timeslots:          []uint16{},
 	}
 
 	jsonBody, err = json.Marshal(body)
@@ -172,7 +172,7 @@ func TestCantCreateWithInvalidAmountOfParticipants(t *testing.T) {
 		Latitude:           float64Ptr(37.7749),
 		Longitude:          float64Ptr(-122.4194),
 		SearchRadius:       int32Ptr(10),
-		Schedules:          Schedules{},
+		Timeslots:          []uint16{},
 	}
 
 	jsonBody, err = json.Marshal(body)
@@ -216,7 +216,7 @@ func TestRequestsForDifferentActivitiesDontMatch(t *testing.T) {
 	assert.Equal(t, 0, len(groupsResponse.Groups), "There should be no groups")
 }
 
-func TestRequestWithoutSchedulesIsNotCreated(t *testing.T) {
+func TestRequestWithoutTimeslotsIsNotCreated(t *testing.T) {
 	router := router.NewRouter()
 	r := router.SetupRoutes()
 	int32Ptr := func(i int32) *int32 { return &i }
@@ -232,7 +232,7 @@ func TestRequestWithoutSchedulesIsNotCreated(t *testing.T) {
 		Latitude:           float64Ptr(37.7749),
 		Longitude:          float64Ptr(-122.4194),
 		SearchRadius:       int32Ptr(10),
-		Schedules:          Schedules{},
+		Timeslots:          []uint16{},
 	}
 
 	jsonBody, err := json.Marshal(body)
@@ -270,10 +270,7 @@ func TestRequestsTooFarApartDontMatch(t *testing.T) {
 		Latitude:           float64Ptr(37.7749),
 		Longitude:          float64Ptr(-122.4194),
 		SearchRadius:       int32Ptr(10),
-		Schedules: Schedules{
-			"monday":    {{Start: 9, End: 11}, {Start: 14, End: 16}},
-			"wednesday": {{Start: 10, End: 12}},
-		},
+		Timeslots:          []uint16{19, 20, 21, 22, 29, 30, 31, 32, 67, 68, 69, 70, 71},
 	}
 
 	jsonBody, err := json.Marshal(body)
@@ -304,10 +301,7 @@ func TestRequestsTooFarApartDontMatch(t *testing.T) {
 		Latitude:           float64Ptr(89.7749),
 		Longitude:          float64Ptr(-172.4194),
 		SearchRadius:       int32Ptr(10),
-		Schedules: Schedules{
-			"monday":    {{Start: 9, End: 11}, {Start: 14, End: 16}},
-			"wednesday": {{Start: 10, End: 12}},
-		},
+		Timeslots:          []uint16{19, 20, 21, 22, 29, 30, 31, 32, 67, 68, 69, 70, 71},
 	}
 
 	jsonBody, err = json.Marshal(body)

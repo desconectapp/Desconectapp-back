@@ -13,11 +13,7 @@ Here are three activity requests that are all compatible and should create a gro
   "search_radius": 5,
   "max_participants": 6,
   "participants_needed": 3,
-  "schedules": {
-    "monday": [{"start": 18, "end": 20}],
-    "wednesday": [{"start": 18, "end": 20}],
-    "friday": [{"start": 17, "end": 19}]
-  }
+  "timeslots": [37, 38, 39, 40, 67, 68, 69, 70, 113, 114, 115, 116]
 }
 ```
 
@@ -32,11 +28,7 @@ Here are three activity requests that are all compatible and should create a gro
   "search_radius": 4,
   "max_participants": 8,
   "participants_needed": 2,
-  "schedules": {
-    "monday": [{"start": 17, "end": 21}],
-    "wednesday": [{"start": 16, "end": 22}],
-    "saturday": [{"start": 14, "end": 18}]
-  }
+  "timeslots": [35, 36, 37, 38, 39, 40, 41, 42, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 173, 174, 175, 176, 177, 178, 179, 180]
 }
 ```
 
@@ -51,11 +43,7 @@ Here are three activity requests that are all compatible and should create a gro
   "search_radius": 6,
   "max_participants": 4,
   "participants_needed": 3,
-  "schedules": {
-    "monday": [{"start": 19, "end": 21}],
-    "wednesday": [{"start": 18, "end": 20}],
-    "thursday": [{"start": 18, "end": 20}]
-  }
+  "timeslots": [39, 40, 41, 42, 67, 68, 69, 70, 91, 92, 93, 94]
 }
 ```
 
@@ -64,27 +52,27 @@ Here are three activity requests that are all compatible and should create a gro
 ### 1. Same Activity ID
 - All three requests have `activity_id: 5` (tennis)
 
-### 2. Shared Week Hours
-Let's calculate the week_hours for each:
+### 2. Shared Week Timeslots
+Let's calculate the week_timeslots for each (half-hour intervals):
 
-**Request 1 week_hours:** [18, 19, 66, 67, 113, 114] 
-- Monday 18-20: [18, 19]
-- Wednesday 18-20: [48+18, 48+19] = [66, 67]  
-- Friday 17-19: [96+17, 96+18] = [113, 114]
+**Request 1 week_timeslots:** [37, 38, 39, 40, 67, 68, 69, 70, 113, 114, 115, 116] 
+- Monday 18-20: [37, 38, 39, 40] (18*2+1 to 20*2)
+- Wednesday 18-20: [67, 68, 69, 70] (48+18*2+1 to 48+20*2)  
+- Friday 17-19: [113, 114, 115, 116] (96+17*2+1 to 96+19*2)
 
-**Request 2 week_hours:** [17, 18, 19, 20, 64, 65, 66, 67, 68, 69, 134, 135, 136, 137]
-- Monday 17-21: [17, 18, 19, 20]
-- Wednesday 16-22: [64, 65, 66, 67, 68, 69]
-- Saturday 14-18: [134, 135, 136, 137]
+**Request 2 week_timeslots:** [35, 36, 37, 38, 39, 40, 41, 42, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 173, 174, 175, 176, 177, 178, 179, 180]
+- Monday 17-21: [35, 36, 37, 38, 39, 40, 41, 42] (17*2+1 to 21*2)
+- Wednesday 16-22: [65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92] (48+16*2+1 to 48+22*2)
+- Saturday 14-18: [173, 174, 175, 176, 177, 178, 179, 180] (144+14*2+1 to 144+18*2)
 
-**Request 3 week_hours:** [19, 20, 66, 67, 90, 91]
-- Monday 19-21: [19, 20]
-- Wednesday 18-20: [66, 67]
-- Thursday 18-20: [90, 91]
+**Request 3 week_timeslots:** [39, 40, 41, 42, 67, 68, 69, 70, 91, 92, 93, 94]
+- Monday 19-21: [39, 40, 41, 42] (19*2+1 to 21*2)
+- Wednesday 18-20: [67, 68, 69, 70] (48+18*2+1 to 48+20*2)
+- Thursday 18-20: [91, 92, 93, 94] (72+18*2+1 to 72+20*2)
 
-**Shared hours between all three:** [19, 66, 67]
-- Monday 19:00 (hour 19)
-- Wednesday 18:00-19:00 (hours 66, 67)
+**Shared timeslots between all three:** [39, 40, 67, 68, 69, 70]
+- Monday 19:00-20:00 (timeslots 39, 40)
+- Wednesday 18:00-20:00 (timeslots 67, 68, 69, 70)
 
 ### 3. Location Compatibility
 All locations are in Palermo, Buenos Aires:

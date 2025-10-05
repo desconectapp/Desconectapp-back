@@ -36,7 +36,7 @@ func (s *MatchingService) FindMatches(request repository.ActivityRequest) error 
 		return err
 	}
 
-	fmt.Printf("DEBUG: Found %d matches for ActivityID=%d, WeekHours=%v\n", len(matches), activityID, request.WeekHours)
+	fmt.Printf("DEBUG: Found %d matches for ActivityID=%d, WeekTimeslots=%v\n", len(matches), activityID, request.WeekTimeslots)
 
 	for _, match := range matches {
 		matchActivityID := int32(0)
@@ -90,8 +90,8 @@ func isMatchCompatible(request repository.ActivityRequest, match repository.Part
 		return false
 	}
 
-	if !hasSharedWeekHours(request.WeekHours, match.WeekHours) {
-		fmt.Printf("DEBUG COMPATIBILITY: No shared week hours!\n")
+	if !hasSharedWeekTimeslots(request.WeekTimeslots, match.WeekTimeslots) {
+		fmt.Printf("DEBUG COMPATIBILITY: No shared week timeslots!\n")
 		return false
 	}
 
@@ -110,7 +110,7 @@ func isMatchCompatible(request repository.ActivityRequest, match repository.Part
 }
 
 func (s *MatchingService) createCombinedPartialMatch(request repository.ActivityRequest, match repository.PartialMatch) error {
-	intersectionWeekHours := getWeekHoursIntersection(request.WeekHours, match.WeekHours)
+	intersectionWeekTimeslots := getWeekTimeslotsIntersection(request.WeekTimeslots, match.WeekTimeslots)
 
 	var midLat, midLon *float64
 	if request.Latitude != nil && request.Longitude != nil && match.Latitude != nil && match.Longitude != nil {
@@ -164,7 +164,7 @@ func (s *MatchingService) createCombinedPartialMatch(request repository.Activity
 	newMatch, err := s.queries.CreatePartialMatch(s.ctx, repository.CreatePartialMatchParams{
 		ActivityID:          match.ActivityID,
 		Description:         match.Description,
-		WeekHours:           intersectionWeekHours,
+		WeekTimeslots:       intersectionWeekTimeslots,
 		ParticipantsNeeded:  highestMinParticipants,
 		MaximumParticipants: lowestMaxParticipants,
 		MembersCount:        &newMembersCount,
@@ -263,7 +263,7 @@ func (s *MatchingService) createUnconditionalPartialMatch(request repository.Act
 	newMatch, err := s.queries.CreatePartialMatch(s.ctx, repository.CreatePartialMatchParams{
 		ActivityID:          request.ActivityID,
 		Description:         request.Description,
-		WeekHours:           request.WeekHours,
+		WeekTimeslots:       request.WeekTimeslots,
 		ParticipantsNeeded:  request.ParticipantsNeeded,
 		MaximumParticipants: request.MaximumParticipants,
 		MembersCount:        &[]int32{1}[0],
@@ -288,14 +288,14 @@ func (s *MatchingService) createUnconditionalPartialMatch(request repository.Act
 	return nil
 }
 
-func hasSharedWeekHours(hours1, hours2 []int32) bool {
-	hourSet := make(map[int32]bool)
-	for _, hour := range hours1 {
-		hourSet[hour] = true
+func hasSharedWeekTimeslots(timeslots1, timeslots2 []int32) bool {
+	timeslotSet := make(map[int32]bool)
+	for _, timeslot := range timeslots1 {
+		timeslotSet[timeslot] = true
 	}
 
-	for _, hour := range hours2 {
-		if hourSet[hour] {
+	for _, timeslot := range timeslots2 {
+		if timeslotSet[timeslot] {
 			return true
 		}
 	}
@@ -362,19 +362,19 @@ func areParticipantCountsCompatible(request repository.ActivityRequest, match re
 	return reqMaxParticipants >= matchMinParticipants && matchMaxParticipants >= reqMinParticipants
 }
 
-func getWeekHoursIntersection(hours1, hours2 []int32) []int32 {
-	hourSet := make(map[int32]bool)
-	for _, hour := range hours1 {
-		hourSet[hour] = true
+func getWeekTimeslotsIntersection(timeslots1, timeslots2 []int32) []int32 {
+	timeslotSet := make(map[int32]bool)
+	for _, timeslot := range timeslots1 {
+		timeslotSet[timeslot] = true
 	}
 
 	var intersection []int32
-	addedHours := make(map[int32]bool)
+	addedTimeslots := make(map[int32]bool)
 
-	for _, hour := range hours2 {
-		if hourSet[hour] && !addedHours[hour] {
-			intersection = append(intersection, hour)
-			addedHours[hour] = true
+	for _, timeslot := range timeslots2 {
+		if timeslotSet[timeslot] && !addedTimeslots[timeslot] {
+			intersection = append(intersection, timeslot)
+			addedTimeslots[timeslot] = true
 		}
 	}
 

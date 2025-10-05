@@ -51,6 +51,11 @@ SET name = $2,
 WHERE user_id = $1
 RETURNING user_id, name, age, city, current_situation, gender;
 
+-- name: UpdateProfileAvatar :exec
+UPDATE profiles
+SET avatar_url = $2
+WHERE user_id = $1;
+
 -- name: DeleteUser :one
 DELETE FROM users
 WHERE id = $1

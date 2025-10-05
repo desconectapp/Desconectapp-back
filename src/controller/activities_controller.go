@@ -12,57 +12,26 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// TimeSlot represents a time range with start and end hours
-type TimeSlot struct {
-	Start int `json:"start"`
-	End   int `json:"end"`
-}
-
-// Schedules represents the weekly schedule structure
-type Schedules map[string][]TimeSlot
-
 // CreateActivityRequestInput represents the input structure for creating activity requests
 type CreateActivityRequestInput struct {
-	UserID             *int32    `json:"user_id"`
-	ActivityID         *int32    `json:"activity_id"`
-	Description        *string   `json:"description"`
-	Longitude          *float64  `json:"longitude"`
-	Latitude           *float64  `json:"latitude"`
-	SearchRadius       *int32    `json:"search_radius"`
-	MaxParticipants    *int32    `json:"max_participants"`
-	ParticipantsNeeded *int32    `json:"participants_needed"`
-	Schedules          Schedules `json:"schedules"`
+	UserID             *int32   `json:"user_id"`
+	ActivityID         *int32   `json:"activity_id"`
+	Description        *string  `json:"description"`
+	Longitude          *float64 `json:"longitude"`
+	Latitude           *float64 `json:"latitude"`
+	SearchRadius       *int32   `json:"search_radius"`
+	MaxParticipants    *int32   `json:"max_participants"`
+	ParticipantsNeeded *int32   `json:"participants_needed"`
+	Timeslots          []uint16 `json:"timeslots"`
 }
 
-// parseSchedulesToWeekHours converts the schedules JSON to week_hours array
-// Monday starts at 0, Tuesday at 24, Wednesday at 48, etc.
-// For each day, hours are added as: day_offset + hour
-func parseSchedulesToWeekHours(schedules Schedules) []int32 {
-
-	dayOffsets := map[string]int32{
-		"monday":    0,
-		"tuesday":   24,
-		"wednesday": 48,
-		"thursday":  72,
-		"friday":    96,
-		"saturday":  120,
-		"sunday":    144,
+// convertTimeslotsToInt32 converts uint16 timeslots to int32 for database storage
+func convertTimeslotsToInt32(timeslots []uint16) []int32 {
+	result := make([]int32, len(timeslots))
+	for i, slot := range timeslots {
+		result[i] = int32(slot)
 	}
-
-	var weekHours []int32
-
-	for day, timeSlots := range schedules {
-		if offset, exists := dayOffsets[day]; exists {
-			for _, slot := range timeSlots {
-				// Add all hours in the time slot range
-				for hour := slot.Start; hour < slot.End; hour++ {
-					weekHours = append(weekHours, offset+int32(hour))
-				}
-			}
-		}
-	}
-
-	return weekHours
+	return result
 }
 
 type ActivitiesController struct {
@@ -96,8 +65,11 @@ func (c *ActivitiesController) ListActivitiesRequests(ctx *gin.Context) {
 }
 
 func validateActivityRequest(ctx *gin.Context, activityParams repository.CreateActivityRequestParams) bool {
-	if len(activityParams.WeekHours) == 0 {
-		ErrorWithStatus(ctx, "Schedules cannot be empty", http.StatusBadRequest)
+	log.Printf("Validating activity request: %+v", activityParams)
+	
+	if len(activityParams.WeekTimeslots) == 0 {
+		log.Printf("Validation failed: Timeslots cannot be empty")
+		ErrorWithStatus(ctx, "Timeslots cannot be empty", http.StatusBadRequest)
 		return false
 	}
 
@@ -142,19 +114,22 @@ func validateActivityRequest(ctx *gin.Context, activityParams repository.CreateA
 func (c *ActivitiesController) CreateActivityRequest(ctx *gin.Context) {
 	var input CreateActivityRequestInput
 	if err := ctx.ShouldBind(&input); err != nil {
+		log.Printf("Error binding request: %v", err)
 		ErrorWithStatus(ctx, "Could not bind", http.StatusBadRequest)
 		return
 	}
 
-	// Parse schedules to week_hours
-	weekHours := parseSchedulesToWeekHours(input.Schedules)
+	log.Printf("Received activity request: %+v", input)
+
+	// Convert timeslots to int32 for database storage
+	weekTimeslots := convertTimeslotsToInt32(input.Timeslots)
 
 	// Create the repository params
 	activityParams := repository.CreateActivityRequestParams{
 		UserID:              input.UserID,
 		ActivityID:          input.ActivityID,
 		Description:         input.Description,
-		WeekHours:           weekHours,
+		WeekTimeslots:       weekTimeslots,
 		ParticipantsNeeded:  input.ParticipantsNeeded,
 		MaximumParticipants: input.MaxParticipants,
 		Latitude:            input.Latitude,

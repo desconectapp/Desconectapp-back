@@ -22,6 +22,7 @@ DROP TABLE IF EXISTS profiles CASCADE;
 CREATE TABLE profiles (
   user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
+  avatar_url TEXT,
   created_at TIMESTAMP DEFAULT now(),
   age INTEGER NOT NULL DEFAULT 18,
   city TEXT NOT NULL DEFAULT 'Buenos Aires',
@@ -62,7 +63,7 @@ CREATE TABLE activity_requests (
   user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
   activity_id INTEGER REFERENCES activities(id) ON DELETE CASCADE,
   description TEXT,
-  week_hours INTEGER[],
+  week_timeslots INTEGER[],
   participants_needed INTEGER DEFAULT 3,
   maximum_participants INTEGER DEFAULT 10,
   latitude DOUBLE PRECISION,
@@ -78,7 +79,7 @@ CREATE TABLE partial_matches (
     id SERIAL PRIMARY KEY,
     activity_id INTEGER REFERENCES activities(id) ON DELETE CASCADE,
     description TEXT,
-    week_hours INTEGER[],
+    week_timeslots INTEGER[],
     participants_needed INTEGER DEFAULT 3,
     maximum_participants INTEGER DEFAULT 10,
     latitude DOUBLE PRECISION,
@@ -102,6 +103,7 @@ DROP TABLE IF EXISTS groups;
 CREATE TABLE groups (
     id SERIAL PRIMARY KEY,
     name TEXT,
+    avatar_url TEXT,
     description TEXT,
     location TEXT,
     public BOOLEAN DEFAULT false,

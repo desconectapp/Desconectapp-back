@@ -1,7 +1,7 @@
 
 -- name: CreatePartialMatch :one
 INSERT INTO partial_matches (
-  activity_id, description, week_hours,
+  activity_id, description, week_timeslots,
   participants_needed, maximum_participants,
   latitude, longitude, members_count,
   search_radius
