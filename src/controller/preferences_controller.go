@@ -124,9 +124,11 @@ func (c *PreferencesController) BatchAddUserPreferences(ctx *gin.Context) {
 	_userPreferences.UserID = userToken.(int32)
 	_userPreferences.ActivityIds = userPreferences
 
+	log.Println(_userPreferences.ActivityIds)
+
 	err := c.service.BatchAddPreferences(_userPreferences)
 
-	log.Println(err)
+	log.Println(_userPreferences)
 
 	if err != nil {
 		ErrorWithStatus(ctx, err.Error(), http.StatusNotFound)

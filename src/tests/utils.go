@@ -207,15 +207,17 @@ type GroupInfo struct {
 	Description string  `json:"description"`
 	Location    string  `json:"location"`
 	ActivityID  int32   `json:"activity_id"`
+	Public 		bool 	`json:"public"`
 	MembersIds  []int32 `json:"user_ids"`
 }
 
-func NewGroup(t *testing.T, r *gin.Engine, name string, location string, activityID int32, memberIds []int32, token string) int32 {
+func NewGroup(t *testing.T, r *gin.Engine, name string, location string, activityID int32, memberIds []int32, public bool, token string) int32 {
 	body := GroupInfo{
 		ActivityID:  activityID,
 		Name:        name,
 		Location:    location,
 		MembersIds:  memberIds,
+		Public: public,
 		Description: "",
 	}
 	jsonBody, err := json.Marshal(body)

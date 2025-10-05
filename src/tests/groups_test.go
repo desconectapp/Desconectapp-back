@@ -62,7 +62,7 @@ func TestPostGroup(t *testing.T) {
 
 	members := []int32{user1, user2, user3}
 	
-	NewGroup(t, r, "Karasuno", "Miyagi", activityId, members, token)
+	NewGroup(t, r, "Karasuno", "Miyagi", activityId, members, false, token)
 }
 
 // groups.GET("/:groupId", router.groupsController.GetGroup)
@@ -108,7 +108,7 @@ func TestDeleteGroup(t *testing.T) {
 
 	members := []int32{user1, user2, user3}
 	
-	group := NewGroup(t, r, "Karasuno", "Miyagi", activityId, members, token)
+	group := NewGroup(t, r, "Karasuno", "Miyagi", activityId, members, false, token)
 
 	req := httptest.NewRequest("DELETE", "/groups/"+strconv.Itoa(int(group)), nil)
 	req.Header.Add("Authorization", "Bearer "+token)
@@ -173,7 +173,7 @@ func TestDeleteUserFromGroup(t *testing.T) {
 
 	members := []int32{user1, user2, user3}
 	
-	group := NewGroup(t, r, "Shiratorizawa", "Miyagi", activityId, members, token)
+	group := NewGroup(t, r, "Shiratorizawa", "Miyagi", activityId, members, false, token)
 
 	req := httptest.NewRequest("DELETE", "/groups/user-from-group/"+strconv.Itoa(int(group)), nil)
 	req.Header.Add("Authorization", "Bearer "+token)
