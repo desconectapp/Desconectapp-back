@@ -22,6 +22,7 @@ DROP TABLE IF EXISTS profiles CASCADE;
 CREATE TABLE profiles (
   user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
+  avatar_url TEXT,
   created_at TIMESTAMP DEFAULT now(),
   age INTEGER NOT NULL DEFAULT 18,
   city TEXT NOT NULL DEFAULT 'Buenos Aires',
@@ -102,6 +103,7 @@ DROP TABLE IF EXISTS groups;
 CREATE TABLE groups (
     id SERIAL PRIMARY KEY,
     name TEXT,
+    avatar_url TEXT,
     description TEXT,
     location TEXT,
     public BOOLEAN DEFAULT false,

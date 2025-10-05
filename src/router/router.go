@@ -104,6 +104,7 @@ func (router *Router) SetupRoutes() *gin.Engine {
 		users.DELETE("", router.controller.DeleteUser)
 		users.POST("/profile", router.controller.CreateProfile)
 		users.PUT("/profile", router.controller.UpdateProfile)
+		users.PUT("/profile/avatar", router.controller.UpdateProfileAvatar)
 	}
 
 	activities := router.r.Group("/activities")
@@ -137,6 +138,7 @@ func (router *Router) SetupRoutes() *gin.Engine {
 		groups.PUT("public/:groupId", router.groupsController.ChangeGroupStatus)
 		groups.PUT("name/:groupId", router.groupsController.UpdateGroupName)
 		groups.PUT("location/:groupId", router.groupsController.UpdateGroupLocation)
+		groups.PUT("avatar/:groupId", router.groupsController.UpdateGroupAvatar)
 		groups.PUT("add-user/:groupId", router.groupsController.JoinGroup)
 		groups.GET("/open", router.groupsController.GetOpenGroups)
 		groups.GET("/recs", router.groupsController.GetUserRecommendations)

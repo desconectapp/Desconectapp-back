@@ -318,6 +318,31 @@ func (c *GroupsController) ChangeGroupStatus(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{})
 }
 
+func (c *GroupsController) UpdateGroupAvatar(ctx *gin.Context) {
+    var body struct {
+        AvatarUrl *string `json:"avatar_url"`
+    }
+    if err := ctx.ShouldBind(&body); err != nil {
+        ErrorWithStatus(ctx, "Could not bind", http.StatusBadRequest)
+        return
+    }
+    groupIdStr := ctx.Param("groupId")
+    groupId, err := strconv.Atoi(groupIdStr)
+    if err != nil {
+        ErrorNoStatus(ctx, err)
+        return
+    }
+    params := repository.UpdateGroupAvatarParams{
+        ID:        int32(groupId),
+        AvatarUrl: body.AvatarUrl,
+    }
+    if err := c.service.UpdateGroupAvatar(params); err != nil {
+        ErrorNoStatus(ctx, err)
+        return
+    }
+    ctx.JSON(http.StatusOK, gin.H{})
+}
+
 func (c *GroupsController) GetOpenGroups(ctx *gin.Context) {
 	var filter service.ActivityFilter
 

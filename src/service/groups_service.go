@@ -160,6 +160,11 @@ func (s *GroupsService) ChangeGroupLocation(params repository.ChangeGroupLocatio
 	return err
 }
 
+func (s *GroupsService) UpdateGroupAvatar(params repository.UpdateGroupAvatarParams) error {
+    err := s.queries.UpdateGroupAvatar(s.ctx, params)
+    return err
+}
+
 func (s *GroupsService) GetOpenGroups(filter ActivityFilter) ([]OpenGroup, error) {
 	var openGroups []OpenGroup
 	var err error

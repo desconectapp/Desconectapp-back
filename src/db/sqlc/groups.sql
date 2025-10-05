@@ -145,6 +145,11 @@ UPDATE groups
 SET location = $2
 WHERE id = $1;
 
+-- name: UpdateGroupAvatar :exec
+UPDATE groups
+SET avatar_url = $2
+WHERE id = $1;
+
 -- name: GetOpenGroupsWithFilter :many
 SELECT 
     g.id,

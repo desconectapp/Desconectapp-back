@@ -124,6 +124,26 @@ func (c *Controller) UpdateProfile(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, res)
 }
 
+func (c *Controller) UpdateProfileAvatar(ctx *gin.Context) {
+    var body struct {
+        AvatarUrl *string `json:"avatar_url"`
+    }
+    if err := ctx.ShouldBind(&body); err != nil {
+        ErrorWithStatus(ctx, "Invalid json format", http.StatusBadRequest)
+        return
+    }
+    userId, _ := ctx.Get("userID")
+    params := repository.UpdateProfileAvatarParams{
+        UserID:    userId.(int32),
+        AvatarUrl: body.AvatarUrl,
+    }
+    if err := c.service.UpdateProfileAvatar(params); err != nil {
+        ErrorNoStatus(ctx, err)
+        return
+    }
+    ctx.JSON(http.StatusOK, gin.H{})
+}
+
 func (c *Controller) GetUser(ctx *gin.Context) {
 	userToken, _ := ctx.Get("userID")
 
