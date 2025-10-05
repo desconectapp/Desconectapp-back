@@ -99,7 +99,7 @@ const createGroup = `-- name: CreateGroup :one
 WITH inserted_group AS (
   INSERT INTO groups (name, description, location, activity_id, public)
   VALUES ($1, $2, $3, $4, false)
-  RETURNING id, name, description, location, public, activity_id, created_at
+  RETURNING id, name, avatar_url, description, location, public, activity_id, created_at
 ), inserted_members AS (
   INSERT INTO group_members (user_id, group_id)
   SELECT u.id, g.id
@@ -484,7 +484,7 @@ func (q *Queries) GetPreferredGroups(ctx context.Context, arg GetPreferredGroups
 
 const listGroups = `-- name: ListGroups :many
 WITH selected_groups AS (
-  SELECT id, name, description, location, public, activity_id, created_at
+  SELECT id, name, avatar_url, description, location, public, activity_id, created_at
   FROM groups
   ORDER BY created_at DESC
   LIMIT $1 OFFSET $2
@@ -552,7 +552,7 @@ func (q *Queries) ListGroups(ctx context.Context, arg ListGroupsParams) ([]ListG
 
 const listUserGroups = `-- name: ListUserGroups :many
 WITH user_groups AS (
-  SELECT g.id, g.name, g.description, g.location, g.public, g.activity_id, g.created_at
+  SELECT g.id, g.name, g.avatar_url, g.description, g.location, g.public, g.activity_id, g.created_at
   FROM groups g
   JOIN group_members gm ON g.id = gm.group_id
   WHERE gm.user_id = $3
@@ -619,6 +619,22 @@ func (q *Queries) ListUserGroups(ctx context.Context, arg ListUserGroupsParams) 
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateGroupAvatar = `-- name: UpdateGroupAvatar :exec
+UPDATE groups
+SET avatar_url = $2
+WHERE id = $1
+`
+
+type UpdateGroupAvatarParams struct {
+	ID        int32   `json:"id"`
+	AvatarUrl *string `json:"avatar_url"`
+}
+
+func (q *Queries) UpdateGroupAvatar(ctx context.Context, arg UpdateGroupAvatarParams) error {
+	_, err := q.db.Exec(ctx, updateGroupAvatar, arg.ID, arg.AvatarUrl)
+	return err
 }
 
 const updateGroupDescriptiom = `-- name: UpdateGroupDescriptiom :exec

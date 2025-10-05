@@ -122,7 +122,7 @@ func (q *Queries) DeleteUser(ctx context.Context, id int32) (int32, error) {
 }
 
 const getUser = `-- name: GetUser :one
-SELECT user_id, name, created_at, age, city, current_situation, gender, profile_complete FROM profiles
+SELECT user_id, name, avatar_url, created_at, age, city, current_situation, gender, profile_complete FROM profiles
 WHERE user_id = $1 LIMIT 1
 `
 
@@ -132,6 +132,7 @@ func (q *Queries) GetUser(ctx context.Context, userID int32) (Profile, error) {
 	err := row.Scan(
 		&i.UserID,
 		&i.Name,
+		&i.AvatarUrl,
 		&i.CreatedAt,
 		&i.Age,
 		&i.City,
@@ -223,7 +224,7 @@ func (q *Queries) GetVerificationCode(ctx context.Context, userID int32) (EmailV
 }
 
 const listUsers = `-- name: ListUsers :many
-SELECT user_id, name, created_at, age, city, current_situation, gender, profile_complete FROM profiles
+SELECT user_id, name, avatar_url, created_at, age, city, current_situation, gender, profile_complete FROM profiles
 LIMIT $1 OFFSET $2
 `
 
@@ -244,6 +245,7 @@ func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]Profile
 		if err := rows.Scan(
 			&i.UserID,
 			&i.Name,
+			&i.AvatarUrl,
 			&i.CreatedAt,
 			&i.Age,
 			&i.City,
@@ -310,6 +312,22 @@ func (q *Queries) UpdateProfile(ctx context.Context, arg UpdateProfileParams) (U
 		&i.Gender,
 	)
 	return i, err
+}
+
+const updateProfileAvatar = `-- name: UpdateProfileAvatar :exec
+UPDATE profiles
+SET avatar_url = $2
+WHERE user_id = $1
+`
+
+type UpdateProfileAvatarParams struct {
+	UserID    int32   `json:"user_id"`
+	AvatarUrl *string `json:"avatar_url"`
+}
+
+func (q *Queries) UpdateProfileAvatar(ctx context.Context, arg UpdateProfileAvatarParams) error {
+	_, err := q.db.Exec(ctx, updateProfileAvatar, arg.UserID, arg.AvatarUrl)
+	return err
 }
 
 const updateUser = `-- name: UpdateUser :one

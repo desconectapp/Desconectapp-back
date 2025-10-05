@@ -89,6 +89,7 @@ type EmailVerificationCode struct {
 type Group struct {
 	ID          int32              `json:"id"`
 	Name        *string            `json:"name"`
+	AvatarUrl   *string            `json:"avatar_url"`
 	Description *string            `json:"description"`
 	Location    *string            `json:"location"`
 	Public      *bool              `json:"public"`
@@ -124,6 +125,7 @@ type PartialMatchMember struct {
 type Profile struct {
 	UserID           int32            `json:"user_id"`
 	Name             string           `json:"name"`
+	AvatarUrl        *string          `json:"avatar_url"`
 	CreatedAt        pgtype.Timestamp `json:"created_at"`
 	Age              int32            `json:"age"`
 	City             string           `json:"city"`
