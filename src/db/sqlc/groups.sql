@@ -64,7 +64,8 @@ SELECT
   a.name AS activity,
   a.icon,
   g.location,
-  g.public
+  g.public,
+  g.avatar_url
 FROM groups g
 JOIN activities a ON g.activity_id = a.id
 LEFT JOIN group_members gm ON gm.group_id = g.id

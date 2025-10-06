@@ -214,7 +214,8 @@ SELECT
   a.name AS activity,
   a.icon,
   g.location,
-  g.public
+  g.public,
+  g.avatar_url
 FROM groups g
 JOIN activities a ON g.activity_id = a.id
 LEFT JOIN group_members gm ON gm.group_id = g.id
@@ -232,6 +233,7 @@ type GetGroupRow struct {
 	Icon        *string            `json:"icon"`
 	Location    *string            `json:"location"`
 	Public      *bool              `json:"public"`
+	AvatarUrl   *string            `json:"avatar_url"`
 }
 
 func (q *Queries) GetGroup(ctx context.Context, id int32) (GetGroupRow, error) {
@@ -246,21 +248,23 @@ func (q *Queries) GetGroup(ctx context.Context, id int32) (GetGroupRow, error) {
 		&i.Icon,
 		&i.Location,
 		&i.Public,
+		&i.AvatarUrl,
 	)
 	return i, err
 }
 
 const getGroupMembers = `-- name: GetGroupMembers :many
-SELECT u.id, u.uuid, p.name FROM users u
+SELECT u.id, u.uuid, p.name, p.avatar_url FROM users u
 	JOIN profiles p ON u.id = p.user_id
 	JOIN group_members gm ON u.id = gm.user_id
 	WHERE gm.group_id = $1
 `
 
 type GetGroupMembersRow struct {
-	ID   int32       `json:"id"`
-	Uuid pgtype.UUID `json:"uuid"`
-	Name string      `json:"name"`
+	ID        int32       `json:"id"`
+	Uuid      pgtype.UUID `json:"uuid"`
+	Name      string      `json:"name"`
+	AvatarUrl *string     `json:"avatar_url"`
 }
 
 func (q *Queries) GetGroupMembers(ctx context.Context, groupID int32) ([]GetGroupMembersRow, error) {
@@ -272,7 +276,12 @@ func (q *Queries) GetGroupMembers(ctx context.Context, groupID int32) ([]GetGrou
 	items := []GetGroupMembersRow{}
 	for rows.Next() {
 		var i GetGroupMembersRow
-		if err := rows.Scan(&i.ID, &i.Uuid, &i.Name); err != nil {
+		if err := rows.Scan(
+			&i.ID,
+			&i.Uuid,
+			&i.Name,
+			&i.AvatarUrl,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
