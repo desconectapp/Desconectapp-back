@@ -164,6 +164,7 @@ func (c *Controller) GetUser(ctx *gin.Context) {
 		City:             user.City,
 		CurrentSituation: user.CurrentSituation,
 		Gender:           user.Gender,
+		AvatarUrl:        user.AvatarUrl,
 	}
 
 	ctx.JSON(http.StatusOK, res)

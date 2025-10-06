@@ -47,6 +47,7 @@ SET name = $2,
     city = $4,
     current_situation = $5,
     gender = $6,
+	avatar_url = COALESCE(avatar_url, $7),
     profile_complete = true
 WHERE user_id = $1
 RETURNING user_id, name, age, city, current_situation, gender;
