@@ -17,7 +17,7 @@ type GroupWithMembers struct {
 	Location    *string                         `json:"location"`
 	Members     []repository.GetGroupMembersRow `json:"members"`
 	Public      bool                            `json:"public"`
-	Time	string	`json:"created_at"`
+	Time        string                          `json:"created_at"`
 }
 
 type OpenGroup struct {
@@ -26,9 +26,9 @@ type OpenGroup struct {
 	Description  *string `json:"description"`
 	Location     *string `json:"location"`
 	ActivityName string  `json:"activity_name"`
-	MemberCount	int32 `json:"member_count"`
-	Photo	string	`json:"photo"`
-	Time	string	`json:"created_at"`
+	MemberCount  int32   `json:"member_count"`
+	Photo        string  `json:"photo"`
+	Time         string  `json:"created_at"`
 }
 
 type ActivityFilter struct {
@@ -120,7 +120,7 @@ func addMembers(group repository.GetGroupRow, members []repository.GetGroupMembe
 		Icon:        group.Icon,
 		Members:     members,
 		Public:      *group.Public,
-		Time:	group.CreatedAt.Time.String(),
+		Time:        group.CreatedAt.Time.String(),
 	}
 }
 
@@ -171,12 +171,18 @@ func (s *GroupsService) GetOpenGroups(filter ActivityFilter) ([]OpenGroup, error
 	if filter.Latitude != nil && filter.Longitude != nil && filter.Radius != nil {
 		openGroups, err = s.GetOpenGroupsWithLocation(
 			repository.GetOpenGroupsWithLocationParams{
-				Limit:      filter.Limit,
-				Offset:     filter.Offset,
-				Latitude:   *filter.Latitude,
-				Longitude:  *filter.Longitude,
-				Radius:     *filter.Radius,
-				ActivityID: func() *int32 { if filter.ActivityId != 0 { return &filter.ActivityId } else { return nil } }(),
+				Limit:     filter.Limit,
+				Offset:    filter.Offset,
+				Latitude:  *filter.Latitude,
+				Longitude: *filter.Longitude,
+				Radius:    *filter.Radius,
+				ActivityID: func() *int32 {
+					if filter.ActivityId != 0 {
+						return &filter.ActivityId
+					} else {
+						return nil
+					}
+				}(),
 			},
 		)
 	} else if filter.ActivityId == 0 {
@@ -218,8 +224,8 @@ func (s *GroupsService) GetOpenGroupsNoFilter(filter repository.GetOpenGroupsNoF
 			Location:     group.Location,
 			Description:  group.Description,
 			ActivityName: group.ActivityName,
-			MemberCount: int32(group.MemberCount),
-			Photo: *group.Icon,
+			MemberCount:  int32(group.MemberCount),
+			Photo:        *group.Icon,
 		})
 	}
 	return openGroups, err
@@ -241,8 +247,8 @@ func (s *GroupsService) GetPublicOpenGroupsWithFilter(filter repository.GetOpenG
 			Location:     group.Location,
 			Description:  group.Description,
 			ActivityName: group.ActivityName,
-			MemberCount: int32(group.MemberCount),
-			Photo: *group.Icon,
+			MemberCount:  int32(group.MemberCount),
+			Photo:        *group.Icon,
 		})
 	}
 	return openGroups, err
@@ -286,9 +292,9 @@ func (s *GroupsService) GetUserRecommendations(filter repository.GetPreferredGro
 			Location:     group.Location,
 			Description:  group.Description,
 			ActivityName: group.ActivityName,
-			MemberCount: int32(group.MemberCount),
-			Photo: *group.ActivityIcon,
-			Time:	group.CreatedAt.Time.String(),
+			MemberCount:  int32(group.MemberCount),
+			Photo:        *group.ActivityIcon,
+			Time:         group.CreatedAt.Time.String(),
 		})
 	}
 	return openGroups, err

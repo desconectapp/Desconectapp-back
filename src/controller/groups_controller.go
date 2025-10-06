@@ -288,16 +288,16 @@ func (c *GroupsController) UpdateGroupLocation(ctx *gin.Context) {
 
 func (c *GroupsController) ChangeGroupStatus(ctx *gin.Context) {
 	var publicParam struct {
-        PublicG *bool `json:"public_g" binding:"required"`
-    }
-	
+		PublicG *bool `json:"public_g" binding:"required"`
+	}
+
 	if err := ctx.ShouldBind(&publicParam); err != nil {
 		ErrorWithStatus(ctx, "Could not bind", http.StatusBadRequest)
 		return
 	}
-	
+
 	var descriptionParams repository.ChangeGroupPublicParams
-	
+
 	groupIdStr := ctx.Param("groupId")
 	groupId, err := strconv.Atoi(groupIdStr)
 	if err != nil {
@@ -359,8 +359,6 @@ func (c *GroupsController) GetOpenGroups(ctx *gin.Context) {
 	}
 
 	groups, err := c.service.GetOpenGroups(filter)
-
-	log.Println(groups)
 
 	hasMore := len(groups) == int(filter.Limit)
 	if hasMore {

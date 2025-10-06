@@ -412,13 +412,13 @@ SELECT
     a.name AS activity_name,
     a.icon,
     COUNT(gm.user_id) AS member_count,
-    (6371 * acos(
+    CAST((6371 * acos(
         cos(radians($3::float)) * 
         cos(radians(CAST(split_part(g.location, ',', 1) AS float))) *
         cos(radians(CAST(split_part(g.location, ',', 2) AS float)) - radians($4::float)) +
         sin(radians($3::float)) * 
         sin(radians(CAST(split_part(g.location, ',', 1) AS float)))
-    )) AS distance_km
+    )) AS float) AS distance_km
 FROM groups g
 JOIN activities a ON g.activity_id = a.id
 LEFT JOIN group_members gm ON g.id = gm.group_id
@@ -455,7 +455,7 @@ type GetOpenGroupsWithLocationRow struct {
 	ActivityName string  `json:"activity_name"`
 	Icon         *string `json:"icon"`
 	MemberCount  int64   `json:"member_count"`
-	DistanceKm   int32   `json:"distance_km"`
+	DistanceKm   float64 `json:"distance_km"`
 }
 
 func (q *Queries) GetOpenGroupsWithLocation(ctx context.Context, arg GetOpenGroupsWithLocationParams) ([]GetOpenGroupsWithLocationRow, error) {

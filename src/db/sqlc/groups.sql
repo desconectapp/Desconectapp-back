@@ -186,13 +186,13 @@ SELECT
     a.name AS activity_name,
     a.icon,
     COUNT(gm.user_id) AS member_count,
-    (6371 * acos(
+    CAST((6371 * acos(
         cos(radians(sqlc.arg('latitude')::float)) * 
         cos(radians(CAST(split_part(g.location, ',', 1) AS float))) *
         cos(radians(CAST(split_part(g.location, ',', 2) AS float)) - radians(sqlc.arg('longitude')::float)) +
         sin(radians(sqlc.arg('latitude')::float)) * 
         sin(radians(CAST(split_part(g.location, ',', 1) AS float)))
-    )) AS distance_km
+    )) AS float) AS distance_km
 FROM groups g
 JOIN activities a ON g.activity_id = a.id
 LEFT JOIN group_members gm ON g.id = gm.group_id
