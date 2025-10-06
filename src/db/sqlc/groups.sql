@@ -46,13 +46,14 @@ SELECT
   g.description,
   g.created_at,
   g.location,
+  g.avatar_url,
   a.name AS activity,
   a.icon,
   COUNT(gm.user_id) AS members_count
 FROM selected_groups g
 JOIN activities a ON g.activity_id = a.id
 LEFT JOIN group_members gm ON g.id = gm.group_id
-GROUP BY g.id, g.name, g.description, g.created_at, g.location, a.name, a.icon
+GROUP BY g.id, g.name, g.description, g.created_at, g.location, a.name, a.icon, g.avatar_url
 ORDER BY g.created_at DESC;
 
 -- name: GetGroup :one
@@ -113,13 +114,14 @@ SELECT
   g.description,
   g.created_at,
   g.location,
+  g.avatar_url,
   a.name AS activity,
   a.icon,
   COUNT(gm_all.user_id) AS members_count
 FROM user_groups g
 JOIN activities a ON g.activity_id = a.id
 LEFT JOIN group_members gm_all ON g.id = gm_all.group_id
-GROUP BY g.id, g.name, g.description, g.created_at, g.location, a.name, a.icon
+GROUP BY g.id, g.name, g.description, g.created_at, g.location, a.name, a.icon, g.avatar_url
 ORDER BY g.created_at DESC;
 
 -- name: ExitGroup :exec

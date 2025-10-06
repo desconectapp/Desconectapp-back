@@ -506,13 +506,14 @@ SELECT
   g.description,
   g.created_at,
   g.location,
+  g.avatar_url,
   a.name AS activity,
   a.icon,
   COUNT(gm.user_id) AS members_count
 FROM selected_groups g
 JOIN activities a ON g.activity_id = a.id
 LEFT JOIN group_members gm ON g.id = gm.group_id
-GROUP BY g.id, g.name, g.description, g.created_at, g.location, a.name, a.icon
+GROUP BY g.id, g.name, g.description, g.created_at, g.location, a.name, a.icon, g.avatar_url
 ORDER BY g.created_at DESC
 `
 
@@ -527,6 +528,7 @@ type ListGroupsRow struct {
 	Description  *string            `json:"description"`
 	CreatedAt    pgtype.Timestamptz `json:"created_at"`
 	Location     *string            `json:"location"`
+	AvatarUrl    *string            `json:"avatar_url"`
 	Activity     string             `json:"activity"`
 	Icon         *string            `json:"icon"`
 	MembersCount int64              `json:"members_count"`
@@ -547,6 +549,7 @@ func (q *Queries) ListGroups(ctx context.Context, arg ListGroupsParams) ([]ListG
 			&i.Description,
 			&i.CreatedAt,
 			&i.Location,
+			&i.AvatarUrl,
 			&i.Activity,
 			&i.Icon,
 			&i.MembersCount,
@@ -576,13 +579,14 @@ SELECT
   g.description,
   g.created_at,
   g.location,
+  g.avatar_url,
   a.name AS activity,
   a.icon,
   COUNT(gm_all.user_id) AS members_count
 FROM user_groups g
 JOIN activities a ON g.activity_id = a.id
 LEFT JOIN group_members gm_all ON g.id = gm_all.group_id
-GROUP BY g.id, g.name, g.description, g.created_at, g.location, a.name, a.icon
+GROUP BY g.id, g.name, g.description, g.created_at, g.location, a.name, a.icon, g.avatar_url
 ORDER BY g.created_at DESC
 `
 
@@ -598,6 +602,7 @@ type ListUserGroupsRow struct {
 	Description  *string            `json:"description"`
 	CreatedAt    pgtype.Timestamptz `json:"created_at"`
 	Location     *string            `json:"location"`
+	AvatarUrl    *string            `json:"avatar_url"`
 	Activity     string             `json:"activity"`
 	Icon         *string            `json:"icon"`
 	MembersCount int64              `json:"members_count"`
@@ -618,6 +623,7 @@ func (q *Queries) ListUserGroups(ctx context.Context, arg ListUserGroupsParams) 
 			&i.Description,
 			&i.CreatedAt,
 			&i.Location,
+			&i.AvatarUrl,
 			&i.Activity,
 			&i.Icon,
 			&i.MembersCount,
