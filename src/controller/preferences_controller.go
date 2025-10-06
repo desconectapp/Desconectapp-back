@@ -130,8 +130,6 @@ func (c *PreferencesController) BatchAddUserPreferences(ctx *gin.Context) {
 
     err := c.service.BatchAddPreferences(params)
 
-    log.Println(err)
-
     if err != nil {
         ErrorWithStatus(ctx, err.Error(), http.StatusNotFound)
         return

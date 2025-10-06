@@ -122,6 +122,7 @@ func TestDeletePreference(t *testing.T) {
 	}
 	jsonBody, err := json.Marshal(body)
 
+	assert.Equal(t, err, nil, "Error should be nil")
 
 	req := httptest.NewRequest("DELETE", "/preferences",bytes.NewReader(jsonBody))
 	req.Header.Add("content-type", "application/json")
