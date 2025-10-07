@@ -1,46 +1,55 @@
 package service
 
 import (
-	repository "gin/db/generated"
 	"context"
-	"github.com/jackc/pgx/v5"
+	repository "gin/db/generated"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Service struct {
 	queries *repository.Queries
-	ctx    context.Context
+	ctx     context.Context
 }
 
-func NewService(conn *pgx.Conn) *Service {
+func NewService(conn *pgxpool.Pool) *Service {
 	queries := repository.New(conn)
 	ctx := context.Background()
 
 	return &Service{
 		queries: queries,
-		ctx:    ctx,
+		ctx:     ctx,
 	}
 }
 
-func (s *Service) ListUsers() ([]repository.User, error) {
-	users, err := s.queries.ListUsers(s.ctx)
+func (s *Service) ListUsers(params repository.ListUsersParams) ([]repository.Profile, error) {
+	users, err := s.queries.ListUsers(s.ctx, params)
 	if err != nil {
 		return nil, err
 	}
 	return users, nil
 }
 
-func (s *Service) CreateUser(userParams repository.CreateUserParams) (repository.User, error) {	
-	user, err := s.queries.CreateUser(s.ctx, userParams)
+func (s *Service) CreateProfile(profile repository.CreateProfileParams) (repository.CreateProfileRow, error) {
+	user, err := s.queries.CreateProfile(s.ctx, profile)
 	if err != nil {
-		return repository.User{}, err
+		return repository.CreateProfileRow{}, err
 	}
 	return user, nil
 }
 
-func (s *Service) GetUser(userId int32) (repository.User, error) {
-	user, err := s.queries.GetUser(s. ctx, userId)
+func (s *Service) UpdateProfile(profile repository.UpdateProfileParams) (repository.UpdateProfileRow, error) {
+	user, err := s.queries.UpdateProfile(s.ctx, profile)
 	if err != nil {
-		return repository.User{}, err
+		return repository.UpdateProfileRow{}, err
+	}
+	return user, nil
+}
+
+func (s *Service) GetUser(userId int32) (repository.Profile, error) {
+	user, err := s.queries.GetUser(s.ctx, userId)
+	if err != nil {
+		return repository.Profile{}, err
 	}
 	return user, nil
 }
@@ -53,10 +62,22 @@ func (s *Service) DeleteUser(userId int32) (int32, error) {
 	return id, nil
 }
 
-func (s *Service) UpdateUser(userParams repository.UpdateUserParams) (int32, error) {
+func (s *Service) UpdateUser(userParams repository.UpdateUserParams, userPreferences repository.BatchAddPreferencesParams) (int32, error) {
 	id, err := s.queries.UpdateUser(s.ctx, userParams)
 	if err != nil {
 		return -1, err
 	}
+	err = s.queries.BatchAddPreferences(s.ctx, userPreferences)
+	if err != nil {
+		return -1, err
+	}
 	return id, nil
+}
+
+func (s *Service) UpdateProfileAvatar(params repository.UpdateProfileAvatarParams) error {
+    err := s.queries.UpdateProfileAvatar(s.ctx, params)
+    if err != nil {
+        return err
+    }
+    return nil
 }

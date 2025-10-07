@@ -1,2 +1,4 @@
 .env
 database/
+.env_test
+database_test/

@@ -1,129 +1,188 @@
 package controller
 
 import (
+	"database/sql"
+	"errors"
 	"gin/service"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	repository "gin/db/generated"
+)
+
+const (
+	MIN_AGE = 15
+	MAX_AGE = 100
 )
 
 type Controller struct {
 	service *service.Service
 }
 
-func NewController(conn *pgx.Conn) *Controller {
+func NewController(conn *pgxpool.Pool) *Controller {
 	service := service.NewService(conn)
 	return &Controller{
 		service: service,
 	}
 }
 
-
 func (c *Controller) ListUsers(ctx *gin.Context) {
-	users, err := c.service.ListUsers()
+	var userParams repository.ListUsersParams
+
+	limit, offset := GetLimmitAndOffset(ctx)
+
+	userParams.Limit = int32(limit) + 1
+	userParams.Offset = int32(offset)
+
+	users, err := c.service.ListUsers(userParams)
+
 	if err != nil {
-		ctx.Error(gin.Error{
+		ctx.Error(&gin.Error{
 			Err:  err,
-			Type: gin.ErrorTypePublic,})
+			Type: gin.ErrorTypePublic,
+		})
+		ctx.Abort()
 		return
 	}
-	ctx.JSON(http.StatusOK, users)
+
+	hasMore := len(users) == int(userParams.Limit)
+
+	if hasMore {
+		users = users[:len(users)-1]
+	}
+
+	result := PaginatedUsers{Users: users, HasMore: hasMore}
+
+	ctx.JSON(http.StatusOK, result)
 }
 
-func (c *Controller) CreateUser(ctx *gin.Context) {
-	var userParams repository.CreateUserParams
-	if err := ctx.ShouldBind(&userParams); err != nil {
-		ctx.Error(gin.Error{
-			Err:  err,
-			Type: gin.ErrorTypePublic,})
+func (c *Controller) CreateProfile(ctx *gin.Context) {
+	var profileData repository.CreateProfileParams
+	if err := ctx.ShouldBind(&profileData); err != nil {
+		ErrorWithStatus(ctx, "Could not bind", http.StatusBadRequest)
 		return
 	}
 
-	user, err := c.service.CreateUser(userParams)
-	if err != nil {
-		ctx.Error(gin.Error{
-			Err:  err,
-			Type: gin.ErrorTypePublic,})
+	if profileData.Age < MIN_AGE || profileData.Age > MAX_AGE {
+		ErrorWithStatus(ctx, "Age must be between 15 and 100", http.StatusBadRequest)
 		return
 	}
-	ctx.JSON(http.StatusOK, user)
+
+	userToken, _ := ctx.Get("userID")
+	profileData.UserID = userToken.(int32)
+
+	user, err := c.service.CreateProfile(profileData)
+	if err != nil {
+		ErrorNoStatus(ctx, err)
+		return
+	}
+
+	res := Profile{
+		UserID:           user.UserID,
+		Age:              user.Age,
+		Name:             user.Name,
+		City:             user.City,
+		CurrentSituation: user.CurrentSituation,
+		Gender:           user.Gender,
+	}
+
+	ctx.JSON(http.StatusOK, res)
+}
+
+func (c *Controller) UpdateProfile(ctx *gin.Context) {
+	var profileData repository.UpdateProfileParams
+	if err := ctx.ShouldBind(&profileData); err != nil {
+		ErrorWithStatus(ctx, "Invalid json format", http.StatusBadRequest)
+		return
+	}
+
+	if profileData.Age < MIN_AGE || profileData.Age > MAX_AGE {
+		ErrorWithStatus(ctx, "Age must be between 15 and 100", http.StatusBadRequest)
+		return
+	}
+
+	userId, _ := ctx.Get("userID")
+	profileData.UserID = userId.(int32)
+
+	user, err := c.service.UpdateProfile(profileData)
+	if err != nil {
+		ErrorWithStatus(ctx, "An error ocurred updating the profile", http.StatusBadRequest)
+		return
+	}
+
+	res := Profile{
+		UserID:           user.UserID,
+		Age:              user.Age,
+		Name:             user.Name,
+		City:             user.City,
+		CurrentSituation: user.CurrentSituation,
+		Gender:           user.Gender,
+	}
+
+	ctx.JSON(http.StatusOK, res)
+}
+
+func (c *Controller) UpdateProfileAvatar(ctx *gin.Context) {
+    var body struct {
+        AvatarUrl *string `json:"avatar_url"`
+    }
+    if err := ctx.ShouldBind(&body); err != nil {
+        ErrorWithStatus(ctx, "Invalid json format", http.StatusBadRequest)
+        return
+    }
+    userId, _ := ctx.Get("userID")
+    params := repository.UpdateProfileAvatarParams{
+        UserID:    userId.(int32),
+        AvatarUrl: body.AvatarUrl,
+    }
+    if err := c.service.UpdateProfileAvatar(params); err != nil {
+        ErrorNoStatus(ctx, err)
+        return
+    }
+    ctx.JSON(http.StatusOK, gin.H{})
 }
 
 func (c *Controller) GetUser(ctx *gin.Context) {
-	userId := ctx.Param("userId")
-	stringId, err := strconv.Atoi(userId)
-	if err != nil {
-		ctx.Error(gin.Error{
-			Err:  err,
-			Type: gin.ErrorTypePublic,})
+	userToken, _ := ctx.Get("userID")
+
+	user, err := c.service.GetUser(userToken.(int32))
+
+	if errors.Is(err, sql.ErrNoRows) {
+		ErrorWithStatus(ctx, "The user does not exist", http.StatusNotFound)
+		return
+	} else if err != nil {
+		ErrorNoStatus(ctx, err)
 		return
 	}
 
-	user, err := c.service.GetUser(int32(stringId))
-	if err != nil {
-		ctx.Error(gin.Error{
-			Err:  err,
-			Type: gin.ErrorTypePublic,})
-		return
+	res := Profile{
+		UserID:           user.UserID,
+		Age:              user.Age,
+		Name:             user.Name,
+		City:             user.City,
+		CurrentSituation: user.CurrentSituation,
+		Gender:           user.Gender,
+		AvatarUrl:        user.AvatarUrl,
 	}
-	ctx.JSON(http.StatusOK, user)
+
+	ctx.JSON(http.StatusOK, res)
 }
 
 func (c *Controller) DeleteUser(ctx *gin.Context) {
-	userId := ctx.Param("userId")
-	stringId, err := strconv.Atoi(userId)
-	if err != nil {
-		ctx.Error(gin.Error{
-			Err:  err,
-			Type: gin.ErrorTypePublic,})
+	userToken, _ := ctx.Get("userID")
+
+	id, err := c.service.DeleteUser(userToken.(int32))
+
+	if errors.Is(err, sql.ErrNoRows) {
+		ErrorWithStatus(ctx, "The user does not exist", http.StatusNotFound)
+		return
+	} else if err != nil {
+		ErrorNoStatus(ctx, err)
 		return
 	}
 
-	id, err := c.service.DeleteUser(int32(stringId))
-	if err != nil {
-		ctx.Error(gin.Error{
-			Err:  err,
-			Type: gin.ErrorTypePublic,})
-		return
-	}
-	ctx.JSON(http.StatusOK, gin.H{
-		"deleted": id,
-	})
+	res := UserDeletedResponse{DeletedUserID: id}
+	ctx.JSON(http.StatusOK, res)
 }
-
-func (c *Controller) UpdateUser(ctx *gin.Context) {
-	userId := ctx.Param("userId")
-	stringId, err := strconv.Atoi(userId)
-	if err != nil {
-		ctx.Error(gin.Error{
-			Err:  err,
-			Type: gin.ErrorTypePublic,})
-		return
-	}
-
-	var userParams repository.UpdateUserParams
-	if err := ctx.ShouldBind(&userParams); err != nil {
-		ctx.Error(gin.Error{
-			Err:  err,
-			Type: gin.ErrorTypePublic,})
-		return
-	}
-
-	userParams.ID = int32(stringId)
-
-	id, err := c.service.UpdateUser(userParams)
-	if err != nil {
-		ctx.Error(gin.Error{
-			Err:  err,
-			Type: gin.ErrorTypePublic,})
-		return
-	}
-	ctx.JSON(http.StatusOK, gin.H{
-		"updated": id,
-	})
-}
-

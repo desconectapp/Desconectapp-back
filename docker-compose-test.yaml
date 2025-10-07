@@ -1,0 +1,41 @@
+services:
+  test-db:
+    image: postgres:16.4-alpine3.20
+    ports:
+      - "5436:5432"
+    env_file:
+      - .env_test
+    volumes:
+      - ./database_test/postgres:/var/lib/postgresql/data
+      - ./src/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./src/db/files/activities_test.csv:/activities.csv
+      - ./src/db/files/users_test.csv:/users.csv
+      - ./src/db/files/activity_requests.csv:/activity_requests.csv
+      - ./src/db/files/users_preference_test.csv:/users_preference.csv
+      - ./src/db/files/profiles_test.csv:/profiles.csv
+      - ./src/db/files/groups_test.csv:/groups.csv
+      - ./src/db/files/group_members_test.csv:/group_members.csv
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d testdb"]
+      interval: 2s
+      timeout: 2s
+      retries: 20
+
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    ports:
+      - "8083:8083"
+    volumes:
+      - ./src:/app
+    working_dir: /app
+    environment:
+      PORT: "8080"
+      GIN_MODE: test
+    env_file:
+      - .env_test
+    depends_on:
+      test-db:
+        condition: service_healthy
+    command: go test ./... -v

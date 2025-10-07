@@ -1,0 +1,9 @@
+FROM golang:latest
+
+WORKDIR /app
+ADD ./src /app
+
+RUN go install -mod=mod github.com/githubnemo/CompileDaemon
+RUN go get github.com/gin-gonic/gin
+
+CMD ["go", "run", "main.go"]
