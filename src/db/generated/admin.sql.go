@@ -117,7 +117,7 @@ func (q *Queries) AdminCreateActivity(ctx context.Context, arg AdminCreateActivi
 const adminCreateGroup = `-- name: AdminCreateGroup :one
 INSERT INTO groups (name, description, location, activity_id)
 VALUES ($1, $2, $3, $4)
-RETURNING id, name, description, location, public, activity_id, week_hours, created_at
+RETURNING id, name, avatar_url, description, location, public, activity_id, week_timeslots, created_at
 `
 
 type AdminCreateGroupParams struct {
@@ -138,11 +138,12 @@ func (q *Queries) AdminCreateGroup(ctx context.Context, arg AdminCreateGroupPara
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
+		&i.AvatarUrl,
 		&i.Description,
 		&i.Location,
 		&i.Public,
 		&i.ActivityID,
-		&i.WeekHours,
+		&i.WeekTimeslots,
 		&i.CreatedAt,
 	)
 	return i, err
@@ -846,18 +847,18 @@ SET name = $2,
     description = $3,
     location = $4,
     activity_id = $5,
-    week_hours = $6
+    week_timeslots = $6
 WHERE id = $1
-RETURNING id, name, description, location, public, activity_id, week_hours, created_at
+RETURNING id, name, avatar_url, description, location, public, activity_id, week_timeslots, created_at
 `
 
 type AdminUpdateGroupParams struct {
-	ID          int32   `json:"id"`
-	Name        *string `json:"name"`
-	Description *string `json:"description"`
-	Location    *string `json:"location"`
-	ActivityID  int32   `json:"activity_id"`
-	WeekHours   []int32 `json:"week_hours"`
+	ID            int32   `json:"id"`
+	Name          *string `json:"name"`
+	Description   *string `json:"description"`
+	Location      *string `json:"location"`
+	ActivityID    int32   `json:"activity_id"`
+	WeekTimeslots []int32 `json:"week_timeslots"`
 }
 
 func (q *Queries) AdminUpdateGroup(ctx context.Context, arg AdminUpdateGroupParams) (Group, error) {
@@ -867,17 +868,18 @@ func (q *Queries) AdminUpdateGroup(ctx context.Context, arg AdminUpdateGroupPara
 		arg.Description,
 		arg.Location,
 		arg.ActivityID,
-		arg.WeekHours,
+		arg.WeekTimeslots,
 	)
 	var i Group
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
+		&i.AvatarUrl,
 		&i.Description,
 		&i.Location,
 		&i.Public,
 		&i.ActivityID,
-		&i.WeekHours,
+		&i.WeekTimeslots,
 		&i.CreatedAt,
 	)
 	return i, err

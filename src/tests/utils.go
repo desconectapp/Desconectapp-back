@@ -34,11 +34,7 @@ type CreateProfile struct {
 	Gender           string `json:"gender"`
 }
 
-type TimeSlot struct {
-	Start int `json:"start"`
-	End   int `json:"end"`
-}
-type Schedules map[string][]TimeSlot
+type TimeSlot struct{}
 
 type CreateActivityRequestInput struct {
 	UserID             *int32    `json:"user_id"`
@@ -49,7 +45,7 @@ type CreateActivityRequestInput struct {
 	SearchRadius       *int32    `json:"search_radius"`
 	MaxParticipants    *int32    `json:"max_participants"`
 	ParticipantsNeeded *int32    `json:"participants_needed"`
-	Schedules          Schedules `json:"schedules"`
+	Timeslots          []uint16  `json:"timeslots"`
 }
 
 type ActivityRequest struct {
@@ -87,6 +83,12 @@ func SendActivityRequest(t *testing.T, r *gin.Engine, userId int32, activityId i
 	float64Ptr := func(f float64) *float64 { return &f }
 	strPtr := func(s string) *string { return &s }
 
+	// Convert time ranges to half-hour timeslots
+	// Monday 9-11: timeslots 19-22 (9*2+1 to 11*2)
+	// Monday 14-16: timeslots 29-32 (14*2+1 to 16*2)  
+	// Wednesday 10-12: timeslots 67-71 (48+10*2+1 to 48+12*2)
+	timeslots := []uint16{19, 20, 21, 22, 29, 30, 31, 32, 67, 68, 69, 70, 71}
+
 	body := CreateActivityRequestInput{
 		UserID:             int32Ptr(userId),
 		ActivityID:         int32Ptr(activityId),
@@ -96,10 +98,7 @@ func SendActivityRequest(t *testing.T, r *gin.Engine, userId int32, activityId i
 		Latitude:           float64Ptr(37.7749),
 		Longitude:          float64Ptr(-122.4194),
 		SearchRadius:       int32Ptr(10),
-		Schedules: Schedules{
-			"monday":    {{Start: 9, End: 11}, {Start: 14, End: 16}},
-			"wednesday": {{Start: 10, End: 12}},
-		},
+		Timeslots:          timeslots,
 	}
 
 	jsonBody, err := json.Marshal(body)
@@ -120,8 +119,8 @@ func SendActivityRequest(t *testing.T, r *gin.Engine, userId int32, activityId i
 	}
 
 	var response ActivityRequest
-	err = json.Unmarshal(w.Body.Bytes(), &response)
-	assert.Equal(t, err, nil, "Error should be nil")
+    err = json.Unmarshal(w.Body.Bytes(), &response)
+    assert.NoError(t, err, "Error should be nil")
 
 	activity, err := GetActivityByID(activityId)
 	assert.Equal(t, err, nil, "Error should be nil")
@@ -168,13 +167,13 @@ func NewUser(t *testing.T, r *gin.Engine, emailStart string) (int32, string) {
 
 	log.Println(response)
 
-	_, _, err = service.ValidateSession(response.Token)
-	assert.Equal(t, err, nil, "Error should be nil")
+    _, _, err = service.ValidateSession(response.Token)
+    assert.NoError(t, err, "Error should be nil")
 
-	_, _, err = service.ValidateSession(response.RefreshToken)
-	assert.Equal(t, err, nil, "Error should be nil")
+    _, _, err = service.ValidateSession(response.RefreshToken)
+    assert.NoError(t, err, "Error should be nil")
 
-	assert.Equal(t, w.Code, http.StatusCreated, "Status code should be 201")
+    assert.Equal(t, http.StatusCreated, w.Code, "Status code should be 201")
 
 	return response.UserId, response.Token
 }
@@ -207,15 +206,17 @@ type GroupInfo struct {
 	Description string  `json:"description"`
 	Location    string  `json:"location"`
 	ActivityID  int32   `json:"activity_id"`
+	Public 		bool 	`json:"public"`
 	MembersIds  []int32 `json:"user_ids"`
 }
 
-func NewGroup(t *testing.T, r *gin.Engine, name string, location string, activityID int32, memberIds []int32, token string) int32 {
+func NewGroup(t *testing.T, r *gin.Engine, name string, location string, activityID int32, memberIds []int32, public bool, token string) int32 {
 	body := GroupInfo{
 		ActivityID:  activityID,
 		Name:        name,
 		Location:    location,
 		MembersIds:  memberIds,
+		Public: public,
 		Description: "",
 	}
 	jsonBody, err := json.Marshal(body)

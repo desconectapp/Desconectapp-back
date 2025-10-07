@@ -1,7 +1,7 @@
 -- name: CreateGroup :one
 WITH inserted_group AS (
-  INSERT INTO groups (name, description, location, activity_id, public, week_hours)
-  VALUES ($1, $2, $3, $4, false, $5)
+  INSERT INTO groups (name, description, location, activity_id, public, week_timeslots)
+  VALUES ($1, $2, $3, $4, $5, $6)
   RETURNING *
 ), inserted_members AS (
   INSERT INTO group_members (user_id, group_id)
@@ -46,13 +46,14 @@ SELECT
   g.description,
   g.created_at,
   g.location,
+  g.avatar_url,
   a.name AS activity,
   a.icon,
   COUNT(gm.user_id) AS members_count
 FROM selected_groups g
 JOIN activities a ON g.activity_id = a.id
 LEFT JOIN group_members gm ON g.id = gm.group_id
-GROUP BY g.id, g.name, g.description, g.created_at, g.location, a.name, a.icon
+GROUP BY g.id, g.name, g.description, g.created_at, g.location, a.name, a.icon, g.avatar_url
 ORDER BY g.created_at DESC;
 
 -- name: GetGroup :one
@@ -64,7 +65,8 @@ SELECT
   a.name AS activity,
   a.icon,
   g.location,
-  g.public
+  g.public,
+  g.avatar_url
 FROM groups g
 JOIN activities a ON g.activity_id = a.id
 LEFT JOIN group_members gm ON gm.group_id = g.id
@@ -92,7 +94,7 @@ WHERE id = ANY(sqlc.arg(user_ids)::int[])
 ON CONFLICT DO NOTHING;
 
 -- name: GetGroupMembers :many
-SELECT u.id, u.uuid, p.name FROM users u
+SELECT u.id, u.uuid, p.name, p.avatar_url FROM users u
 	JOIN profiles p ON u.id = p.user_id
 	JOIN group_members gm ON u.id = gm.user_id
 	WHERE gm.group_id = $1;
@@ -112,13 +114,14 @@ SELECT
   g.description,
   g.created_at,
   g.location,
+  g.avatar_url,
   a.name AS activity,
   a.icon,
   COUNT(gm_all.user_id) AS members_count
 FROM user_groups g
 JOIN activities a ON g.activity_id = a.id
 LEFT JOIN group_members gm_all ON g.id = gm_all.group_id
-GROUP BY g.id, g.name, g.description, g.created_at, g.location, a.name, a.icon
+GROUP BY g.id, g.name, g.description, g.created_at, g.location, a.name, a.icon, g.avatar_url
 ORDER BY g.created_at DESC;
 
 -- name: ExitGroup :exec
@@ -145,12 +148,19 @@ UPDATE groups
 SET location = $2
 WHERE id = $1;
 
+-- name: UpdateGroupAvatar :exec
+UPDATE groups
+SET avatar_url = $2
+WHERE id = $1;
+
 -- name: GetOpenGroupsWithFilter :many
 SELECT 
     g.id,
     g.name,
     g.description,
     g.location,
+    g.avatar_url,
+    g.week_timeslots,
     a.name AS activity_name,
     a.icon,
     COUNT(gm.user_id) AS member_count
@@ -166,6 +176,8 @@ SELECT
     g.name,
     g.description,
     g.location,
+    g.avatar_url,
+    g.week_timeslots,
     a.name AS activity_name,
     a.icon,
     COUNT(gm.user_id) AS member_count
@@ -174,7 +186,7 @@ JOIN activities a ON g.activity_id = a.id
 LEFT JOIN group_members gm ON g.id = gm.group_id
 WHERE g.public = true
   AND (sqlc.narg('activity_id')::int IS NULL OR g.activity_id = sqlc.narg('activity_id')::int)
-GROUP BY g.id, g.name, g.description, g.location, a.name, a.icon
+GROUP BY g.id, g.name, g.description, g.location, g.avatar_url, g.week_timeslots, a.name, a.icon
 LIMIT $1 OFFSET $2;
 
 -- name: GetOpenGroupsWithLocation :many
@@ -183,6 +195,8 @@ SELECT
     g.name,
     g.description,
     g.location,
+    g.avatar_url,
+    g.week_timeslots,
     a.name AS activity_name,
     a.icon,
     COUNT(gm.user_id) AS member_count,
@@ -207,7 +221,7 @@ WHERE g.public = true
         sin(radians(sqlc.arg('latitude')::float)) * 
         sin(radians(CAST(split_part(g.location, ',', 1) AS float)))
     )) <= sqlc.arg('radius')::float
-GROUP BY g.id, g.name, g.description, g.location, a.name, a.icon
+GROUP BY g.id, g.name, g.description, g.location, g.avatar_url, g.week_timeslots, a.name, a.icon
 ORDER BY distance_km
 LIMIT $1 OFFSET $2;
 
@@ -216,6 +230,7 @@ SELECT g.id,
        g.name,
        g.description,
        g.location,
+       g.avatar_url,
        g.public,
        g.activity_id,
        g.created_at,
@@ -234,7 +249,7 @@ WHERE up.user_id = $1
       WHERE gm2.group_id = g.id
         AND gm2.user_id = $1
   )
-GROUP BY g.id, g.name, g.description, g.location, g.public, g.activity_id, g.created_at,
+GROUP BY g.id, g.name, g.description, g.location, g.avatar_url, g.public, g.activity_id, g.created_at,
          a.name, a.icon
 ORDER BY member_count ASC, g.created_at DESC
 LIMIT $2 OFFSET $3;

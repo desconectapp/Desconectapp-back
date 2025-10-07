@@ -110,32 +110,34 @@ func (c *PreferencesController) DeletePreference(ctx *gin.Context) {
 }
 
 func (c *PreferencesController) BatchAddUserPreferences(ctx *gin.Context) {
-	var userPreferences []int32 
-	log.Println(ctx.Request.Body)
+    type batchRequest struct {
+        ActivityIds []int32 `json:"activity_ids"`
+    }
 
-	if err := ctx.ShouldBind(&userPreferences); err != nil {
-		ErrorWithStatus(ctx, "Bad request", http.StatusBadRequest)
-		return
-	}
+    var req batchRequest
+    log.Println(ctx.Request.Body)
 
-	var _userPreferences repository.BatchAddPreferencesParams
+    if err := ctx.ShouldBind(&req); err != nil {
+        ErrorWithStatus(ctx, "Bad request", http.StatusBadRequest)
+        return
+    }
 
-	userToken, _ := ctx.Get("userID")
-	_userPreferences.UserID = userToken.(int32)
-	_userPreferences.ActivityIds = userPreferences
+    var params repository.BatchAddPreferencesParams
 
-	err := c.service.BatchAddPreferences(_userPreferences)
+    userToken, _ := ctx.Get("userID")
+    params.UserID = userToken.(int32)
+    params.ActivityIds = req.ActivityIds
 
-	log.Println(err)
+    err := c.service.BatchAddPreferences(params)
 
-	if err != nil {
-		ErrorWithStatus(ctx, err.Error(), http.StatusNotFound)
-		return
-	}
+    if err != nil {
+        ErrorWithStatus(ctx, err.Error(), http.StatusNotFound)
+        return
+    }
 
-	res := ActivityIdBatchResponse{
-		ActivityIdBatchIDs: userPreferences,
-	}
+    res := ActivityIdBatchResponse{
+        ActivityIdBatchIDs: req.ActivityIds,
+    }
 
-	ctx.JSON(http.StatusOK, res)
+    ctx.JSON(http.StatusOK, res)
 }

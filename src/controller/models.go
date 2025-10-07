@@ -100,4 +100,5 @@ type Profile struct {
 	City             string           `json:"city"`
 	CurrentSituation string           `json:"current_situation"`
 	Gender           string           `json:"gender"`
+	AvatarUrl        *string          `json:"avatar_url"`
 }

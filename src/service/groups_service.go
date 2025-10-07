@@ -15,20 +15,23 @@ type GroupWithMembers struct {
 	Activity    string                          `json:"activity"`
 	Icon        *string                         `json:"icon"`
 	Location    *string                         `json:"location"`
+	AvatarUrl   *string                         `json:"avatar_url"`
 	Members     []repository.GetGroupMembersRow `json:"members"`
 	Public      bool                            `json:"public"`
 	Time        string                          `json:"created_at"`
 }
 
 type OpenGroup struct {
-	ID           int32   `json:"id"`
-	Name         *string `json:"name"`
-	Description  *string `json:"description"`
-	Location     *string `json:"location"`
-	ActivityName string  `json:"activity_name"`
-	MemberCount  int32   `json:"member_count"`
-	Photo        string  `json:"photo"`
-	Time         string  `json:"created_at"`
+	ID            int32   `json:"id"`
+	Name          *string `json:"name"`
+	Description   *string `json:"description"`
+	Location      *string `json:"location"`
+	AvatarUrl     *string `json:"avatar_url"`
+	WeekTimeslots []int32 `json:"week_timeslots"`
+	ActivityName  string  `json:"activity_name"`
+	MemberCount   int32   `json:"member_count"`
+	Photo         string  `json:"photo"`
+	Time          string  `json:"created_at"`
 }
 
 type ActivityFilter struct {
@@ -121,6 +124,7 @@ func addMembers(group repository.GetGroupRow, members []repository.GetGroupMembe
 		Members:     members,
 		Public:      *group.Public,
 		Time:        group.CreatedAt.Time.String(),
+		AvatarUrl:   group.AvatarUrl,
 	}
 }
 
@@ -160,6 +164,11 @@ func (s *GroupsService) ChangeGroupLocation(params repository.ChangeGroupLocatio
 
 	err := s.queries.ChangeGroupLocation(s.ctx, params)
 
+	return err
+}
+
+func (s *GroupsService) UpdateGroupAvatar(params repository.UpdateGroupAvatarParams) error {
+	err := s.queries.UpdateGroupAvatar(s.ctx, params)
 	return err
 }
 
@@ -219,13 +228,15 @@ func (s *GroupsService) GetOpenGroupsNoFilter(filter repository.GetOpenGroupsNoF
 
 	for _, group := range groups {
 		openGroups = append(openGroups, OpenGroup{
-			ID:           group.ID,
-			Name:         group.Name,
-			Location:     group.Location,
-			Description:  group.Description,
-			ActivityName: group.ActivityName,
-			MemberCount:  int32(group.MemberCount),
-			Photo:        *group.Icon,
+			ID:            group.ID,
+			Name:          group.Name,
+			Location:      group.Location,
+			AvatarUrl:     group.AvatarUrl,
+			WeekTimeslots: group.WeekTimeslots,
+			Description:   group.Description,
+			ActivityName:  group.ActivityName,
+			MemberCount:   int32(group.MemberCount),
+			Photo:         *group.Icon,
 		})
 	}
 	return openGroups, err
@@ -242,13 +253,15 @@ func (s *GroupsService) GetPublicOpenGroupsWithFilter(filter repository.GetOpenG
 
 	for _, group := range groups {
 		openGroups = append(openGroups, OpenGroup{
-			ID:           group.ID,
-			Name:         group.Name,
-			Location:     group.Location,
-			Description:  group.Description,
-			ActivityName: group.ActivityName,
-			MemberCount:  int32(group.MemberCount),
-			Photo:        *group.Icon,
+			ID:            group.ID,
+			Name:          group.Name,
+			Location:      group.Location,
+			AvatarUrl:     group.AvatarUrl,
+			WeekTimeslots: group.WeekTimeslots,
+			Description:   group.Description,
+			ActivityName:  group.ActivityName,
+			MemberCount:   int32(group.MemberCount),
+			Photo:         *group.Icon,
 		})
 	}
 	return openGroups, err
@@ -264,13 +277,15 @@ func (s *GroupsService) GetOpenGroupsWithLocation(filter repository.GetOpenGroup
 	var openGroups []OpenGroup
 	for _, group := range groups {
 		openGroups = append(openGroups, OpenGroup{
-			ID:           group.ID,
-			Name:         group.Name,
-			Location:     group.Location,
-			Description:  group.Description,
-			ActivityName: group.ActivityName,
-			MemberCount:  int32(group.MemberCount),
-			Photo:        *group.Icon,
+			ID:            group.ID,
+			Name:          group.Name,
+			Location:      group.Location,
+			AvatarUrl:     group.AvatarUrl,
+			WeekTimeslots: group.WeekTimeslots,
+			Description:   group.Description,
+			ActivityName:  group.ActivityName,
+			MemberCount:   int32(group.MemberCount),
+			Photo:         *group.Icon,
 		})
 	}
 	return openGroups, err
@@ -290,6 +305,7 @@ func (s *GroupsService) GetUserRecommendations(filter repository.GetPreferredGro
 			ID:           group.ID,
 			Name:         group.Name,
 			Location:     group.Location,
+			AvatarUrl:    group.AvatarUrl,
 			Description:  group.Description,
 			ActivityName: group.ActivityName,
 			MemberCount:  int32(group.MemberCount),

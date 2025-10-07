@@ -71,7 +71,7 @@ type ActivityRequest struct {
 	UserID              *int32           `json:"user_id"`
 	ActivityID          *int32           `json:"activity_id"`
 	Description         *string          `json:"description"`
-	WeekHours           []int32          `json:"week_hours"`
+	WeekTimeslots       []int32          `json:"week_timeslots"`
 	ParticipantsNeeded  *int32           `json:"participants_needed"`
 	MaximumParticipants *int32           `json:"maximum_participants"`
 	Latitude            *float64         `json:"latitude"`
@@ -87,14 +87,15 @@ type EmailVerificationCode struct {
 }
 
 type Group struct {
-	ID          int32              `json:"id"`
-	Name        *string            `json:"name"`
-	Description *string            `json:"description"`
-	Location    *string            `json:"location"`
-	Public      *bool              `json:"public"`
-	ActivityID  int32              `json:"activity_id"`
-	WeekHours   []int32            `json:"week_hours"`
-	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	ID            int32              `json:"id"`
+	Name          *string            `json:"name"`
+	AvatarUrl     *string            `json:"avatar_url"`
+	Description   *string            `json:"description"`
+	Location      *string            `json:"location"`
+	Public        *bool              `json:"public"`
+	ActivityID    int32              `json:"activity_id"`
+	WeekTimeslots []int32            `json:"week_timeslots"`
+	CreatedAt     pgtype.Timestamptz `json:"created_at"`
 }
 
 type GroupMember struct {
@@ -106,7 +107,7 @@ type PartialMatch struct {
 	ID                  int32            `json:"id"`
 	ActivityID          *int32           `json:"activity_id"`
 	Description         *string          `json:"description"`
-	WeekHours           []int32          `json:"week_hours"`
+	WeekTimeslots       []int32          `json:"week_timeslots"`
 	ParticipantsNeeded  *int32           `json:"participants_needed"`
 	MaximumParticipants *int32           `json:"maximum_participants"`
 	Latitude            *float64         `json:"latitude"`
@@ -125,6 +126,7 @@ type PartialMatchMember struct {
 type Profile struct {
 	UserID           int32            `json:"user_id"`
 	Name             string           `json:"name"`
+	AvatarUrl        *string          `json:"avatar_url"`
 	CreatedAt        pgtype.Timestamp `json:"created_at"`
 	Age              int32            `json:"age"`
 	City             string           `json:"city"`

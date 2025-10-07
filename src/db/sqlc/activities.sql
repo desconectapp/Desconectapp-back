@@ -1,7 +1,7 @@
 -- name: CreateActivityRequest :one
 INSERT INTO activity_requests (
   user_id, activity_id, description,
-  week_hours, participants_needed,
+  week_timeslots, participants_needed,
   maximum_participants, latitude, longitude,
   search_radius
 ) VALUES (

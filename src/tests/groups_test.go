@@ -10,7 +10,7 @@ import (
 	"net/http/httptest"
 	"strconv"
 	"testing"
-
+	"net/http"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -62,7 +62,7 @@ func TestPostGroup(t *testing.T) {
 
 	members := []int32{user1, user2, user3}
 	
-	NewGroup(t, r, "Karasuno", "Miyagi", activityId, members, token)
+	NewGroup(t, r, "Karasuno", "Miyagi", activityId, members, false, token)
 }
 
 // groups.GET("/:groupId", router.groupsController.GetGroup)
@@ -108,7 +108,7 @@ func TestDeleteGroup(t *testing.T) {
 
 	members := []int32{user1, user2, user3}
 	
-	group := NewGroup(t, r, "Karasuno", "Miyagi", activityId, members, token)
+	group := NewGroup(t, r, "Karasuno", "Miyagi", activityId, members, false, token)
 
 	req := httptest.NewRequest("DELETE", "/groups/"+strconv.Itoa(int(group)), nil)
 	req.Header.Add("Authorization", "Bearer "+token)
@@ -173,7 +173,7 @@ func TestDeleteUserFromGroup(t *testing.T) {
 
 	members := []int32{user1, user2, user3}
 	
-	group := NewGroup(t, r, "Shiratorizawa", "Miyagi", activityId, members, token)
+	group := NewGroup(t, r, "Shiratorizawa", "Miyagi", activityId, members, false, token)
 
 	req := httptest.NewRequest("DELETE", "/groups/user-from-group/"+strconv.Itoa(int(group)), nil)
 	req.Header.Add("Authorization", "Bearer "+token)
@@ -400,4 +400,42 @@ func TestGetStatusOpenListWithFilter(t *testing.T) {
 	assert.Equal(t, location, *response.Groups[0].Location)
 	assert.Equal(t, groupName, *response.Groups[0].Name)
 	assert.Equal(t, int32(3), response.Groups[0].MemberCount)
+}
+
+func TestCreatePublic(t *testing.T) {
+	router := router.NewRouter()
+	r := router.SetupRoutes()
+
+	token, err := service.NewTestToken(32)
+	assert.Equal(t, err, nil, "Error should be nil")
+
+	body := GroupInfo{
+		ActivityID:  1,
+		Name:        "PublicGroup",
+		Location:    "location",
+		MembersIds:  []int32{1, 2, 3, 4},
+		Public: true,
+		Description: "",
+	}
+	jsonBody, err := json.Marshal(body)
+
+	assert.Equal(t, err, nil, "Error should be nil")
+
+	req := httptest.NewRequest("POST", "/groups", bytes.NewReader(jsonBody))
+	req.Header.Add("content-type", "application/json")
+	req.Header.Add("Authorization", "Bearer "+token)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	var response controller.NewGroup
+
+	err = json.Unmarshal(w.Body.Bytes(), &response)
+
+	assert.Equal(t, err, nil, "Error should be nil")
+	assert.Equal(t, w.Code, http.StatusCreated, "Status code should be 201")
+	assert.Equal(t, body.ActivityID, response.ActivityID)
+	assert.Equal(t, body.Name, *response.Name)
+	assert.Equal(t, body.Location, *response.Location)
+	assert.Equal(t, body.MembersIds, response.Members)
+	assert.Equal(t, true, *response.Public)
 }
