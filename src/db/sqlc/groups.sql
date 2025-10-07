@@ -1,7 +1,7 @@
 -- name: CreateGroup :one
 WITH inserted_group AS (
-  INSERT INTO groups (name, description, location, activity_id, public)
-  VALUES ($1, $2, $3, $4, false)
+  INSERT INTO groups (name, description, location, activity_id, public, week_hours)
+  VALUES ($1, $2, $3, $4, false, $5)
   RETURNING *
 ), inserted_members AS (
   INSERT INTO group_members (user_id, group_id)

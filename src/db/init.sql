@@ -106,6 +106,7 @@ CREATE TABLE groups (
     location TEXT,
     public BOOLEAN DEFAULT false,
     activity_id INTEGER NOT NULL REFERENCES activities(id) ON DELETE CASCADE,
+    week_hours INTEGER[],
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 

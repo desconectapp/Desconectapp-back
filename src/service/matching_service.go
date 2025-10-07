@@ -204,10 +204,14 @@ func (s *MatchingService) createCombinedPartialMatch(request repository.Activity
 }
 
 func (s *MatchingService) createGroup(request repository.ActivityRequest, match repository.PartialMatch, members []repository.GetPartialMatchMembersRow) error {
+	location := fmt.Sprintf("%f,%f", *match.Longitude, *match.Latitude)
+	
 	groupID, err := s.queries.CreateGroup(s.ctx, repository.CreateGroupParams{
 		Name:        match.Description,
 		Description: match.Description,
 		ActivityID:  *match.ActivityID,
+		Location:    &location,
+		WeekHours:   match.WeekHours,
 	})
 	if err != nil {
 		return err
