@@ -14,6 +14,7 @@ RETURNING *;
 
 -- name: ListActivityRequests :many
 SELECT * FROM activity_requests
+WHERE (sqlc.narg('user_id')::int IS NULL OR user_id = sqlc.narg('user_id'))
 ORDER BY created_at DESC
 LIMIT $1 OFFSET $2;
 

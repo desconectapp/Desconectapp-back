@@ -209,7 +209,8 @@ UPDATE groups
 SET name = $2,
     description = $3,
     location = $4,
-    activity_id = $5
+    activity_id = $5,
+    week_timeslots = $6
 WHERE id = $1
 RETURNING *;
 

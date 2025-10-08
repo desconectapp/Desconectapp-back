@@ -53,6 +53,15 @@ func (c *ActivitiesController) ListActivitiesRequests(ctx *gin.Context) {
 	activityParams.Limit = int32(limit)
 	activityParams.Offset = int32(offset)
 
+	// Get user ID from JWT token
+	userToken, exists := ctx.Get("userID")
+	if !exists {
+		ErrorWithStatus(ctx, "User not authenticated", http.StatusUnauthorized)
+		return
+	}
+	userID := userToken.(int32)
+	activityParams.UserID = &userID
+
 	activities, err := c.service.ListActivitiesRequests(activityParams)
 
 	if err != nil {
