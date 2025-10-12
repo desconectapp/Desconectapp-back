@@ -112,6 +112,11 @@ func (c *GroupsController) CreateGroup(ctx *gin.Context) {
 		return
 	}
 
+	if len(groupInfo.UserIds) == 0 {
+		userToken, _ := ctx.Get("userID")
+		groupInfo.UserIds = append(groupInfo.UserIds, userToken.(int32))
+	}
+
 	group, err := c.service.CreateGroup(groupInfo)
 
 	log.Println(err)
@@ -132,6 +137,8 @@ func (c *GroupsController) CreateGroup(ctx *gin.Context) {
 		Members:      group.Members,
 		Public:       group.Public,
 	}
+
+	log.Println(res)
 
 	ctx.JSON(http.StatusCreated, res)
 }

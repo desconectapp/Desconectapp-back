@@ -115,7 +115,6 @@ func (c *PreferencesController) BatchAddUserPreferences(ctx *gin.Context) {
     }
 
     var req batchRequest
-    log.Println(ctx.Request.Body)
 
     if err := ctx.ShouldBind(&req); err != nil {
         ErrorWithStatus(ctx, "Bad request", http.StatusBadRequest)
