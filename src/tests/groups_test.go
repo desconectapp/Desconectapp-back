@@ -45,7 +45,7 @@ router := router.NewRouter()
 	assert.Equal(t, false, response.HasMore)
 
 	assert.Equal(t, members, int(response.Groups[0].MembersCount))
-	assert.Equal(t, location, *response.Groups[0].Location)
+	assert.Equal(t, location, *response.Groups[0].LocationName)
 	assert.Equal(t, name, *response.Groups[0].Name)
 }
 
@@ -153,10 +153,10 @@ router := router.NewRouter()
 	assert.Equal(t, false, response.HasMore)
 
 	assert.Equal(t, members2, int(response.Groups[1].MembersCount))
-	assert.Equal(t, location2, *response.Groups[1].Location)
+	assert.Equal(t, location2, *response.Groups[1].LocationName)
 	assert.Equal(t, name2, *response.Groups[1].Name)
 	assert.Equal(t, members, int(response.Groups[0].MembersCount))
-	assert.Equal(t, location, *response.Groups[0].Location)
+	assert.Equal(t, location, *response.Groups[0].LocationName)
 	assert.Equal(t, name, *response.Groups[0].Name)
 }
 
@@ -435,7 +435,7 @@ func TestCreatePublic(t *testing.T) {
 	assert.Equal(t, w.Code, http.StatusCreated, "Status code should be 201")
 	assert.Equal(t, body.ActivityID, response.ActivityID)
 	assert.Equal(t, body.Name, *response.Name)
-	assert.Equal(t, body.Location, *response.Location)
+	assert.Equal(t, body.Location, *response.LocationName)
 	assert.Equal(t, body.MembersIds, response.Members)
 	assert.Equal(t, true, *response.Public)
 }

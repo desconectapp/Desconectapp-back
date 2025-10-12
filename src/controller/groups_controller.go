@@ -130,7 +130,7 @@ func (c *GroupsController) CreateGroup(ctx *gin.Context) {
 		ID:           group.ID,
 		Name:         group.Name,
 		Description:  group.Description,
-		Location:     group.Location,
+		LocationName:     group.LocationName,
 		ActivityID:   group.ActivityID,
 		ActivityName: group.ActivityName,
 		ActivityIcon: group.ActivityIcon,

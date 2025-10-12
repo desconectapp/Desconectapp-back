@@ -49,17 +49,18 @@ func (q *Queries) BatchAddUserToGroup(ctx context.Context, arg BatchAddUserToGro
 
 const changeGroupLocation = `-- name: ChangeGroupLocation :exec
 UPDATE groups
-SET location = $2
+SET location = $2, location_name = $3
 WHERE id = $1
 `
 
 type ChangeGroupLocationParams struct {
-	ID       int32   `json:"id"`
-	Location *string `json:"location"`
+	ID           int32   `json:"id"`
+	Location     *string `json:"location"`
+	LocationName *string `json:"location_name"`
 }
 
 func (q *Queries) ChangeGroupLocation(ctx context.Context, arg ChangeGroupLocationParams) error {
-	_, err := q.db.Exec(ctx, changeGroupLocation, arg.ID, arg.Location)
+	_, err := q.db.Exec(ctx, changeGroupLocation, arg.ID, arg.Location, arg.LocationName)
 	return err
 }
 
@@ -97,15 +98,15 @@ func (q *Queries) ChangeGroupPublic(ctx context.Context, arg ChangeGroupPublicPa
 
 const createGroup = `-- name: CreateGroup :one
 WITH inserted_group AS (
-  INSERT INTO groups (name, description, location, activity_id, public, week_timeslots)
-  VALUES ($1, $2, $3, $4, $5, $6)
-  RETURNING id, name, avatar_url, description, location, public, activity_id, week_timeslots, created_at
+  INSERT INTO groups (name, description, location, location_name, activity_id, public, week_timeslots)
+  VALUES ($1, $2, $3, $4, $5, $6, $7)
+  RETURNING id, name, avatar_url, description, location, location_name, public, activity_id, week_timeslots, created_at
 ), inserted_members AS (
   INSERT INTO group_members (user_id, group_id)
   SELECT u.id, g.id
   FROM users u
   CROSS JOIN inserted_group g
-  WHERE u.id = ANY($7::int[])
+  WHERE u.id = ANY($8::int[])
   ON CONFLICT DO NOTHING
   RETURNING user_id, group_id
 )
@@ -113,7 +114,7 @@ SELECT
   g.id,
   g.name,
   g.description,
-  g.location,
+  g.location_name,
   g.activity_id,
   g.created_at,
   g.public,
@@ -128,13 +129,14 @@ SELECT
 FROM inserted_group g
 LEFT JOIN inserted_members m ON g.id = m.group_id
 JOIN activities a ON g.activity_id = a.id
-GROUP BY g.id, g.name, g.description, g.location, g.activity_id, g.created_at, a.name, a.icon, g.public
+GROUP BY g.id, g.name, g.description, g.location_name, g.activity_id, g.created_at, a.name, a.icon, g.public
 `
 
 type CreateGroupParams struct {
 	Name          *string `json:"name"`
 	Description   *string `json:"description"`
 	Location      *string `json:"location"`
+	LocationName  *string `json:"location_name"`
 	ActivityID    int32   `json:"activity_id"`
 	Public        *bool   `json:"public"`
 	WeekTimeslots []int32 `json:"week_timeslots"`
@@ -145,7 +147,7 @@ type CreateGroupRow struct {
 	ID           int32              `json:"id"`
 	Name         *string            `json:"name"`
 	Description  *string            `json:"description"`
-	Location     *string            `json:"location"`
+	LocationName *string            `json:"location_name"`
 	ActivityID   int32              `json:"activity_id"`
 	CreatedAt    pgtype.Timestamptz `json:"created_at"`
 	Public       *bool              `json:"public"`
@@ -159,6 +161,7 @@ func (q *Queries) CreateGroup(ctx context.Context, arg CreateGroupParams) (Creat
 		arg.Name,
 		arg.Description,
 		arg.Location,
+		arg.LocationName,
 		arg.ActivityID,
 		arg.Public,
 		arg.WeekTimeslots,
@@ -169,7 +172,7 @@ func (q *Queries) CreateGroup(ctx context.Context, arg CreateGroupParams) (Creat
 		&i.ID,
 		&i.Name,
 		&i.Description,
-		&i.Location,
+		&i.LocationName,
 		&i.ActivityID,
 		&i.CreatedAt,
 		&i.Public,
@@ -215,7 +218,7 @@ SELECT
   g.created_at,
   a.name AS activity,
   a.icon,
-  g.location,
+  g.location_name,
   g.public,
   g.avatar_url
 FROM groups g
@@ -223,19 +226,19 @@ JOIN activities a ON g.activity_id = a.id
 LEFT JOIN group_members gm ON gm.group_id = g.id
 LEFT JOIN users u ON gm.user_id = u.id
 WHERE g.id = $1
-GROUP BY g.id, g.name, g.description, g.created_at, a.name, a.icon, g.location, g.public
+GROUP BY g.id, g.name, g.description, g.created_at, a.name, a.icon, g.location_name, g.public
 `
 
 type GetGroupRow struct {
-	ID          int32              `json:"id"`
-	Name        *string            `json:"name"`
-	Description *string            `json:"description"`
-	CreatedAt   pgtype.Timestamptz `json:"created_at"`
-	Activity    string             `json:"activity"`
-	Icon        *string            `json:"icon"`
-	Location    *string            `json:"location"`
-	Public      *bool              `json:"public"`
-	AvatarUrl   *string            `json:"avatar_url"`
+	ID           int32              `json:"id"`
+	Name         *string            `json:"name"`
+	Description  *string            `json:"description"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	Activity     string             `json:"activity"`
+	Icon         *string            `json:"icon"`
+	LocationName *string            `json:"location_name"`
+	Public       *bool              `json:"public"`
+	AvatarUrl    *string            `json:"avatar_url"`
 }
 
 func (q *Queries) GetGroup(ctx context.Context, id int32) (GetGroupRow, error) {
@@ -248,7 +251,7 @@ func (q *Queries) GetGroup(ctx context.Context, id int32) (GetGroupRow, error) {
 		&i.CreatedAt,
 		&i.Activity,
 		&i.Icon,
-		&i.Location,
+		&i.LocationName,
 		&i.Public,
 		&i.AvatarUrl,
 	)
@@ -299,7 +302,7 @@ SELECT
     g.id,
     g.name,
     g.description,
-    g.location,
+    g.location_name,
     g.avatar_url,
     g.week_timeslots,
     a.name AS activity_name,
@@ -310,7 +313,7 @@ JOIN activities a ON g.activity_id = a.id
 LEFT JOIN group_members gm ON g.id = gm.group_id
 WHERE g.public = true
   AND ($3::int IS NULL OR g.activity_id = $3::int)
-GROUP BY g.id, g.name, g.description, g.location, g.avatar_url, g.week_timeslots, a.name, a.icon
+GROUP BY g.id, g.name, g.description, g.location_name, g.avatar_url, g.week_timeslots, a.name, a.icon
 LIMIT $1 OFFSET $2
 `
 
@@ -324,7 +327,7 @@ type GetOpenGroupsNoFilterRow struct {
 	ID            int32   `json:"id"`
 	Name          *string `json:"name"`
 	Description   *string `json:"description"`
-	Location      *string `json:"location"`
+	LocationName  *string `json:"location_name"`
 	AvatarUrl     *string `json:"avatar_url"`
 	WeekTimeslots []int32 `json:"week_timeslots"`
 	ActivityName  string  `json:"activity_name"`
@@ -345,7 +348,7 @@ func (q *Queries) GetOpenGroupsNoFilter(ctx context.Context, arg GetOpenGroupsNo
 			&i.ID,
 			&i.Name,
 			&i.Description,
-			&i.Location,
+			&i.LocationName,
 			&i.AvatarUrl,
 			&i.WeekTimeslots,
 			&i.ActivityName,
@@ -367,7 +370,7 @@ SELECT
     g.id,
     g.name,
     g.description,
-    g.location,
+    g.location_name,
     g.avatar_url,
     g.week_timeslots,
     a.name AS activity_name,
@@ -390,7 +393,7 @@ type GetOpenGroupsWithFilterRow struct {
 	ID            int32   `json:"id"`
 	Name          *string `json:"name"`
 	Description   *string `json:"description"`
-	Location      *string `json:"location"`
+	LocationName  *string `json:"location_name"`
 	AvatarUrl     *string `json:"avatar_url"`
 	WeekTimeslots []int32 `json:"week_timeslots"`
 	ActivityName  string  `json:"activity_name"`
@@ -411,7 +414,7 @@ func (q *Queries) GetOpenGroupsWithFilter(ctx context.Context, arg GetOpenGroups
 			&i.ID,
 			&i.Name,
 			&i.Description,
-			&i.Location,
+			&i.LocationName,
 			&i.AvatarUrl,
 			&i.WeekTimeslots,
 			&i.ActivityName,
@@ -529,7 +532,7 @@ const getPreferredGroups = `-- name: GetPreferredGroups :many
 SELECT g.id,
        g.name,
        g.description,
-       g.location,
+       g.location_name,
        g.avatar_url,
        g.public,
        g.activity_id,
@@ -549,7 +552,7 @@ WHERE up.user_id = $1
       WHERE gm2.group_id = g.id
         AND gm2.user_id = $1
   )
-GROUP BY g.id, g.name, g.description, g.location, g.avatar_url, g.public, g.activity_id, g.created_at,
+GROUP BY g.id, g.name, g.description, g.location_name, g.avatar_url, g.public, g.activity_id, g.created_at,
          a.name, a.icon
 ORDER BY member_count ASC, g.created_at DESC
 LIMIT $2 OFFSET $3
@@ -565,7 +568,7 @@ type GetPreferredGroupsRow struct {
 	ID           int32              `json:"id"`
 	Name         *string            `json:"name"`
 	Description  *string            `json:"description"`
-	Location     *string            `json:"location"`
+	LocationName *string            `json:"location_name"`
 	AvatarUrl    *string            `json:"avatar_url"`
 	Public       *bool              `json:"public"`
 	ActivityID   int32              `json:"activity_id"`
@@ -588,7 +591,7 @@ func (q *Queries) GetPreferredGroups(ctx context.Context, arg GetPreferredGroups
 			&i.ID,
 			&i.Name,
 			&i.Description,
-			&i.Location,
+			&i.LocationName,
 			&i.AvatarUrl,
 			&i.Public,
 			&i.ActivityID,
@@ -609,7 +612,7 @@ func (q *Queries) GetPreferredGroups(ctx context.Context, arg GetPreferredGroups
 
 const listGroups = `-- name: ListGroups :many
 WITH selected_groups AS (
-  SELECT id, name, avatar_url, description, location, public, activity_id, week_timeslots, created_at
+  SELECT id, name, avatar_url, description, location, location_name, public, activity_id, week_timeslots, created_at
   FROM groups
   ORDER BY created_at DESC
   LIMIT $1 OFFSET $2
@@ -619,7 +622,7 @@ SELECT
   g.name,
   g.description,
   g.created_at,
-  g.location,
+  g.location_name,
   g.avatar_url,
   a.name AS activity,
   a.icon,
@@ -627,7 +630,7 @@ SELECT
 FROM selected_groups g
 JOIN activities a ON g.activity_id = a.id
 LEFT JOIN group_members gm ON g.id = gm.group_id
-GROUP BY g.id, g.name, g.description, g.created_at, g.location, a.name, a.icon, g.avatar_url
+GROUP BY g.id, g.name, g.description, g.created_at, g.location_name, a.name, a.icon, g.avatar_url
 ORDER BY g.created_at DESC
 `
 
@@ -641,7 +644,7 @@ type ListGroupsRow struct {
 	Name         *string            `json:"name"`
 	Description  *string            `json:"description"`
 	CreatedAt    pgtype.Timestamptz `json:"created_at"`
-	Location     *string            `json:"location"`
+	LocationName *string            `json:"location_name"`
 	AvatarUrl    *string            `json:"avatar_url"`
 	Activity     string             `json:"activity"`
 	Icon         *string            `json:"icon"`
@@ -662,7 +665,7 @@ func (q *Queries) ListGroups(ctx context.Context, arg ListGroupsParams) ([]ListG
 			&i.Name,
 			&i.Description,
 			&i.CreatedAt,
-			&i.Location,
+			&i.LocationName,
 			&i.AvatarUrl,
 			&i.Activity,
 			&i.Icon,
@@ -680,7 +683,7 @@ func (q *Queries) ListGroups(ctx context.Context, arg ListGroupsParams) ([]ListG
 
 const listUserGroups = `-- name: ListUserGroups :many
 WITH user_groups AS (
-  SELECT g.id, g.name, g.avatar_url, g.description, g.location, g.public, g.activity_id, g.week_timeslots, g.created_at
+  SELECT g.id, g.name, g.avatar_url, g.description, g.location, g.location_name, g.public, g.activity_id, g.week_timeslots, g.created_at
   FROM groups g
   JOIN group_members gm ON g.id = gm.group_id
   WHERE gm.user_id = $3
@@ -692,7 +695,7 @@ SELECT
   g.name,
   g.description,
   g.created_at,
-  g.location,
+  g.location_name,
   g.avatar_url,
   a.name AS activity,
   a.icon,
@@ -700,7 +703,7 @@ SELECT
 FROM user_groups g
 JOIN activities a ON g.activity_id = a.id
 LEFT JOIN group_members gm_all ON g.id = gm_all.group_id
-GROUP BY g.id, g.name, g.description, g.created_at, g.location, a.name, a.icon, g.avatar_url
+GROUP BY g.id, g.name, g.description, g.created_at, g.location_name, a.name, a.icon, g.avatar_url
 ORDER BY g.created_at DESC
 `
 
@@ -715,7 +718,7 @@ type ListUserGroupsRow struct {
 	Name         *string            `json:"name"`
 	Description  *string            `json:"description"`
 	CreatedAt    pgtype.Timestamptz `json:"created_at"`
-	Location     *string            `json:"location"`
+	LocationName *string            `json:"location_name"`
 	AvatarUrl    *string            `json:"avatar_url"`
 	Activity     string             `json:"activity"`
 	Icon         *string            `json:"icon"`
@@ -736,7 +739,7 @@ func (q *Queries) ListUserGroups(ctx context.Context, arg ListUserGroupsParams) 
 			&i.Name,
 			&i.Description,
 			&i.CreatedAt,
-			&i.Location,
+			&i.LocationName,
 			&i.AvatarUrl,
 			&i.Activity,
 			&i.Icon,

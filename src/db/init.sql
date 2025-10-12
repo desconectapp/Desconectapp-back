@@ -106,6 +106,7 @@ CREATE TABLE groups (
     avatar_url TEXT,
     description TEXT,
     location TEXT,
+    location_name TEXT,
     public BOOLEAN DEFAULT false,
     activity_id INTEGER NOT NULL REFERENCES activities(id) ON DELETE CASCADE,
     week_timeslots INTEGER[],
@@ -136,7 +137,7 @@ COPY users_preference(user_id, activity_id)
 FROM '/users_preference.csv'
 WITH (FORMAT csv, HEADER true);
 
-COPY groups(name, description, location, public, activity_id)
+COPY groups(name, description, location, location_name, public, activity_id)
 FROM '/groups.csv'
 WITH (FORMAT csv, HEADER true);
 
