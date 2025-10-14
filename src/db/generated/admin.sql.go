@@ -117,7 +117,7 @@ func (q *Queries) AdminCreateActivity(ctx context.Context, arg AdminCreateActivi
 const adminCreateGroup = `-- name: AdminCreateGroup :one
 INSERT INTO groups (name, description, location, activity_id)
 VALUES ($1, $2, $3, $4)
-RETURNING id, name, avatar_url, description, location, public, activity_id, week_timeslots, created_at
+RETURNING id, name, avatar_url, description, location, location_name, public, activity_id, week_timeslots, created_at
 `
 
 type AdminCreateGroupParams struct {
@@ -141,6 +141,7 @@ func (q *Queries) AdminCreateGroup(ctx context.Context, arg AdminCreateGroupPara
 		&i.AvatarUrl,
 		&i.Description,
 		&i.Location,
+		&i.LocationName,
 		&i.Public,
 		&i.ActivityID,
 		&i.WeekTimeslots,
@@ -849,7 +850,7 @@ SET name = $2,
     activity_id = $5,
     week_timeslots = $6
 WHERE id = $1
-RETURNING id, name, avatar_url, description, location, public, activity_id, week_timeslots, created_at
+RETURNING id, name, avatar_url, description, location, location_name, public, activity_id, week_timeslots, created_at
 `
 
 type AdminUpdateGroupParams struct {
@@ -877,6 +878,7 @@ func (q *Queries) AdminUpdateGroup(ctx context.Context, arg AdminUpdateGroupPara
 		&i.AvatarUrl,
 		&i.Description,
 		&i.Location,
+		&i.LocationName,
 		&i.Public,
 		&i.ActivityID,
 		&i.WeekTimeslots,

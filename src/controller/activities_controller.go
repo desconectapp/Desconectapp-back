@@ -189,6 +189,12 @@ func (c *ActivitiesController) GetActivities(ctx *gin.Context) {
 func (c *ActivitiesController) DeleteActivityRequest(ctx *gin.Context) {
 	requestId := ctx.Param("requestId")
 	requestIdInt, err := strconv.Atoi(requestId)
+	if err != nil {
+		ctx.Error(gin.Error{
+			Err:  err,
+			Type: gin.ErrorTypePublic})
+		return
+	}
 	err = c.service.DeleteActivityRequest(requestIdInt)
 	if err != nil {
 		ctx.Error(gin.Error{

@@ -80,7 +80,7 @@ type NewGroup struct {
 	ID          int32              `json:"id"`
 	Name        *string            `json:"name"`
 	Description *string            `json:"description"`
-	Location    *string            `json:"location"`
+	LocationName    *string            `json:"location_name"`
 	ActivityID  int32              `json:"activity_id"`
 	Members     []int32        `json:"members"`
 	ActivityName string             `json:"activity_name"`

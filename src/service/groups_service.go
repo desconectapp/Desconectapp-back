@@ -119,7 +119,7 @@ func addMembers(group repository.GetGroupRow, members []repository.GetGroupMembe
 		Name:        group.Name,
 		Activity:    group.Activity,
 		Description: group.Description,
-		Location:    group.Location,
+		Location:    group.LocationName,
 		Icon:        group.Icon,
 		Members:     members,
 		Public:      *group.Public,
@@ -230,7 +230,7 @@ func (s *GroupsService) GetOpenGroupsNoFilter(filter repository.GetOpenGroupsNoF
 		openGroups = append(openGroups, OpenGroup{
 			ID:            group.ID,
 			Name:          group.Name,
-			Location:      group.Location,
+			Location:      group.LocationName,
 			AvatarUrl:     group.AvatarUrl,
 			WeekTimeslots: group.WeekTimeslots,
 			Description:   group.Description,
@@ -255,7 +255,7 @@ func (s *GroupsService) GetPublicOpenGroupsWithFilter(filter repository.GetOpenG
 		openGroups = append(openGroups, OpenGroup{
 			ID:            group.ID,
 			Name:          group.Name,
-			Location:      group.Location,
+			Location:      group.LocationName,
 			AvatarUrl:     group.AvatarUrl,
 			WeekTimeslots: group.WeekTimeslots,
 			Description:   group.Description,
@@ -304,7 +304,7 @@ func (s *GroupsService) GetUserRecommendations(filter repository.GetPreferredGro
 		openGroups = append(openGroups, OpenGroup{
 			ID:           group.ID,
 			Name:         group.Name,
-			Location:     group.Location,
+			Location:     group.LocationName,
 			AvatarUrl:    group.AvatarUrl,
 			Description:  group.Description,
 			ActivityName: group.ActivityName,

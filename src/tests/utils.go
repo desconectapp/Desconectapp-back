@@ -237,7 +237,7 @@ func NewGroup(t *testing.T, r *gin.Engine, name string, location string, activit
 	assert.Equal(t, w.Code, http.StatusCreated, "Status code should be 201")
 	assert.Equal(t, body.ActivityID, response.ActivityID)
 	assert.Equal(t, body.Name, *response.Name)
-	assert.Equal(t, body.Location, *response.Location)
+	assert.Equal(t, body.Location, *response.LocationName)
 	assert.Equal(t, body.MembersIds, response.Members)
 	assert.Equal(t, false, *response.Public)
 

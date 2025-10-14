@@ -92,6 +92,7 @@ type Group struct {
 	AvatarUrl     *string            `json:"avatar_url"`
 	Description   *string            `json:"description"`
 	Location      *string            `json:"location"`
+	LocationName  *string            `json:"location_name"`
 	Public        *bool              `json:"public"`
 	ActivityID    int32              `json:"activity_id"`
 	WeekTimeslots []int32            `json:"week_timeslots"`

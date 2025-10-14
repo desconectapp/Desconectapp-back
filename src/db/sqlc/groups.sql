@@ -1,7 +1,7 @@
 -- name: CreateGroup :one
 WITH inserted_group AS (
-  INSERT INTO groups (name, description, location, activity_id, public, week_timeslots)
-  VALUES ($1, $2, $3, $4, $5, $6)
+  INSERT INTO groups (name, description, location, location_name, activity_id, public, week_timeslots)
+  VALUES ($1, $2, $3, $4, $5, $6, $7)
   RETURNING *
 ), inserted_members AS (
   INSERT INTO group_members (user_id, group_id)
@@ -16,7 +16,7 @@ SELECT
   g.id,
   g.name,
   g.description,
-  g.location,
+  g.location_name,
   g.activity_id,
   g.created_at,
   g.public,
@@ -31,7 +31,7 @@ SELECT
 FROM inserted_group g
 LEFT JOIN inserted_members m ON g.id = m.group_id
 JOIN activities a ON g.activity_id = a.id
-GROUP BY g.id, g.name, g.description, g.location, g.activity_id, g.created_at, a.name, a.icon, g.public;
+GROUP BY g.id, g.name, g.description, g.location_name, g.activity_id, g.created_at, a.name, a.icon, g.public;
 
 -- name: ListGroups :many
 WITH selected_groups AS (
@@ -45,7 +45,7 @@ SELECT
   g.name,
   g.description,
   g.created_at,
-  g.location,
+  g.location_name,
   g.avatar_url,
   a.name AS activity,
   a.icon,
@@ -53,7 +53,7 @@ SELECT
 FROM selected_groups g
 JOIN activities a ON g.activity_id = a.id
 LEFT JOIN group_members gm ON g.id = gm.group_id
-GROUP BY g.id, g.name, g.description, g.created_at, g.location, a.name, a.icon, g.avatar_url
+GROUP BY g.id, g.name, g.description, g.created_at, g.location_name, a.name, a.icon, g.avatar_url
 ORDER BY g.created_at DESC;
 
 -- name: GetGroup :one
@@ -64,7 +64,7 @@ SELECT
   g.created_at,
   a.name AS activity,
   a.icon,
-  g.location,
+  g.location_name,
   g.public,
   g.avatar_url
 FROM groups g
@@ -72,7 +72,7 @@ JOIN activities a ON g.activity_id = a.id
 LEFT JOIN group_members gm ON gm.group_id = g.id
 LEFT JOIN users u ON gm.user_id = u.id
 WHERE g.id = $1
-GROUP BY g.id, g.name, g.description, g.created_at, a.name, a.icon, g.location, g.public;
+GROUP BY g.id, g.name, g.description, g.created_at, a.name, a.icon, g.location_name, g.public;
 
 -- name: DeleteGroup :one
 DELETE FROM groups
@@ -113,7 +113,7 @@ SELECT
   g.name,
   g.description,
   g.created_at,
-  g.location,
+  g.location_name,
   g.avatar_url,
   a.name AS activity,
   a.icon,
@@ -121,7 +121,7 @@ SELECT
 FROM user_groups g
 JOIN activities a ON g.activity_id = a.id
 LEFT JOIN group_members gm_all ON g.id = gm_all.group_id
-GROUP BY g.id, g.name, g.description, g.created_at, g.location, a.name, a.icon, g.avatar_url
+GROUP BY g.id, g.name, g.description, g.created_at, g.location_name, a.name, a.icon, g.avatar_url
 ORDER BY g.created_at DESC;
 
 -- name: ExitGroup :exec
@@ -145,7 +145,7 @@ WHERE id = $1;
 
 -- name: ChangeGroupLocation :exec
 UPDATE groups
-SET location = $2
+SET location = $2, location_name = $3
 WHERE id = $1;
 
 -- name: UpdateGroupAvatar :exec
@@ -158,7 +158,7 @@ SELECT
     g.id,
     g.name,
     g.description,
-    g.location,
+    g.location_name,
     g.avatar_url,
     g.week_timeslots,
     a.name AS activity_name,
@@ -175,7 +175,7 @@ SELECT
     g.id,
     g.name,
     g.description,
-    g.location,
+    g.location_name,
     g.avatar_url,
     g.week_timeslots,
     a.name AS activity_name,
@@ -186,7 +186,7 @@ JOIN activities a ON g.activity_id = a.id
 LEFT JOIN group_members gm ON g.id = gm.group_id
 WHERE g.public = true
   AND (sqlc.narg('activity_id')::int IS NULL OR g.activity_id = sqlc.narg('activity_id')::int)
-GROUP BY g.id, g.name, g.description, g.location, g.avatar_url, g.week_timeslots, a.name, a.icon
+GROUP BY g.id, g.name, g.description, g.location_name, g.avatar_url, g.week_timeslots, a.name, a.icon
 LIMIT $1 OFFSET $2;
 
 -- name: GetOpenGroupsWithLocation :many
@@ -229,7 +229,7 @@ LIMIT $1 OFFSET $2;
 SELECT g.id,
        g.name,
        g.description,
-       g.location,
+       g.location_name,
        g.avatar_url,
        g.public,
        g.activity_id,
@@ -249,7 +249,7 @@ WHERE up.user_id = $1
       WHERE gm2.group_id = g.id
         AND gm2.user_id = $1
   )
-GROUP BY g.id, g.name, g.description, g.location, g.avatar_url, g.public, g.activity_id, g.created_at,
+GROUP BY g.id, g.name, g.description, g.location_name, g.avatar_url, g.public, g.activity_id, g.created_at,
          a.name, a.icon
 ORDER BY member_count ASC, g.created_at DESC
 LIMIT $2 OFFSET $3;
