@@ -303,6 +303,7 @@ SELECT
     g.name,
     g.description,
     g.location_name,
+    g.location,
     g.avatar_url,
     g.week_timeslots,
     a.name AS activity_name,
@@ -328,6 +329,7 @@ type GetOpenGroupsNoFilterRow struct {
 	Name          *string `json:"name"`
 	Description   *string `json:"description"`
 	LocationName  *string `json:"location_name"`
+	Location      *string `json:"location"`
 	AvatarUrl     *string `json:"avatar_url"`
 	WeekTimeslots []int32 `json:"week_timeslots"`
 	ActivityName  string  `json:"activity_name"`
@@ -349,6 +351,7 @@ func (q *Queries) GetOpenGroupsNoFilter(ctx context.Context, arg GetOpenGroupsNo
 			&i.Name,
 			&i.Description,
 			&i.LocationName,
+			&i.Location,
 			&i.AvatarUrl,
 			&i.WeekTimeslots,
 			&i.ActivityName,
@@ -371,6 +374,7 @@ SELECT
     g.name,
     g.description,
     g.location_name,
+    g.location,
     g.avatar_url,
     g.week_timeslots,
     a.name AS activity_name,
@@ -394,6 +398,7 @@ type GetOpenGroupsWithFilterRow struct {
 	Name          *string `json:"name"`
 	Description   *string `json:"description"`
 	LocationName  *string `json:"location_name"`
+	Location      *string `json:"location"`
 	AvatarUrl     *string `json:"avatar_url"`
 	WeekTimeslots []int32 `json:"week_timeslots"`
 	ActivityName  string  `json:"activity_name"`
@@ -415,6 +420,7 @@ func (q *Queries) GetOpenGroupsWithFilter(ctx context.Context, arg GetOpenGroups
 			&i.Name,
 			&i.Description,
 			&i.LocationName,
+			&i.Location,
 			&i.AvatarUrl,
 			&i.WeekTimeslots,
 			&i.ActivityName,
@@ -534,6 +540,8 @@ SELECT g.id,
        g.description,
        g.location_name,
        g.avatar_url,
+       g.week_timeslots,
+       g.location,
        g.public,
        g.activity_id,
        g.created_at,
@@ -552,7 +560,7 @@ WHERE up.user_id = $1
       WHERE gm2.group_id = g.id
         AND gm2.user_id = $1
   )
-GROUP BY g.id, g.name, g.description, g.location_name, g.avatar_url, g.public, g.activity_id, g.created_at,
+GROUP BY g.id, g.name, g.description, g.location_name, g.avatar_url, g.week_timeslots, g.public, g.activity_id, g.created_at,
          a.name, a.icon
 ORDER BY member_count ASC, g.created_at DESC
 LIMIT $2 OFFSET $3
@@ -565,17 +573,19 @@ type GetPreferredGroupsParams struct {
 }
 
 type GetPreferredGroupsRow struct {
-	ID           int32              `json:"id"`
-	Name         *string            `json:"name"`
-	Description  *string            `json:"description"`
-	LocationName *string            `json:"location_name"`
-	AvatarUrl    *string            `json:"avatar_url"`
-	Public       *bool              `json:"public"`
-	ActivityID   int32              `json:"activity_id"`
-	CreatedAt    pgtype.Timestamptz `json:"created_at"`
-	MemberCount  int64              `json:"member_count"`
-	ActivityName string             `json:"activity_name"`
-	ActivityIcon *string            `json:"activity_icon"`
+	ID            int32              `json:"id"`
+	Name          *string            `json:"name"`
+	Description   *string            `json:"description"`
+	LocationName  *string            `json:"location_name"`
+	AvatarUrl     *string            `json:"avatar_url"`
+	WeekTimeslots []int32            `json:"week_timeslots"`
+	Location      *string            `json:"location"`
+	Public        *bool              `json:"public"`
+	ActivityID    int32              `json:"activity_id"`
+	CreatedAt     pgtype.Timestamptz `json:"created_at"`
+	MemberCount   int64              `json:"member_count"`
+	ActivityName  string             `json:"activity_name"`
+	ActivityIcon  *string            `json:"activity_icon"`
 }
 
 func (q *Queries) GetPreferredGroups(ctx context.Context, arg GetPreferredGroupsParams) ([]GetPreferredGroupsRow, error) {
@@ -593,6 +603,8 @@ func (q *Queries) GetPreferredGroups(ctx context.Context, arg GetPreferredGroups
 			&i.Description,
 			&i.LocationName,
 			&i.AvatarUrl,
+			&i.WeekTimeslots,
+			&i.Location,
 			&i.Public,
 			&i.ActivityID,
 			&i.CreatedAt,

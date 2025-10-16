@@ -159,6 +159,7 @@ SELECT
     g.name,
     g.description,
     g.location_name,
+    g.location,
     g.avatar_url,
     g.week_timeslots,
     a.name AS activity_name,
@@ -176,6 +177,7 @@ SELECT
     g.name,
     g.description,
     g.location_name,
+    g.location,
     g.avatar_url,
     g.week_timeslots,
     a.name AS activity_name,
@@ -231,6 +233,8 @@ SELECT g.id,
        g.description,
        g.location_name,
        g.avatar_url,
+       g.week_timeslots,
+       g.location,
        g.public,
        g.activity_id,
        g.created_at,
@@ -249,7 +253,7 @@ WHERE up.user_id = $1
       WHERE gm2.group_id = g.id
         AND gm2.user_id = $1
   )
-GROUP BY g.id, g.name, g.description, g.location_name, g.avatar_url, g.public, g.activity_id, g.created_at,
+GROUP BY g.id, g.name, g.description, g.location_name, g.avatar_url, g.week_timeslots, g.public, g.activity_id, g.created_at,
          a.name, a.icon
 ORDER BY member_count ASC, g.created_at DESC
 LIMIT $2 OFFSET $3;

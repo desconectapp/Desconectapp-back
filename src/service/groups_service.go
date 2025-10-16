@@ -26,6 +26,7 @@ type OpenGroup struct {
 	Name          *string `json:"name"`
 	Description   *string `json:"description"`
 	Location      *string `json:"location"`
+	Coords        *string `json:"coords"`
 	AvatarUrl     *string `json:"avatar_url"`
 	WeekTimeslots []int32 `json:"week_timeslots"`
 	ActivityName  string  `json:"activity_name"`
@@ -302,15 +303,17 @@ func (s *GroupsService) GetUserRecommendations(filter repository.GetPreferredGro
 
 	for _, group := range groups {
 		openGroups = append(openGroups, OpenGroup{
-			ID:           group.ID,
-			Name:         group.Name,
-			Location:     group.LocationName,
-			AvatarUrl:    group.AvatarUrl,
-			Description:  group.Description,
-			ActivityName: group.ActivityName,
-			MemberCount:  int32(group.MemberCount),
-			Photo:        *group.ActivityIcon,
-			Time:         group.CreatedAt.Time.String(),
+			ID:            group.ID,
+			Name:          group.Name,
+			Location:      group.LocationName,
+			Coords:        group.Location,
+			AvatarUrl:     group.AvatarUrl,
+			WeekTimeslots: group.WeekTimeslots,
+			Description:   group.Description,
+			ActivityName:  group.ActivityName,
+			MemberCount:   int32(group.MemberCount),
+			Photo:         *group.ActivityIcon,
+			Time:          group.CreatedAt.Time.String(),
 		})
 	}
 	return openGroups, err
