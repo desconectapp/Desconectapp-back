@@ -117,10 +117,21 @@ SELECT
   g.avatar_url,
   a.name AS activity,
   a.icon,
-  COUNT(gm_all.user_id) AS members_count
+  COUNT(DISTINCT gm_all.user_id) AS members_count,
+  COALESCE(
+    json_agg(
+      DISTINCT jsonb_build_object(
+        'uuid', u.uuid,
+        'name', p.name
+      )
+    ) FILTER (WHERE u.id IS NOT NULL),
+    '[]'
+  ) AS members
 FROM user_groups g
 JOIN activities a ON g.activity_id = a.id
 LEFT JOIN group_members gm_all ON g.id = gm_all.group_id
+LEFT JOIN users u ON gm_all.user_id = u.id
+LEFT JOIN profiles p ON gm_all.user_id = p.user_id
 GROUP BY g.id, g.name, g.description, g.created_at, g.location_name, a.name, a.icon, g.avatar_url
 ORDER BY g.created_at DESC;
 
