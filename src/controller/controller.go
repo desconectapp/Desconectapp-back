@@ -1,10 +1,13 @@
 package controller
 
 import (
+	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"gin/service"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -19,12 +22,16 @@ const (
 
 type Controller struct {
 	service *service.Service
+	db      *repository.Queries
+	ctx     context.Context
 }
 
 func NewController(conn *pgxpool.Pool) *Controller {
 	service := service.NewService(conn)
 	return &Controller{
 		service: service,
+		db:      repository.New(conn),
+		ctx:     context.Background(),
 	}
 }
 
@@ -185,4 +192,124 @@ func (c *Controller) DeleteUser(ctx *gin.Context) {
 
 	res := UserDeletedResponse{DeletedUserID: id}
 	ctx.JSON(http.StatusOK, res)
+}
+
+// RegisterPushToken registers a push token for a user
+func (c *Controller) RegisterPushToken(ctx *gin.Context) {
+	userID := ctx.GetInt("user_id")
+	if userID == 0 {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	var req PushTokenRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Store or update the push token
+	_, err := c.db.CreatePushToken(c.ctx, repository.CreatePushTokenParams{
+		UserID:   int32(userID),
+		Token:    req.Token,
+		Platform: req.Platform,
+	})
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to register push token"})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, PushTokenResponse{
+		Success: true,
+		Message: "Push token registered successfully",
+	})
+}
+
+// UnregisterPushToken removes a push token
+func (c *Controller) UnregisterPushToken(ctx *gin.Context) {
+	token := ctx.Param("token")
+	if token == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Token is required"})
+		return
+	}
+
+	err := c.db.DeletePushToken(c.ctx, token)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to unregister push token"})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, PushTokenResponse{
+		Success: true,
+		Message: "Push token unregistered successfully",
+	})
+}
+
+// SendPushNotification sends a notification to a specific token
+func (c *Controller) SendPushNotification(token, title, body string, data map[string]interface{}) error {
+	// This is a placeholder - you'll need to implement the actual push notification sending
+	// For now, we'll just log it
+	fmt.Printf("Sending push notification to token %s: %s - %s\n", token, title, body)
+	return nil
+}
+
+// SendPushNotificationToUser sends a notification to all tokens for a user
+func (c *Controller) SendPushNotificationToUser(userID int32, title, body string, data map[string]interface{}) error {
+	tokens, err := c.db.GetPushTokensByUser(c.ctx, userID)
+	if err != nil {
+		return fmt.Errorf("failed to get user push tokens: %w", err)
+	}
+
+	for _, token := range tokens {
+		err := c.SendPushNotification(token.Token, title, body, data)
+		if err != nil {
+			// Log error but continue with other tokens
+			fmt.Printf("Failed to send notification to token %s: %v\n", token.Token, err)
+		}
+	}
+
+	return nil
+}
+
+// SendPushNotificationToGroup sends a notification to all members of a group
+func (c *Controller) SendPushNotificationToGroup(groupID int32, title, body string, data map[string]interface{}) error {
+	tokens, err := c.db.GetPushTokensForGroup(c.ctx, groupID)
+	if err != nil {
+		return fmt.Errorf("failed to get group push tokens: %w", err)
+	}
+
+	for _, token := range tokens {
+		err := c.SendPushNotification(token.Token, title, body, data)
+		if err != nil {
+			// Log error but continue with other tokens
+			fmt.Printf("Failed to send notification to token %s: %v\n", token.Token, err)
+		}
+	}
+
+	return nil
+}
+
+// TestPushNotification sends a test notification to the current user
+func (c *Controller) TestPushNotification(ctx *gin.Context) {
+	userID := ctx.GetInt("user_id")
+	if userID == 0 {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	// Send test notification
+	err := c.SendPushNotificationToUser(int32(userID), "Test Notification", "This is a test push notification from your app!", map[string]interface{}{
+		"type": "test",
+		"timestamp": time.Now().Unix(),
+	})
+	
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to send test notification: " + err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Test notification sent successfully",
+	})
 }

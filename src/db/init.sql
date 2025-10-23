@@ -121,6 +121,18 @@ CREATE TABLE group_members (
     PRIMARY KEY (group_id, user_id)
 );
 
+DROP TABLE IF EXISTS push_tokens;
+
+CREATE TABLE push_tokens (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token TEXT NOT NULL,
+    platform TEXT NOT NULL CHECK (platform IN ('ios', 'android')),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, token)
+);
+
 COPY activities(name, icon, category)
 FROM '/activities.csv'
 WITH (FORMAT csv, HEADER true);

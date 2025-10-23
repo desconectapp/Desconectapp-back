@@ -149,6 +149,14 @@ func (router *Router) SetupRoutes() *gin.Engine {
 		chats.GET("/token", router.chatsController.GetToken)
 	}
 
+	pushTokens := router.r.Group("/push-tokens")
+	pushTokens.Use(router.authController.AuthMiddleware())
+	{
+		pushTokens.POST("", router.controller.RegisterPushToken)
+		pushTokens.DELETE("/:token", router.controller.UnregisterPushToken)
+		pushTokens.POST("/test", router.controller.TestPushNotification)
+	}
+
 	admin := router.r.Group("/admin")
 	admin.Use(router.authController.AdminMiddleware())
 	{

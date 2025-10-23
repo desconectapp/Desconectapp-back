@@ -102,3 +102,13 @@ type Profile struct {
 	Gender           string           `json:"gender"`
 	AvatarUrl        *string          `json:"avatar_url"`
 }
+
+type PushTokenRequest struct {
+	Token    string `json:"token" binding:"required"`
+	Platform string `json:"platform" binding:"required,oneof=ios android"`
+}
+
+type PushTokenResponse struct {
+	Success bool   `json:"success"`
+	Message string `json:"message,omitempty"`
+}
