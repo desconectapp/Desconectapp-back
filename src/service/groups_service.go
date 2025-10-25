@@ -4,7 +4,7 @@ import (
 	"context"
 	repository "gin/db/generated"
 	"log"
-
+	"strings"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -60,6 +60,18 @@ func NewGroupsService(conn *pgxpool.Pool) *GroupsService {
 }
 
 func (s *GroupsService) CreateGroup(groupParams repository.CreateGroupParams) (repository.CreateGroupRow, error) {
+	// Get location name from coordinates
+	parts := strings.Split(*groupParams.Location, ",")
+	// El front las manda como long,lat
+	lat := parts[1]
+	long := parts[0]
+	location, err := getLocationFromCoordinates(lat, long)
+	if err != nil {
+		log.Println("Error getting location from coordinates:", err)
+		return repository.CreateGroupRow{}, err
+	}
+	groupParams.LocationName = &location
+	// Create the group
 	group, err := s.queries.CreateGroup(s.ctx, groupParams)
 	if err != nil {
 		return repository.CreateGroupRow{}, err
