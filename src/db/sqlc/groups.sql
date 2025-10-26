@@ -208,6 +208,7 @@ SELECT
     g.name,
     g.description,
     g.location,
+    g.location_name,
     g.avatar_url,
     g.week_timeslots,
     a.name AS activity_name,

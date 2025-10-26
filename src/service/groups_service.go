@@ -26,6 +26,7 @@ type OpenGroup struct {
 	Name          *string `json:"name"`
 	Description   *string `json:"description"`
 	Location      *string `json:"location"`
+	LocationName  *string `json:"location_name"`
 	Coords        *string `json:"coords"`
 	AvatarUrl     *string `json:"avatar_url"`
 	WeekTimeslots []int32 `json:"week_timeslots"`
@@ -244,6 +245,7 @@ func (s *GroupsService) GetOpenGroupsNoFilter(filter repository.GetOpenGroupsNoF
 			ID:            group.ID,
 			Name:          group.Name,
 			Location:      group.LocationName,
+			LocationName:  group.LocationName,
 			AvatarUrl:     group.AvatarUrl,
 			WeekTimeslots: group.WeekTimeslots,
 			Description:   group.Description,
@@ -269,6 +271,7 @@ func (s *GroupsService) GetPublicOpenGroupsWithFilter(filter repository.GetOpenG
 			ID:            group.ID,
 			Name:          group.Name,
 			Location:      group.LocationName,
+			LocationName:  group.LocationName,
 			AvatarUrl:     group.AvatarUrl,
 			WeekTimeslots: group.WeekTimeslots,
 			Description:   group.Description,
@@ -293,6 +296,7 @@ func (s *GroupsService) GetOpenGroupsWithLocation(filter repository.GetOpenGroup
 			ID:            group.ID,
 			Name:          group.Name,
 			Location:      group.Location,
+			LocationName:  group.LocationName,
 			AvatarUrl:     group.AvatarUrl,
 			WeekTimeslots: group.WeekTimeslots,
 			Description:   group.Description,
@@ -318,6 +322,7 @@ func (s *GroupsService) GetUserRecommendations(filter repository.GetPreferredGro
 			ID:            group.ID,
 			Name:          group.Name,
 			Location:      group.LocationName,
+			LocationName:  group.LocationName,
 			Coords:        group.Location,
 			AvatarUrl:     group.AvatarUrl,
 			WeekTimeslots: group.WeekTimeslots,

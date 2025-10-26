@@ -443,6 +443,7 @@ SELECT
     g.name,
     g.description,
     g.location,
+    g.location_name,
     g.avatar_url,
     g.week_timeslots,
     a.name AS activity_name,
@@ -488,6 +489,7 @@ type GetOpenGroupsWithLocationRow struct {
 	Name          *string `json:"name"`
 	Description   *string `json:"description"`
 	Location      *string `json:"location"`
+	LocationName  *string `json:"location_name"`
 	AvatarUrl     *string `json:"avatar_url"`
 	WeekTimeslots []int32 `json:"week_timeslots"`
 	ActivityName  string  `json:"activity_name"`
@@ -517,6 +519,7 @@ func (q *Queries) GetOpenGroupsWithLocation(ctx context.Context, arg GetOpenGrou
 			&i.Name,
 			&i.Description,
 			&i.Location,
+			&i.LocationName,
 			&i.AvatarUrl,
 			&i.WeekTimeslots,
 			&i.ActivityName,
