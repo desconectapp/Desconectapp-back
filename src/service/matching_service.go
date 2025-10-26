@@ -119,6 +119,12 @@ func (s *MatchingService) createCombinedPartialMatch(request repository.Activity
 		midLon = &lon
 	}
 
+	locationName, err := getLocationFromCoordinates(fmt.Sprintf("%f", *midLat), fmt.Sprintf("%f", *midLon))
+	if err != nil {
+		return err
+	}
+	
+
 	var avgSearchRadius *int32
 	if request.SearchRadius != nil && match.SearchRadius != nil {
 		avg := (*request.SearchRadius + *match.SearchRadius) / 2
@@ -170,6 +176,7 @@ func (s *MatchingService) createCombinedPartialMatch(request repository.Activity
 		MembersCount:        &newMembersCount,
 		Latitude:            midLat,
 		Longitude:           midLon,
+		LocationName:        &locationName,
 		SearchRadius:        avgSearchRadius,
 	})
 	if err != nil {
@@ -283,6 +290,7 @@ func (s *MatchingService) createUnconditionalPartialMatch(request repository.Act
 		MembersCount:        &[]int32{1}[0],
 		Latitude:            request.Latitude,
 		Longitude:           request.Longitude,
+		LocationName:        request.LocationName,
 		SearchRadius:        request.SearchRadius,
 	})
 	if err != nil {

@@ -37,22 +37,25 @@ func (q *Queries) CreateActivity(ctx context.Context, arg CreateActivityParams) 
 const createActivityRequest = `-- name: CreateActivityRequest :one
 INSERT INTO activity_requests (
   user_id, activity_id, description,
+  location_name,
   week_timeslots, participants_needed,
   maximum_participants, latitude, longitude,
   search_radius
 ) VALUES (
   $1, $2, $3,
-  $4, $5,
-  $6, $7, $8,
-  $9
+  $4,
+  $5, $6,
+  $7, $8, $9,
+  $10
 )
-RETURNING id, user_id, activity_id, description, week_timeslots, participants_needed, maximum_participants, latitude, longitude, search_radius, created_at, expires_at
+RETURNING id, user_id, activity_id, description, location_name, week_timeslots, participants_needed, maximum_participants, latitude, longitude, search_radius, created_at, expires_at
 `
 
 type CreateActivityRequestParams struct {
 	UserID              *int32   `json:"user_id"`
 	ActivityID          *int32   `json:"activity_id"`
 	Description         *string  `json:"description"`
+	LocationName        *string  `json:"location_name"`
 	WeekTimeslots       []int32  `json:"week_timeslots"`
 	ParticipantsNeeded  *int32   `json:"participants_needed"`
 	MaximumParticipants *int32   `json:"maximum_participants"`
@@ -66,6 +69,7 @@ func (q *Queries) CreateActivityRequest(ctx context.Context, arg CreateActivityR
 		arg.UserID,
 		arg.ActivityID,
 		arg.Description,
+		arg.LocationName,
 		arg.WeekTimeslots,
 		arg.ParticipantsNeeded,
 		arg.MaximumParticipants,
@@ -79,6 +83,7 @@ func (q *Queries) CreateActivityRequest(ctx context.Context, arg CreateActivityR
 		&i.UserID,
 		&i.ActivityID,
 		&i.Description,
+		&i.LocationName,
 		&i.WeekTimeslots,
 		&i.ParticipantsNeeded,
 		&i.MaximumParticipants,
@@ -177,7 +182,7 @@ func (q *Queries) GetActivityByName(ctx context.Context, name string) (Activity,
 }
 
 const getActivityRequestByUserAndActivityID = `-- name: GetActivityRequestByUserAndActivityID :one
-SELECT id, user_id, activity_id, description, week_timeslots, participants_needed, maximum_participants, latitude, longitude, search_radius, created_at, expires_at FROM activity_requests
+SELECT id, user_id, activity_id, description, location_name, week_timeslots, participants_needed, maximum_participants, latitude, longitude, search_radius, created_at, expires_at FROM activity_requests
 WHERE user_id = $1 AND activity_id = $2
 `
 
@@ -194,6 +199,7 @@ func (q *Queries) GetActivityRequestByUserAndActivityID(ctx context.Context, arg
 		&i.UserID,
 		&i.ActivityID,
 		&i.Description,
+		&i.LocationName,
 		&i.WeekTimeslots,
 		&i.ParticipantsNeeded,
 		&i.MaximumParticipants,
@@ -207,7 +213,7 @@ func (q *Queries) GetActivityRequestByUserAndActivityID(ctx context.Context, arg
 }
 
 const listActivityRequests = `-- name: ListActivityRequests :many
-SELECT id, user_id, activity_id, description, week_timeslots, participants_needed, maximum_participants, latitude, longitude, search_radius, created_at, expires_at FROM activity_requests
+SELECT id, user_id, activity_id, description, location_name, week_timeslots, participants_needed, maximum_participants, latitude, longitude, search_radius, created_at, expires_at FROM activity_requests
 WHERE ($3::int IS NULL OR user_id = $3)
 ORDER BY created_at DESC
 LIMIT $1 OFFSET $2
@@ -233,6 +239,7 @@ func (q *Queries) ListActivityRequests(ctx context.Context, arg ListActivityRequ
 			&i.UserID,
 			&i.ActivityID,
 			&i.Description,
+			&i.LocationName,
 			&i.WeekTimeslots,
 			&i.ParticipantsNeeded,
 			&i.MaximumParticipants,

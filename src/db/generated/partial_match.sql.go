@@ -51,15 +51,15 @@ const createPartialMatch = `-- name: CreatePartialMatch :one
 INSERT INTO partial_matches (
   activity_id, description, week_timeslots,
   participants_needed, maximum_participants,
-  latitude, longitude, members_count,
+  latitude, longitude, location_name, members_count,
   search_radius
 ) VALUES (
   $1, $2, $3,
   $4, $5,
-  $6, $7, $8,
-  $9
+  $6, $7, $8, $9,
+  $10
 )
-RETURNING id, activity_id, description, week_timeslots, participants_needed, maximum_participants, latitude, longitude, search_radius, members_count, created_at, expires_at
+RETURNING id, activity_id, description, week_timeslots, participants_needed, maximum_participants, latitude, longitude, location_name, search_radius, members_count, created_at, expires_at
 `
 
 type CreatePartialMatchParams struct {
@@ -70,6 +70,7 @@ type CreatePartialMatchParams struct {
 	MaximumParticipants *int32   `json:"maximum_participants"`
 	Latitude            *float64 `json:"latitude"`
 	Longitude           *float64 `json:"longitude"`
+	LocationName        *string  `json:"location_name"`
 	MembersCount        *int32   `json:"members_count"`
 	SearchRadius        *int32   `json:"search_radius"`
 }
@@ -83,6 +84,7 @@ func (q *Queries) CreatePartialMatch(ctx context.Context, arg CreatePartialMatch
 		arg.MaximumParticipants,
 		arg.Latitude,
 		arg.Longitude,
+		arg.LocationName,
 		arg.MembersCount,
 		arg.SearchRadius,
 	)
@@ -96,6 +98,7 @@ func (q *Queries) CreatePartialMatch(ctx context.Context, arg CreatePartialMatch
 		&i.MaximumParticipants,
 		&i.Latitude,
 		&i.Longitude,
+		&i.LocationName,
 		&i.SearchRadius,
 		&i.MembersCount,
 		&i.CreatedAt,
@@ -137,7 +140,7 @@ func (q *Queries) DeletePartialMatchesByUserAndActivityID(ctx context.Context, a
 }
 
 const findPartialMatches = `-- name: FindPartialMatches :many
-SELECT id, activity_id, description, week_timeslots, participants_needed, maximum_participants, latitude, longitude, search_radius, members_count, created_at, expires_at FROM partial_matches
+SELECT id, activity_id, description, week_timeslots, participants_needed, maximum_participants, latitude, longitude, location_name, search_radius, members_count, created_at, expires_at FROM partial_matches
 WHERE activity_id = $1
 ORDER BY created_at DESC
 `
@@ -160,6 +163,7 @@ func (q *Queries) FindPartialMatches(ctx context.Context, activityID *int32) ([]
 			&i.MaximumParticipants,
 			&i.Latitude,
 			&i.Longitude,
+			&i.LocationName,
 			&i.SearchRadius,
 			&i.MembersCount,
 			&i.CreatedAt,
@@ -208,7 +212,7 @@ func (q *Queries) GetPartialMatchMembers(ctx context.Context, partialMatchID int
 }
 
 const getPartialMatchesByActivity = `-- name: GetPartialMatchesByActivity :many
-SELECT pm.id, pm.activity_id, pm.description, pm.week_timeslots, pm.participants_needed, pm.maximum_participants, pm.latitude, pm.longitude, pm.search_radius, pm.members_count, pm.created_at, pm.expires_at, COUNT(pmm.user_id) as current_members
+SELECT pm.id, pm.activity_id, pm.description, pm.week_timeslots, pm.participants_needed, pm.maximum_participants, pm.latitude, pm.longitude, pm.location_name, pm.search_radius, pm.members_count, pm.created_at, pm.expires_at, COUNT(pmm.user_id) as current_members
 FROM partial_matches pm
 LEFT JOIN partial_match_members pmm ON pm.id = pmm.partial_match_id
 WHERE ($1::int IS NULL OR pm.activity_id = $1)
@@ -232,6 +236,7 @@ type GetPartialMatchesByActivityRow struct {
 	MaximumParticipants *int32           `json:"maximum_participants"`
 	Latitude            *float64         `json:"latitude"`
 	Longitude           *float64         `json:"longitude"`
+	LocationName        *string          `json:"location_name"`
 	SearchRadius        *int32           `json:"search_radius"`
 	MembersCount        *int32           `json:"members_count"`
 	CreatedAt           pgtype.Timestamp `json:"created_at"`
@@ -257,6 +262,7 @@ func (q *Queries) GetPartialMatchesByActivity(ctx context.Context, arg GetPartia
 			&i.MaximumParticipants,
 			&i.Latitude,
 			&i.Longitude,
+			&i.LocationName,
 			&i.SearchRadius,
 			&i.MembersCount,
 			&i.CreatedAt,

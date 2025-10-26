@@ -79,6 +79,12 @@ func (s *ActivitiesRequestService) CreateActivityRequest(params repository.Creat
 	formattedDescription := fmt.Sprintf("%s %s", *activity.Icon, activity.Name)
 	params.Description = &formattedDescription
 
+	locationName, err := getLocationFromCoordinates(fmt.Sprintf("%f", *params.Latitude), fmt.Sprintf("%f", *params.Longitude))
+	if err != nil {
+		return repository.ActivityRequest{}, err
+	}
+	params.LocationName = &locationName
+
 	// Armamos la ActivityRequest
 	activityReq, err := s.queries.CreateActivityRequest(s.ctx, params)
 	if err != nil {

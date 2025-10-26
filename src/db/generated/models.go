@@ -71,6 +71,7 @@ type ActivityRequest struct {
 	UserID              *int32           `json:"user_id"`
 	ActivityID          *int32           `json:"activity_id"`
 	Description         *string          `json:"description"`
+	LocationName        *string          `json:"location_name"`
 	WeekTimeslots       []int32          `json:"week_timeslots"`
 	ParticipantsNeeded  *int32           `json:"participants_needed"`
 	MaximumParticipants *int32           `json:"maximum_participants"`
@@ -113,6 +114,7 @@ type PartialMatch struct {
 	MaximumParticipants *int32           `json:"maximum_participants"`
 	Latitude            *float64         `json:"latitude"`
 	Longitude           *float64         `json:"longitude"`
+	LocationName        *string          `json:"location_name"`
 	SearchRadius        *int32           `json:"search_radius"`
 	MembersCount        *int32           `json:"members_count"`
 	CreatedAt           pgtype.Timestamp `json:"created_at"`
