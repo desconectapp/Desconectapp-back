@@ -8,6 +8,7 @@ sql:
       - "./db/sqlc/activities.sql"
       - "./db/sqlc/partial_match.sql"
       - "./db/sqlc/admin.sql"
+      - "./db/sqlc/communities.sql"
     schema: "./db/init.sql"
     gen:
       go:

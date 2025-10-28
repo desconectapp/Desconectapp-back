@@ -76,50 +76,75 @@ CREATE TABLE activity_requests (
 DROP TABLE IF EXISTS partial_matches;
 
 CREATE TABLE partial_matches (
-    id SERIAL PRIMARY KEY,
-    activity_id INTEGER REFERENCES activities(id) ON DELETE CASCADE,
-    description TEXT,
-    week_timeslots INTEGER[],
-    participants_needed INTEGER DEFAULT 3,
-    maximum_participants INTEGER DEFAULT 10,
-    latitude DOUBLE PRECISION,
-    longitude DOUBLE PRECISION,
-    search_radius INTEGER DEFAULT 10,
-    members_count INTEGER DEFAULT 0,
-    created_at TIMESTAMP DEFAULT NOW(),
-    expires_at TIMESTAMP DEFAULT (NOW() + INTERVAL '7 days')
+  id SERIAL PRIMARY KEY,
+  activity_id INTEGER REFERENCES activities(id) ON DELETE CASCADE,
+  description TEXT,
+  week_timeslots INTEGER[],
+  participants_needed INTEGER DEFAULT 3,
+  maximum_participants INTEGER DEFAULT 10,
+  latitude DOUBLE PRECISION,
+  longitude DOUBLE PRECISION,
+  search_radius INTEGER DEFAULT 10,
+  members_count INTEGER DEFAULT 0,
+  created_at TIMESTAMP DEFAULT NOW(),
+  expires_at TIMESTAMP DEFAULT (NOW() + INTERVAL '7 days')
 );
 
 DROP TABLE IF EXISTS partial_match_members;
 
 CREATE TABLE partial_match_members (
-    partial_match_id INTEGER REFERENCES partial_matches(id) ON DELETE CASCADE,
-    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    PRIMARY KEY (partial_match_id, user_id)
+  partial_match_id INTEGER REFERENCES partial_matches(id) ON DELETE CASCADE,
+  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  PRIMARY KEY (partial_match_id, user_id)
 );
 
 DROP TABLE IF EXISTS groups;
 
 CREATE TABLE groups (
-    id SERIAL PRIMARY KEY,
-    name TEXT,
-    avatar_url TEXT,
-    description TEXT,
-    location TEXT,
-    location_name TEXT,
-    public BOOLEAN DEFAULT false,
-    activity_id INTEGER NOT NULL REFERENCES activities(id) ON DELETE CASCADE,
-    week_timeslots INTEGER[],
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+  id SERIAL PRIMARY KEY,
+  name TEXT,
+  avatar_url TEXT,
+  description TEXT,
+  location TEXT,
+  location_name TEXT,
+  public BOOLEAN DEFAULT false,
+  activity_id INTEGER NOT NULL REFERENCES activities(id) ON DELETE CASCADE,
+  week_timeslots INTEGER[],
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 DROP TABLE IF EXISTS group_members;
 
 CREATE TABLE group_members (
-    group_id INTEGER NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    PRIMARY KEY (group_id, user_id)
+  group_id INTEGER NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  PRIMARY KEY (group_id, user_id)
 );
+
+
+DROP TABLE IF EXISTS communities;
+
+CREATE TABLE communities (
+  id SERIAL PRIMARY KEY,
+  activity_id INTEGER NOT NULL REFERENCES activities(id) ON DELETE CASCADE,
+  name TEXT,
+  avatar_url TEXT,
+  description TEXT,
+  location TEXT,
+  location_name TEXT,
+  week_timeslots INTEGER[],
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+DROP TABLE IF EXISTS communities_members;
+
+CREATE TABLE communities_members (
+  community_id INTEGER NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  is_admin BOOLEAN DEFAULT false,
+  PRIMARY KEY (community_id, user_id)
+);
+
 
 COPY activities(name, icon, category)
 FROM '/activities.csv'
