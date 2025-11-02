@@ -616,17 +616,7 @@ SELECT
   c.created_at,
   a.name AS activity,
   a.icon,
-  COUNT(DISTINCT cm_all.user_id) AS members_count,
-  COALESCE(
-    json_agg(
-      DISTINCT jsonb_build_object(
-        'uuid', u.uuid,
-        'name', p.name,
-        'is_admin', cm_all.is_admin
-      )
-    ) FILTER (WHERE u.id IS NOT NULL),
-    '[]'
-  ) AS members
+  COUNT(DISTINCT cm_all.user_id) AS members_count
 FROM user_communities c
 JOIN activities a ON c.activity_id = a.id
 LEFT JOIN communities_members cm_all ON c.id = cm_all.community_id
@@ -654,7 +644,6 @@ type ListUserCommunitiesRow struct {
 	Activity      string             `json:"activity"`
 	Icon          *string            `json:"icon"`
 	MembersCount  int64              `json:"members_count"`
-	Members       interface{}        `json:"members"`
 }
 
 func (q *Queries) ListUserCommunities(ctx context.Context, arg ListUserCommunitiesParams) ([]ListUserCommunitiesRow, error) {
@@ -678,7 +667,6 @@ func (q *Queries) ListUserCommunities(ctx context.Context, arg ListUserCommuniti
 			&i.Activity,
 			&i.Icon,
 			&i.MembersCount,
-			&i.Members,
 		); err != nil {
 			return nil, err
 		}

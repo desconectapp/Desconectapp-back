@@ -30,6 +30,8 @@ services:
       - ./src/db/files/profiles.csv:/profiles.csv
       - ./src/db/files/groups.csv:/groups.csv
       - ./src/db/files/group_members.csv:/group_members.csv
+      - ./src/db/files/communities.csv:/communities.csv
+      - ./src/db/files/communities_members.csv:/communities_members.csv
 
   pgadmin:
     image: dpage/pgadmin4:7.5

@@ -49,17 +49,14 @@ func NewCommunitiesService(conn *pgxpool.Pool) *CommunitiesService {
 	}
 }
 
-// CreateCommunity wraps the sqlc CreateCommunity query
 func (s *CommunitiesService) CreateCommunity(params repository.CreateCommunityParams) (repository.CreateCommunityRow, error) {
 	return s.queries.CreateCommunity(s.ctx, params)
 }
 
-// ListUserCommunities returns communities the user belongs to
 func (s *CommunitiesService) ListUserCommunities(params repository.ListUserCommunitiesParams) ([]repository.ListUserCommunitiesRow, error) {
 	return s.queries.ListUserCommunities(s.ctx, params)
 }
 
-// GetCommunity returns a single community with members
 func (s *CommunitiesService) GetCommunity(communityID int32) (CommunityWithMembers, error) {
 	var community CommunityWithMembers
 
@@ -113,17 +110,14 @@ func (s *CommunitiesService) UpdateCommunityAvatar(params repository.UpdateCommu
 	return s.queries.UpdateCommunityAvatar(s.ctx, params)
 }
 
-// AddUserToCommunity adds a user
 func (s *CommunitiesService) AddUserToCommunity(params repository.AddUserToCommunityParams) error {
 	return s.queries.AddUserToCommunity(s.ctx, params)
 }
 
-// ExitCommunity removes a user
 func (s *CommunitiesService) ExitCommunity(params repository.ExitCommunityParams) error {
 	return s.queries.ExitCommunity(s.ctx, params)
 }
 
-// GetCommunitiesWithLocation for filtering by distance and activity
 func (s *CommunitiesService) GetCommunitiesWithLocation(params repository.GetCommunitiesWithLocationParams) ([]CommunityWithLocation, error) {
 	rows, err := s.queries.GetCommunitiesWithLocation(s.ctx, params)
 	if err != nil {

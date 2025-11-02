@@ -25,6 +25,7 @@ type Router struct {
 	adminActivityController *controller.AdminActivityController
 	adminGroupController    *controller.AdminGroupController
 	chatsController         *controller.ChatsController
+	communitiesController	*controller.CommunitiesController
 	r                       *gin.Engine
 }
 
@@ -47,6 +48,9 @@ func NewRouter() *Router {
 	preferencesController := controller.NewPreferencesController(conn)
 
 	groupsController := controller.NewGroupsController(conn)
+
+	communitiesController := controller.NewCommunitiesController(conn)
+
 	adminUserController := controller.NewAdminUserController(conn)
 	adminActivityController := controller.NewAdminActivityController(conn)
 	adminGroupController := controller.NewAdminGroupController(conn)
@@ -74,6 +78,7 @@ func NewRouter() *Router {
 		adminUserController:     adminUserController,
 		adminActivityController: adminActivityController,
 		adminGroupController:    adminGroupController,
+		communitiesController:	communitiesController,
 		r:                       r,
 	}
 }
@@ -143,6 +148,23 @@ func (router *Router) SetupRoutes() *gin.Engine {
 		groups.GET("/open", router.groupsController.GetOpenGroups)
 		groups.GET("/recs", router.groupsController.GetUserRecommendations)
 	}
+
+	community := router.r.Group("/community")
+	community.Use(router.authController.AuthMiddleware())
+	{
+		community.GET("/:communityId", router.communitiesController.GetCommunity)
+		community.GET("/user", router.communitiesController.ListUserCommunities)
+		community.POST("", router.communitiesController.CreateCommunity)
+		community.DELETE("/:communityId", router.communitiesController.DeleteCommunity)
+		community.DELETE("/user-from-group/:communityId", router.communitiesController.ExitCommunity)
+		community.PUT("description/:communityId", router.communitiesController.UpdateCommunityDescription)
+		community.PUT("name/:communityId", router.communitiesController.UpdateCommunityName)
+		community.PUT("location/:communityId", router.communitiesController.UpdateCommunityLocation)
+		community.PUT("avatar/:communityId", router.communitiesController.UpdateCommunityAvatar)
+		community.PUT("add-user/:communityId", router.communitiesController.JoinCommunity)
+		community.GET("/open", router.communitiesController.GetCommunitiesWithLocation)
+	}
+
 	chats := router.r.Group("/chats")
 	chats.Use(router.authController.AuthMiddleware())
 	{

@@ -32,6 +32,7 @@ func (c *CommunitiesController) CreateCommunity(ctx *gin.Context) {
 	userToken, _ := ctx.Get("userID")
 	if len(communityInfo.UserIds) == 0 {
 		communityInfo.UserIds = append(communityInfo.UserIds, userToken.(int32))
+		communityInfo.AdminUserIds = append(communityInfo.AdminUserIds, userToken.(int32))
 	}
 
 	community, err := c.service.CreateCommunity(communityInfo)
