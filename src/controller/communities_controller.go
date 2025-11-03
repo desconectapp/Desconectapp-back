@@ -3,6 +3,7 @@ package controller
 import (
 	repository "gin/db/generated"
 	"gin/service"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -41,6 +42,8 @@ func (c *CommunitiesController) CreateCommunity(ctx *gin.Context) {
 		return
 	}
 
+	log.Println(community)
+
 	ctx.JSON(http.StatusCreated, community)
 }
 
@@ -65,6 +68,8 @@ func (c *CommunitiesController) ListUserCommunities(ctx *gin.Context) {
 		communities = communities[:len(communities)-1]
 	}
 
+	log.Println(communities)
+
 	ctx.JSON(http.StatusOK, gin.H{
 		"communities": communities,
 		"has_more":    hasMore,
@@ -72,14 +77,19 @@ func (c *CommunitiesController) ListUserCommunities(ctx *gin.Context) {
 }
 
 func (c *CommunitiesController) GetCommunity(ctx *gin.Context) {
+	var params repository.GetCommunityParams
+
 	idStr := ctx.Param("communityId")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		ErrorNoStatus(ctx, err)
 		return
 	}
+	params.ID = int32(id)
+	userToken, _ := ctx.Get("userID")
+	params.UserID = userToken.(int32)
 
-	community, err := c.service.GetCommunity(int32(id))
+	community, err := c.service.GetCommunity(params)
 	if err != nil {
 		ErrorNoStatus(ctx, err)
 		return

@@ -81,18 +81,15 @@ SELECT
   c.created_at,
   a.name AS activity,
   a.icon,
-  CAST(
-    COALESCE(
-      json_agg(
-        DISTINCT jsonb_build_object(
-          'user_id', u.id,
-          'uuid', u.uuid,
-          'is_admin', cm.is_admin
-        )
-      ) FILTER (WHERE u.id IS NOT NULL),
-      '[]'
-    ) AS json
-  ) AS members
+  COALESCE(
+    (
+      SELECT cm_admin.is_admin
+      FROM communities_members cm_admin
+      WHERE cm_admin.community_id = c.id
+      AND cm_admin.user_id = $2
+    ),
+    FALSE
+  )::boolean AS is_current_user_admin
 FROM communities c
 JOIN activities a ON c.activity_id = a.id
 LEFT JOIN communities_members cm ON cm.community_id = c.id

@@ -341,18 +341,15 @@ SELECT
   c.created_at,
   a.name AS activity,
   a.icon,
-  CAST(
-    COALESCE(
-      json_agg(
-        DISTINCT jsonb_build_object(
-          'user_id', u.id,
-          'uuid', u.uuid,
-          'is_admin', cm.is_admin
-        )
-      ) FILTER (WHERE u.id IS NOT NULL),
-      '[]'
-    ) AS json
-  ) AS members
+  COALESCE(
+    (
+      SELECT cm_admin.is_admin
+      FROM communities_members cm_admin
+      WHERE cm_admin.community_id = c.id
+      AND cm_admin.user_id = $2
+    ),
+    FALSE
+  )::boolean AS is_current_user_admin
 FROM communities c
 JOIN activities a ON c.activity_id = a.id
 LEFT JOIN communities_members cm ON cm.community_id = c.id
@@ -361,22 +358,27 @@ WHERE c.id = $1
 GROUP BY c.id, c.name, c.avatar_url, c.location_name, c.location, c.description, c.week_timeslots, c.created_at, a.name, a.icon
 `
 
-type GetCommunityRow struct {
-	ID            int32              `json:"id"`
-	Name          *string            `json:"name"`
-	AvatarUrl     *string            `json:"avatar_url"`
-	LocationName  *string            `json:"location_name"`
-	Location      *string            `json:"location"`
-	WeekTimeslots []int32            `json:"week_timeslots"`
-	Description   *string            `json:"description"`
-	CreatedAt     pgtype.Timestamptz `json:"created_at"`
-	Activity      string             `json:"activity"`
-	Icon          *string            `json:"icon"`
-	Members       []byte             `json:"members"`
+type GetCommunityParams struct {
+	ID     int32 `json:"id"`
+	UserID int32 `json:"user_id"`
 }
 
-func (q *Queries) GetCommunity(ctx context.Context, id int32) (GetCommunityRow, error) {
-	row := q.db.QueryRow(ctx, getCommunity, id)
+type GetCommunityRow struct {
+	ID                 int32              `json:"id"`
+	Name               *string            `json:"name"`
+	AvatarUrl          *string            `json:"avatar_url"`
+	LocationName       *string            `json:"location_name"`
+	Location           *string            `json:"location"`
+	WeekTimeslots      []int32            `json:"week_timeslots"`
+	Description        *string            `json:"description"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+	Activity           string             `json:"activity"`
+	Icon               *string            `json:"icon"`
+	IsCurrentUserAdmin bool               `json:"is_current_user_admin"`
+}
+
+func (q *Queries) GetCommunity(ctx context.Context, arg GetCommunityParams) (GetCommunityRow, error) {
+	row := q.db.QueryRow(ctx, getCommunity, arg.ID, arg.UserID)
 	var i GetCommunityRow
 	err := row.Scan(
 		&i.ID,
@@ -389,7 +391,7 @@ func (q *Queries) GetCommunity(ctx context.Context, id int32) (GetCommunityRow, 
 		&i.CreatedAt,
 		&i.Activity,
 		&i.Icon,
-		&i.Members,
+		&i.IsCurrentUserAdmin,
 	)
 	return i, err
 }
