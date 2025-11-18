@@ -145,13 +145,15 @@ func (s *AdminGroupService) CreateGroup(name string, description *string, locati
 	}, nil
 }
 
-func (s *AdminGroupService) UpdateGroup(id int32, name string, description *string, location *string, activityID int32) (*repository.Group, error) {
+func (s *AdminGroupService) UpdateGroup(id int32, name *string, description *string, location *string, public *bool, avatarUrl *string, activityID *int32) (*repository.Group, error) {
 	r, err := s.queries.AdminUpdateGroup(s.ctx, repository.AdminUpdateGroupParams{
 		ID:          id,
-		Name:        &name,
+		Name:        name,
 		Description: description,
 		Location:    location,
 		ActivityID:  activityID,
+		Public:      public,
+		AvatarUrl:   avatarUrl,
 	})
 
 	if err != nil {

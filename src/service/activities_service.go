@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	repository "gin/db/generated"
+	"log"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -80,6 +81,7 @@ func (s *ActivitiesRequestService) CreateActivityRequest(params repository.Creat
 	params.Description = &formattedDescription
 
 	locationName, err := getLocationFromCoordinates(fmt.Sprintf("%f", *params.Latitude), fmt.Sprintf("%f", *params.Longitude))
+	log.Printf("Location name: %s", locationName)
 	if err != nil {
 		return repository.ActivityRequest{}, err
 	}

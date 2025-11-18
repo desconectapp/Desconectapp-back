@@ -5,6 +5,7 @@ import (
 	"fmt"
 	repository "gin/db/generated"
 	"io"
+	"log"
 	"os"
 	"strings"
 	"time"
@@ -117,12 +118,17 @@ func getLocationFromCoordinates(lat string, long string) (string, error) {
 	}
 	defer resp.Body.Close()
 
-	fmt.Printf("res code:", resp.StatusCode)
+	if resp.StatusCode == 429 {
+		time.Sleep(2 * time.Second)
+		return getLocationFromCoordinates(lat, long)
+	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", err
 	}
+	
+	log.Print("Response body:", string(body))
 
 	var result map[string]interface{}
 	err = json.Unmarshal(body, &result)

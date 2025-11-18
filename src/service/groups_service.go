@@ -217,6 +217,7 @@ func (s *GroupsService) GetOpenGroups(filter ActivityFilter) ([]OpenGroup, error
 			},
 		)
 	} else {
+		log.Println("Fetching open groups with activity filter:", filter.ActivityId)
 		openGroups, err = s.GetPublicOpenGroupsWithFilter(
 			repository.GetOpenGroupsWithFilterParams{
 				Limit:      filter.Limit,

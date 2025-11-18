@@ -84,17 +84,19 @@ func (c *AdminGroupController) CreateGroup(ctx *gin.Context) {
 func (c *AdminGroupController) UpdateGroup(ctx *gin.Context) {
 	id, _ := strconv.Atoi(ctx.Param("id"))
 	var req struct {
-		Name        string  `json:"name"`
+		Name        *string `json:"name"`
 		Description *string `json:"description"`
 		Location    *string `json:"location"`
 		ActivityID  *int32  `json:"activity_id"`
+		Public      *bool   `json:"public"`
+		AvatarUrl   *string `json:"avatar_url"`
 	}
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	group, err := c.service.UpdateGroup(int32(id), req.Name, req.Description, req.Location, *req.ActivityID)
+	group, err := c.service.UpdateGroup(int32(id), req.Name, req.Description, req.Location, req.Public, req.AvatarUrl, req.ActivityID)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
