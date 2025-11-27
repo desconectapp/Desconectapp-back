@@ -3,9 +3,9 @@ package service
 import (
 	"context"
 	repository "gin/db/generated"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"log"
 	"strings"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type GroupWithMembers struct {
@@ -253,6 +253,7 @@ func (s *GroupsService) GetOpenGroupsNoFilter(filter repository.GetOpenGroupsNoF
 			ActivityName:  group.ActivityName,
 			MemberCount:   int32(group.MemberCount),
 			Photo:         *group.Icon,
+			Time:          group.CreatedAt.Time.String(),
 		})
 	}
 	return openGroups, err
@@ -279,6 +280,7 @@ func (s *GroupsService) GetPublicOpenGroupsWithFilter(filter repository.GetOpenG
 			ActivityName:  group.ActivityName,
 			MemberCount:   int32(group.MemberCount),
 			Photo:         *group.Icon,
+			Time:          group.CreatedAt.Time.String(),
 		})
 	}
 	return openGroups, err
@@ -304,6 +306,7 @@ func (s *GroupsService) GetOpenGroupsWithLocation(filter repository.GetOpenGroup
 			ActivityName:  group.ActivityName,
 			MemberCount:   int32(group.MemberCount),
 			Photo:         *group.Icon,
+			Time:          group.CreatedAt.Time.String(),
 		})
 	}
 	return openGroups, err

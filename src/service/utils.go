@@ -127,7 +127,7 @@ func getLocationFromCoordinates(lat string, long string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	
+
 	log.Print("Response body:", string(body))
 
 	var result map[string]interface{}
@@ -141,7 +141,6 @@ func getLocationFromCoordinates(lat string, long string) (string, error) {
 	if a, ok := result["address"].(map[string]interface{}); ok {
 		addressMap = a
 	}
-
 
 	fieldsPriority := []string{
 		"town",
@@ -159,7 +158,7 @@ func getLocationFromCoordinates(lat string, long string) (string, error) {
 			}
 		}
 	}
-	
+
 	// fallback: display_name or formatted string fields
 	if v, ok := result["display_name"].(string); ok && strings.TrimSpace(v) != "" {
 		return strings.TrimSpace(v), nil

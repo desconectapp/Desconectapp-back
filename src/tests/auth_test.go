@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"github.com/stretchr/testify/assert"
 
 	"gin/router"
 	"gin/service"
@@ -20,21 +20,21 @@ import (
 
 func TestSignUp(t *testing.T) {
 	router := router.NewRouter()
-	r :=  router.SetupRoutes()
+	r := router.SetupRoutes()
 
 	NewUser(t, r, "test")
 }
 
 func TestSignUpEmailAlreadyExists(t *testing.T) {
 	router := router.NewRouter()
-	r :=  router.SetupRoutes()
+	r := router.SetupRoutes()
 
 	NewUser(t, r, "test_exists")
 
 	body := AuthBody{
-    	Email: "test_exists@test.com",
-  		Password: "password123",
-    }
+		Email:    "test_exists@test.com",
+		Password: "password123",
+	}
 
 	jsonBody, err := json.Marshal(body)
 	assert.Equal(t, err, nil, "Error should be nil")
@@ -47,17 +47,16 @@ func TestSignUpEmailAlreadyExists(t *testing.T) {
 	assert.Equal(t, w.Code, http.StatusConflict, "Status code should be 409")
 }
 
-
 // auth.POST("/login", router.authController.Login)
 
 func TestLogIn(t *testing.T) {
 	router := router.NewRouter()
-	r :=  router.SetupRoutes()
+	r := router.SetupRoutes()
 
 	body := AuthBody{
-    	Email:"martina@example.com",
-  		Password: "password123",
-    }
+		Email:    "martina@example.com",
+		Password: "password123",
+	}
 
 	jsonBody, err := json.Marshal(body)
 
@@ -77,20 +76,19 @@ func TestLogIn(t *testing.T) {
 
 	_, _, err = service.ValidateSession(response.RefreshToken)
 	assert.Equal(t, err, nil, "Error should be nil")
-	
+
 	assert.Equal(t, w.Code, http.StatusOK, "Status code should be 200")
 }
-
 
 // auth.POST("/refresh", router.authController.Refresh)
 func TestRefresh(t *testing.T) {
 	router := router.NewRouter()
-	r :=  router.SetupRoutes()
+	r := router.SetupRoutes()
 
 	body := AuthBody{
-    	Email:"martina@example.com",
-  		Password: "password123",
-    }
+		Email:    "martina@example.com",
+		Password: "password123",
+	}
 
 	jsonBody, err := json.Marshal(body)
 
@@ -110,12 +108,12 @@ func TestRefresh(t *testing.T) {
 
 	_, _, err = service.ValidateSession(response.RefreshToken)
 	assert.Equal(t, err, nil, "Invalid Refresh Token")
-	
+
 	assert.Equal(t, w.Code, http.StatusOK, "Status code should be 200")
 
 	time.Sleep(1 * time.Second)
 
-	bodyRefresh := struct{
+	bodyRefresh := struct {
 		RefreshToken string `json:"refresh_token"`
 	}{
 		RefreshToken: response.RefreshToken,

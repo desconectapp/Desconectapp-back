@@ -48,7 +48,7 @@ func (s *ActivitiesRequestService) CreateActivityRequest(params repository.Creat
 			return repository.ActivityRequest{}, err
 		}
 		params.ActivityID = &newActivity.ID
-		// Actualizamos la descripcion para que incluya el nombre de la actividad	
+		// Actualizamos la descripcion para que incluya el nombre de la actividad
 		fmt.Printf("Old description: %v\n", *params.Description)
 		formattedDescription := fmt.Sprintf("%s %s", *newActivity.Icon, newActivity.Name)
 		params.Description = &formattedDescription
@@ -71,7 +71,7 @@ func (s *ActivitiesRequestService) CreateActivityRequest(params repository.Creat
 			ActivityID: existingActivityRequest.ActivityID,
 		})
 	}
-	
+
 	// Cambio la descripcion para que sea el nombre de la actividad
 	activity, err := s.queries.GetActivityByID(s.ctx, *params.ActivityID)
 	if err != nil {

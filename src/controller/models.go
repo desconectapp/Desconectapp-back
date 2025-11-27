@@ -77,15 +77,15 @@ type GroupIdResponse struct {
 }
 
 type NewGroup struct {
-	ID          int32              `json:"id"`
-	Name        *string            `json:"name"`
-	Description *string            `json:"description"`
-	LocationName    *string            `json:"location_name"`
-	ActivityID  int32              `json:"activity_id"`
-	Members     []int32        `json:"members"`
-	ActivityName string             `json:"activity_name"`
-	ActivityIcon *string            `json:"activity_icon"`
-	Public	*bool	`json:"public"`
+	ID           int32   `json:"id"`
+	Name         *string `json:"name"`
+	Description  *string `json:"description"`
+	LocationName *string `json:"location_name"`
+	ActivityID   int32   `json:"activity_id"`
+	Members      []int32 `json:"members"`
+	ActivityName string  `json:"activity_name"`
+	ActivityIcon *string `json:"activity_icon"`
+	Public       *bool   `json:"public"`
 }
 
 type ActivityIdBatchResponse struct {

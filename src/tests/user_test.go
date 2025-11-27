@@ -20,7 +20,7 @@ import (
 // users.GET("", router.controller.ListUsers)
 func TestGetUserList(t *testing.T) {
 	router := router.NewRouter()
-	r :=  router.SetupRoutes()
+	r := router.SetupRoutes()
 
 	token, err := service.NewTestToken(1)
 
@@ -38,14 +38,14 @@ func TestGetUserList(t *testing.T) {
 
 	err = json.Unmarshal(w.Body.Bytes(), &response)
 	assert.Equal(t, err, nil, "Error should be nil")
-	
+
 	assert.Equal(t, w.Code, http.StatusOK, "Status code should be 200")
 	assert.Equal(t, limit, strconv.Itoa(len(response.Users)))
 }
 
 func TestGetUserListPagination(t *testing.T) {
 	router := router.NewRouter()
-	r :=  router.SetupRoutes()
+	r := router.SetupRoutes()
 
 	token, err := service.NewTestToken(1)
 
@@ -63,7 +63,7 @@ func TestGetUserListPagination(t *testing.T) {
 
 	err = json.Unmarshal(w.Body.Bytes(), &response)
 	assert.Equal(t, err, nil, "Error should be nil")
-	
+
 	assert.Equal(t, w.Code, http.StatusOK, "Status code should be 200")
 	assert.Equal(t, limit, strconv.Itoa(len(response.Users)))
 	assert.Equal(t, true, response.HasMore)
@@ -73,7 +73,7 @@ func TestGetUserListPagination(t *testing.T) {
 
 func TestDeleteUser(t *testing.T) {
 	router := router.NewRouter()
-	r :=  router.SetupRoutes()
+	r := router.SetupRoutes()
 
 	userId, token := NewUser(t, r, "test_delete")
 
@@ -89,15 +89,13 @@ func TestDeleteUser(t *testing.T) {
 	err := json.Unmarshal(w_2.Body.Bytes(), &response_2)
 	assert.Equal(t, err, nil, "Error should be nil")
 
-	
 	assert.Equal(t, w_2.Code, http.StatusOK, "Status code should be 200")
 	assert.Equal(t, userId, response_2.DeletedUserID, "The user ids should match")
 }
 
-
 func TestDeleteNonExistentUser(t *testing.T) {
 	router := router.NewRouter()
-	r :=  router.SetupRoutes()
+	r := router.SetupRoutes()
 
 	userID := int32(0)
 	token, err := service.NewTestToken(userID)
@@ -115,7 +113,7 @@ func TestDeleteNonExistentUser(t *testing.T) {
 
 func TestGetUser(t *testing.T) {
 	router := router.NewRouter()
-	r :=  router.SetupRoutes()
+	r := router.SetupRoutes()
 
 	userID := int32(3)
 
@@ -132,14 +130,14 @@ func TestGetUser(t *testing.T) {
 
 	err = json.Unmarshal(w.Body.Bytes(), &response)
 	assert.Equal(t, err, nil, "Error should be nil")
-	
+
 	assert.Equal(t, w.Code, http.StatusOK, "Status code should be 200")
 	assert.Equal(t, userID, response.UserID, "The user ids should match")
 }
 
 func TestGetNonExistentUser(t *testing.T) {
 	router := router.NewRouter()
-	r :=  router.SetupRoutes()
+	r := router.SetupRoutes()
 
 	userID := int32(0)
 	token, err := service.NewTestToken(userID)
@@ -157,22 +155,22 @@ func TestGetNonExistentUser(t *testing.T) {
 
 func TestCreateUserProfile(t *testing.T) {
 	router := router.NewRouter()
-	r :=  router.SetupRoutes()
+	r := router.SetupRoutes()
 
 	userID, token := NewUser(t, r, "maomao")
 
 	age := int32(24)
 	name := "Maomao"
 	city := "Japan"
-	currentSituation :=  "WORKING"
+	currentSituation := "WORKING"
 	gender := "Female"
 
 	body := CreateProfile{
-		Name: name,
-		Age: age,
-		City: city,
+		Name:             name,
+		Age:              age,
+		City:             city,
 		CurrentSituation: currentSituation,
-		Gender: gender,
+		Gender:           gender,
 	}
 
 	jsonBody, err := json.Marshal(body)
@@ -199,26 +197,24 @@ func TestCreateUserProfile(t *testing.T) {
 	assert.Equal(t, gender, response.Gender, "Gender should match")
 }
 
-
 func TestCreateUserProfileInvalidAge(t *testing.T) {
 	router := router.NewRouter()
-	r :=  router.SetupRoutes()
+	r := router.SetupRoutes()
 
-	
 	_, token := NewUser(t, r, "invalid_age")
 
 	age := int32(240)
 	name := "Maomao"
 	city := "Japan"
-	currentSituation :=  "WORKING"
+	currentSituation := "WORKING"
 	gender := "Female"
 
 	body := CreateProfile{
-		Name: name,
-		Age: age,
-		City: city,
+		Name:             name,
+		Age:              age,
+		City:             city,
 		CurrentSituation: currentSituation,
-		Gender: gender,
+		Gender:           gender,
 	}
 
 	jsonBody, err := json.Marshal(body)

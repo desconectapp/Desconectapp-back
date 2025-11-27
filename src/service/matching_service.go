@@ -123,7 +123,6 @@ func (s *MatchingService) createCombinedPartialMatch(request repository.Activity
 	if err != nil {
 		return err
 	}
-	
 
 	var avgSearchRadius *int32
 	if request.SearchRadius != nil && match.SearchRadius != nil {

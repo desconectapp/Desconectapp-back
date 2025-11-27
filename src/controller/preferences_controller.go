@@ -28,7 +28,6 @@ func NewPreferencesController(conn *pgxpool.Pool) *PreferencesController {
 func (c *PreferencesController) GetUserPreferences(ctx *gin.Context) {
 	var preferencesParams repository.GetUserPreferencesParams
 
-
 	limit, offset := GetLimmitAndOffset(ctx)
 
 	preferencesParams.Limit = int32(limit) + 1
@@ -110,33 +109,33 @@ func (c *PreferencesController) DeletePreference(ctx *gin.Context) {
 }
 
 func (c *PreferencesController) BatchAddUserPreferences(ctx *gin.Context) {
-    type batchRequest struct {
-        ActivityIds []int32 `json:"activity_ids"`
-    }
+	type batchRequest struct {
+		ActivityIds []int32 `json:"activity_ids"`
+	}
 
-    var req batchRequest
+	var req batchRequest
 
-    if err := ctx.ShouldBind(&req); err != nil {
-        ErrorWithStatus(ctx, "Bad request", http.StatusBadRequest)
-        return
-    }
+	if err := ctx.ShouldBind(&req); err != nil {
+		ErrorWithStatus(ctx, "Bad request", http.StatusBadRequest)
+		return
+	}
 
-    var params repository.BatchAddPreferencesParams
+	var params repository.BatchAddPreferencesParams
 
-    userToken, _ := ctx.Get("userID")
-    params.UserID = userToken.(int32)
-    params.ActivityIds = req.ActivityIds
+	userToken, _ := ctx.Get("userID")
+	params.UserID = userToken.(int32)
+	params.ActivityIds = req.ActivityIds
 
-    err := c.service.BatchAddPreferences(params)
+	err := c.service.BatchAddPreferences(params)
 
-    if err != nil {
-        ErrorWithStatus(ctx, err.Error(), http.StatusNotFound)
-        return
-    }
+	if err != nil {
+		ErrorWithStatus(ctx, err.Error(), http.StatusNotFound)
+		return
+	}
 
-    res := ActivityIdBatchResponse{
-        ActivityIdBatchIDs: req.ActivityIds,
-    }
+	res := ActivityIdBatchResponse{
+		ActivityIdBatchIDs: req.ActivityIds,
+	}
 
-    ctx.JSON(http.StatusOK, res)
+	ctx.JSON(http.StatusOK, res)
 }
