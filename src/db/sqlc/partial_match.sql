@@ -3,13 +3,13 @@
 INSERT INTO partial_matches (
   activity_id, description, week_timeslots,
   participants_needed, maximum_participants,
-  latitude, longitude, members_count,
+  latitude, longitude, location_name, members_count,
   search_radius
 ) VALUES (
   $1, $2, $3,
   $4, $5,
-  $6, $7, $8,
-  $9
+  $6, $7, $8, $9,
+  $10
 )
 RETURNING *;
 

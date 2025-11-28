@@ -5,6 +5,7 @@ import (
 	"fmt"
 	repository "gin/db/generated"
 	"io"
+	"log"
 	"os"
 	"strings"
 	"time"
@@ -93,11 +94,11 @@ func ValidateSession(tokenString string) (int32, bool, error) {
 		if time.Now().Unix() > exp {
 			return -2, false, errors.New("invalid token")
 		}
-		
+
 		var isAdmin bool = false
-        if claims["is_admin"] != nil {
-            isAdmin = claims["is_admin"].(bool)
-        }
+		if claims["is_admin"] != nil {
+			isAdmin = claims["is_admin"].(bool)
+		}
 
 		return int32(claims["sub"].(float64)), isAdmin, nil
 	}
@@ -105,9 +106,65 @@ func ValidateSession(tokenString string) (int32, bool, error) {
 	return -3, false, errors.New("invalid token")
 }
 
-type OpenAIPayload struct {
-	Model string `json:"model"`
-	Input string `json:"input"`
+func getLocationFromCoordinates(lat string, long string) (string, error) {
+	apiKey := os.Getenv("LOCATION_IQ_API_KEY")
+	url := "https://us1.locationiq.com/v1/reverse?key=" + apiKey + "&lat=" + lat + "&lon=" + long + "&format=json"
+	fmt.Printf("url:", url)
+	req, _ := http.NewRequest("GET", url, nil)
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == 429 {
+		time.Sleep(2 * time.Second)
+		return getLocationFromCoordinates(lat, long)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	log.Print("Response body:", string(body))
+
+	var result map[string]interface{}
+	err = json.Unmarshal(body, &result)
+	if err != nil {
+		return "", err
+	}
+
+	var addressMap map[string]interface{}
+
+	if a, ok := result["address"].(map[string]interface{}); ok {
+		addressMap = a
+	}
+
+	fieldsPriority := []string{
+		"town",
+		"neighbourhood",
+		"suburb",
+		"state_district",
+		"state",
+		"country",
+	}
+
+	for _, key := range fieldsPriority {
+		if val, ok := addressMap[key]; ok {
+			if str, ok := val.(string); ok && str != "" {
+				return str, nil
+			}
+		}
+	}
+
+	// fallback: display_name or formatted string fields
+	if v, ok := result["display_name"].(string); ok && strings.TrimSpace(v) != "" {
+		return strings.TrimSpace(v), nil
+	}
+
+	return "", errors.New("no location found")
 }
 
 type GeminiPayload struct {
@@ -135,10 +192,10 @@ func GenerateActivity(s *ActivitiesRequestService, name string) (repository.Acti
 	}
 
 	prompt := "Dada una lista de actividades y un nombre de actividad, devolvé en JSON la mejor coincidencia o creá una nueva si no existe o si la coincidencia es demasiado amplia. " +
-	"Si la coincidencia es amplia (ej: 'ceramics' → 'arts & crafts'), generá una nueva actividad con nombre corto, emoji y categoría específica. " +
-	"Formato del JSON: {\"name\":\"<nombre>\",\"icon\":\"<emoji>\",\"category\":\"<SPORT|CREATIVE|OUTDOOR|INDOOR|GAME|SOCIAL|WELLNESS>\"}. " +
-	"Lista de actividades: " + fmt.Sprintf("%v", activitiesNames) + ". " +
-	"Nombre de actividad: " + name + "."
+		"Si la coincidencia es amplia (ej: 'ceramics' → 'arts & crafts'), generá una nueva actividad con nombre corto, emoji y categoría específica. " +
+		"Formato del JSON: {\"name\":\"<nombre>\",\"icon\":\"<emoji>\",\"category\":\"<SPORT|CREATIVE|OUTDOOR|INDOOR|GAME|SOCIAL|WELLNESS>\"}. " +
+		"Lista de actividades: " + fmt.Sprintf("%v", activitiesNames) + ". " +
+		"Nombre de actividad: " + name + "."
 
 	fmt.Print(prompt)
 

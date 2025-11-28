@@ -844,13 +844,16 @@ func (q *Queries) AdminUpdateActivity(ctx context.Context, arg AdminUpdateActivi
 
 const adminUpdateGroup = `-- name: AdminUpdateGroup :one
 UPDATE groups
-SET name = $2,
-    description = $3,
-    location = $4,
-    activity_id = $5,
-    week_timeslots = $6
+SET name           = COALESCE($2, name),
+    description    = COALESCE($3, description),
+    location       = COALESCE($4, location),
+    activity_id    = COALESCE($5, activity_id),
+    week_timeslots = COALESCE($6, week_timeslots),
+    public         = COALESCE($7, public),
+	avatar_url     = COALESCE($8, avatar_url)
 WHERE id = $1
-RETURNING id, name, avatar_url, description, location, location_name, public, activity_id, week_timeslots, created_at
+RETURNING id, name, avatar_url, description, location, location_name,
+          public, activity_id, week_timeslots, created_at
 `
 
 type AdminUpdateGroupParams struct {
@@ -858,8 +861,10 @@ type AdminUpdateGroupParams struct {
 	Name          *string `json:"name"`
 	Description   *string `json:"description"`
 	Location      *string `json:"location"`
-	ActivityID    int32   `json:"activity_id"`
+	ActivityID    *int32  `json:"activity_id"`
 	WeekTimeslots []int32 `json:"week_timeslots"`
+	Public        *bool   `json:"public"`
+	AvatarUrl     *string `json:"avatar_url"`
 }
 
 func (q *Queries) AdminUpdateGroup(ctx context.Context, arg AdminUpdateGroupParams) (Group, error) {
@@ -870,6 +875,8 @@ func (q *Queries) AdminUpdateGroup(ctx context.Context, arg AdminUpdateGroupPara
 		arg.Location,
 		arg.ActivityID,
 		arg.WeekTimeslots,
+		arg.Public,
+		arg.AvatarUrl,
 	)
 	var i Group
 	err := row.Scan(

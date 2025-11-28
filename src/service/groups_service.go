@@ -3,9 +3,9 @@ package service
 import (
 	"context"
 	repository "gin/db/generated"
-	"log"
-
 	"github.com/jackc/pgx/v5/pgxpool"
+	"log"
+	"strings"
 )
 
 type GroupWithMembers struct {
@@ -26,6 +26,7 @@ type OpenGroup struct {
 	Name          *string `json:"name"`
 	Description   *string `json:"description"`
 	Location      *string `json:"location"`
+	LocationName  *string `json:"location_name"`
 	Coords        *string `json:"coords"`
 	AvatarUrl     *string `json:"avatar_url"`
 	WeekTimeslots []int32 `json:"week_timeslots"`
@@ -60,6 +61,18 @@ func NewGroupsService(conn *pgxpool.Pool) *GroupsService {
 }
 
 func (s *GroupsService) CreateGroup(groupParams repository.CreateGroupParams) (repository.CreateGroupRow, error) {
+	// Get location name from coordinates
+	parts := strings.Split(*groupParams.Location, ",")
+	// El front las manda como long,lat
+	lat := parts[1]
+	long := parts[0]
+	location, err := getLocationFromCoordinates(lat, long)
+	if err != nil {
+		log.Println("Error getting location from coordinates:", err)
+		return repository.CreateGroupRow{}, err
+	}
+	groupParams.LocationName = &location
+	// Create the group
 	group, err := s.queries.CreateGroup(s.ctx, groupParams)
 	if err != nil {
 		return repository.CreateGroupRow{}, err
@@ -204,6 +217,7 @@ func (s *GroupsService) GetOpenGroups(filter ActivityFilter) ([]OpenGroup, error
 			},
 		)
 	} else {
+		log.Println("Fetching open groups with activity filter:", filter.ActivityId)
 		openGroups, err = s.GetPublicOpenGroupsWithFilter(
 			repository.GetOpenGroupsWithFilterParams{
 				Limit:      filter.Limit,
@@ -232,12 +246,14 @@ func (s *GroupsService) GetOpenGroupsNoFilter(filter repository.GetOpenGroupsNoF
 			ID:            group.ID,
 			Name:          group.Name,
 			Location:      group.LocationName,
+			LocationName:  group.LocationName,
 			AvatarUrl:     group.AvatarUrl,
 			WeekTimeslots: group.WeekTimeslots,
 			Description:   group.Description,
 			ActivityName:  group.ActivityName,
 			MemberCount:   int32(group.MemberCount),
 			Photo:         *group.Icon,
+			Time:          group.CreatedAt.Time.String(),
 		})
 	}
 	return openGroups, err
@@ -257,12 +273,14 @@ func (s *GroupsService) GetPublicOpenGroupsWithFilter(filter repository.GetOpenG
 			ID:            group.ID,
 			Name:          group.Name,
 			Location:      group.LocationName,
+			LocationName:  group.LocationName,
 			AvatarUrl:     group.AvatarUrl,
 			WeekTimeslots: group.WeekTimeslots,
 			Description:   group.Description,
 			ActivityName:  group.ActivityName,
 			MemberCount:   int32(group.MemberCount),
 			Photo:         *group.Icon,
+			Time:          group.CreatedAt.Time.String(),
 		})
 	}
 	return openGroups, err
@@ -281,12 +299,14 @@ func (s *GroupsService) GetOpenGroupsWithLocation(filter repository.GetOpenGroup
 			ID:            group.ID,
 			Name:          group.Name,
 			Location:      group.Location,
+			LocationName:  group.LocationName,
 			AvatarUrl:     group.AvatarUrl,
 			WeekTimeslots: group.WeekTimeslots,
 			Description:   group.Description,
 			ActivityName:  group.ActivityName,
 			MemberCount:   int32(group.MemberCount),
 			Photo:         *group.Icon,
+			Time:          group.CreatedAt.Time.String(),
 		})
 	}
 	return openGroups, err
@@ -306,6 +326,7 @@ func (s *GroupsService) GetUserRecommendations(filter repository.GetPreferredGro
 			ID:            group.ID,
 			Name:          group.Name,
 			Location:      group.LocationName,
+			LocationName:  group.LocationName,
 			Coords:        group.Location,
 			AvatarUrl:     group.AvatarUrl,
 			WeekTimeslots: group.WeekTimeslots,

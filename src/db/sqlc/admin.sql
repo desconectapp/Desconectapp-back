@@ -206,13 +206,16 @@ RETURNING *;
 
 -- name: AdminUpdateGroup :one
 UPDATE groups
-SET name = $2,
-    description = $3,
-    location = $4,
-    activity_id = $5,
-    week_timeslots = $6
+SET name           = COALESCE(sqlc.narg(name), name),
+    description    = COALESCE(sqlc.narg(description), description),
+    location       = COALESCE(sqlc.narg(location), location),
+    activity_id    = COALESCE(sqlc.narg(activity_id), activity_id),
+    week_timeslots = COALESCE(sqlc.narg(week_timeslots), week_timeslots),
+    public         = COALESCE(sqlc.narg(public), public),
+	avatar_url     = COALESCE(sqlc.narg(avatar_url), avatar_url)
 WHERE id = $1
-RETURNING *;
+RETURNING id, name, avatar_url, description, location, location_name,
+          public, activity_id, week_timeslots, created_at;
 
 -- name: AdminDeleteGroup :exec
 DELETE FROM groups

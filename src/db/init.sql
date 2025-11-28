@@ -63,6 +63,7 @@ CREATE TABLE activity_requests (
   user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
   activity_id INTEGER REFERENCES activities(id) ON DELETE CASCADE,
   description TEXT,
+  location_name TEXT,
   week_timeslots INTEGER[],
   participants_needed INTEGER DEFAULT 3,
   maximum_participants INTEGER DEFAULT 10,
@@ -76,18 +77,19 @@ CREATE TABLE activity_requests (
 DROP TABLE IF EXISTS partial_matches;
 
 CREATE TABLE partial_matches (
-  id SERIAL PRIMARY KEY,
-  activity_id INTEGER REFERENCES activities(id) ON DELETE CASCADE,
-  description TEXT,
-  week_timeslots INTEGER[],
-  participants_needed INTEGER DEFAULT 3,
-  maximum_participants INTEGER DEFAULT 10,
-  latitude DOUBLE PRECISION,
-  longitude DOUBLE PRECISION,
-  search_radius INTEGER DEFAULT 10,
-  members_count INTEGER DEFAULT 0,
-  created_at TIMESTAMP DEFAULT NOW(),
-  expires_at TIMESTAMP DEFAULT (NOW() + INTERVAL '7 days')
+    id SERIAL PRIMARY KEY,
+    activity_id INTEGER REFERENCES activities(id) ON DELETE CASCADE,
+    description TEXT,
+    week_timeslots INTEGER[],
+    participants_needed INTEGER DEFAULT 3,
+    maximum_participants INTEGER DEFAULT 10,
+    latitude DOUBLE PRECISION,
+    longitude DOUBLE PRECISION,
+    location_name TEXT,
+    search_radius INTEGER DEFAULT 10,
+    members_count INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT NOW(),
+    expires_at TIMESTAMP DEFAULT (NOW() + INTERVAL '7 days')
 );
 
 DROP TABLE IF EXISTS partial_match_members;

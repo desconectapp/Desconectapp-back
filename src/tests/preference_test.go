@@ -18,23 +18,23 @@ import (
 
 func TestPostPreference(t *testing.T) {
 	router := router.NewRouter()
-	r :=  router.SetupRoutes()
-	
+	r := router.SetupRoutes()
+
 	_, token := NewUser(t, r, "test_post_preference")
-		
+
 	activityId := int32(19)
-	
+
 	AddPreference(t, r, activityId, token)
 }
 
 func TestPostInvalidPreference(t *testing.T) {
 	router := router.NewRouter()
-	r :=  router.SetupRoutes()
-	
+	r := router.SetupRoutes()
+
 	_, token := NewUser(t, r, "test_post_invalid_preference")
-		
+
 	activityId := int32(0)
-	
+
 	body := ActivityIdStruct{
 		ActivityID: activityId,
 	}
@@ -53,7 +53,7 @@ func TestPostInvalidPreference(t *testing.T) {
 // preferences.GET("", router.preferencesController.GetUserPreferences)
 func TestGetPreferences(t *testing.T) {
 	router := router.NewRouter()
-	r :=  router.SetupRoutes()
+	r := router.SetupRoutes()
 
 	_, token := NewUser(t, r, "test_get_preference")
 
@@ -72,7 +72,7 @@ func TestGetPreferences(t *testing.T) {
 	var response controller.PaginatedPreferences
 
 	err := json.Unmarshal(w.Body.Bytes(), &response)
-		
+
 	assert.Equal(t, err, nil, "Error should be nil")
 
 	assert.Equal(t, activityId, response.Preferences[0].ID, "The activity ids should match")
@@ -80,10 +80,9 @@ func TestGetPreferences(t *testing.T) {
 	assert.LessOrEqual(t, strconv.Itoa(len(response.Preferences)), limit, "Preference len should be less or equal to limit")
 }
 
-
 func TestGetNoPreference(t *testing.T) {
 	router := router.NewRouter()
-	r :=  router.SetupRoutes()
+	r := router.SetupRoutes()
 
 	_, token := NewUser(t, r, "test_get_no_preference")
 
@@ -98,7 +97,7 @@ func TestGetNoPreference(t *testing.T) {
 	var response controller.PaginatedPreferences
 
 	err := json.Unmarshal(w.Body.Bytes(), &response)
-		
+
 	assert.Equal(t, err, nil, "Error should be nil")
 	assert.Equal(t, false, response.HasMore)
 	assert.Equal(t, 0, len(response.Preferences), "User should have no preference")
@@ -109,7 +108,7 @@ func TestGetNoPreference(t *testing.T) {
 
 func TestDeletePreference(t *testing.T) {
 	router := router.NewRouter()
-	r :=  router.SetupRoutes()
+	r := router.SetupRoutes()
 
 	_, token := NewUser(t, r, "test_delete_preference")
 
@@ -124,7 +123,7 @@ func TestDeletePreference(t *testing.T) {
 
 	assert.Equal(t, err, nil, "Error should be nil")
 
-	req := httptest.NewRequest("DELETE", "/preferences",bytes.NewReader(jsonBody))
+	req := httptest.NewRequest("DELETE", "/preferences", bytes.NewReader(jsonBody))
 	req.Header.Add("content-type", "application/json")
 	req.Header.Add("Authorization", "Bearer "+token)
 	w := httptest.NewRecorder()
@@ -133,7 +132,7 @@ func TestDeletePreference(t *testing.T) {
 	var response controller.ActivityIdResponse
 
 	err = json.Unmarshal(w.Body.Bytes(), &response)
-		
+
 	assert.Equal(t, err, nil, "Error should be nil")
 
 	assert.Equal(t, activityId, response.ActivityPreferenseID, "The activity ids should match")
@@ -141,7 +140,7 @@ func TestDeletePreference(t *testing.T) {
 
 func TestDeleteInvalidPreference(t *testing.T) {
 	router := router.NewRouter()
-	r :=  router.SetupRoutes()
+	r := router.SetupRoutes()
 
 	_, token := NewUser(t, r, "test_delete_invalid_preference")
 
@@ -156,7 +155,7 @@ func TestDeleteInvalidPreference(t *testing.T) {
 	jsonBody, err := json.Marshal(body)
 	assert.Equal(t, err, nil, "Error should be nil")
 
-	req := httptest.NewRequest("DELETE", "/preferences",bytes.NewReader(jsonBody))
+	req := httptest.NewRequest("DELETE", "/preferences", bytes.NewReader(jsonBody))
 	req.Header.Add("content-type", "application/json")
 	req.Header.Add("Authorization", "Bearer "+token)
 	w := httptest.NewRecorder()
@@ -165,17 +164,16 @@ func TestDeleteInvalidPreference(t *testing.T) {
 	assert.Equal(t, w.Code, http.StatusNotFound, "Status code should be 404")
 }
 
-
-// preferences.POST("/batch", router.preferencesController.BatchAddUserPreferences)     
+// preferences.POST("/batch", router.preferencesController.BatchAddUserPreferences)
 
 func TestPostbatchPreference(t *testing.T) {
 	router := router.NewRouter()
-	r :=  router.SetupRoutes()
-	
+	r := router.SetupRoutes()
+
 	_, token := NewUser(t, r, "test_bstch_preference")
-	
-	activityIds := []int32{15,23,21,17}
-	
+
+	activityIds := []int32{15, 23, 21, 17}
+
 	body := ActivityBatchStruct{
 		ActivityIDBatch: activityIds,
 	}
@@ -192,7 +190,7 @@ func TestPostbatchPreference(t *testing.T) {
 	var response controller.ActivityIdBatchResponse
 
 	err = json.Unmarshal(w.Body.Bytes(), &response)
-		
+
 	assert.Equal(t, err, nil, "Error should be nil")
 
 	assert.Equal(t, w.Code, http.StatusOK, "Status code should be 200")
@@ -203,12 +201,12 @@ func TestPostbatchPreference(t *testing.T) {
 
 func TestPostInvalidBatchPreference(t *testing.T) {
 	router := router.NewRouter()
-	r :=  router.SetupRoutes()
-	
+	r := router.SetupRoutes()
+
 	_, token := NewUser(t, r, "test_post_invalid_batch_preference")
-		
+
 	activityIds := []int32{0}
-	
+
 	body := ActivityBatchStruct{
 		ActivityIDBatch: activityIds,
 	}

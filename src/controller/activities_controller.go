@@ -75,7 +75,7 @@ func (c *ActivitiesController) ListActivitiesRequests(ctx *gin.Context) {
 
 func validateActivityRequest(ctx *gin.Context, activityParams repository.CreateActivityRequestParams) bool {
 	log.Printf("Validating activity request: %+v", activityParams)
-	
+
 	if len(activityParams.WeekTimeslots) == 0 {
 		log.Printf("Validation failed: Timeslots cannot be empty")
 		ErrorWithStatus(ctx, "Timeslots cannot be empty", http.StatusBadRequest)

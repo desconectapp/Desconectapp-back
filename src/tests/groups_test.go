@@ -6,26 +6,26 @@ import (
 	"gin/controller"
 	"gin/router"
 	"gin/service"
+	"github.com/stretchr/testify/assert"
 	"log"
+	"net/http"
 	"net/http/httptest"
 	"strconv"
 	"testing"
-	"net/http"
-	"github.com/stretchr/testify/assert"
 )
 
 // groups.GET("", router.groupsController.ListGroups)
-func TestListGroups(t *testing.T){
-router := router.NewRouter()
-	r :=  router.SetupRoutes()
-	
+func TestListGroups(t *testing.T) {
+	router := router.NewRouter()
+	r := router.SetupRoutes()
+
 	token, err := service.NewTestToken(1)
 	assert.Equal(t, err, nil, "Error should be nil")
 
 	name := "Karasuno"
 	location := "Miyagi"
 	members := 4
-	
+
 	limit := "9"
 	offset := "0"
 
@@ -37,7 +37,7 @@ router := router.NewRouter()
 	var response controller.PaginatedGroups
 
 	err = json.Unmarshal(w.Body.Bytes(), &response)
-	
+
 	assert.Equal(t, err, nil, "Error should be nil")
 	log.Println(response)
 
@@ -52,24 +52,24 @@ router := router.NewRouter()
 // groups.POST("", router.groupsController.CreateGroup)
 func TestPostGroup(t *testing.T) {
 	router := router.NewRouter()
-	r :=  router.SetupRoutes()
-	
+	r := router.SetupRoutes()
+
 	user1, token := NewUser(t, r, "tsukki")
 	user2, _ := NewUser(t, r, "hinata")
 	user3, _ := NewUser(t, r, "kageyama")
-		
+
 	activityId := int32(4)
 
 	members := []int32{user1, user2, user3}
-	
+
 	NewGroup(t, r, "Karasuno", "Miyagi", activityId, members, false, token)
 }
 
 // groups.GET("/:groupId", router.groupsController.GetGroup)
 func TestGetGroup(t *testing.T) {
 	router := router.NewRouter()
-	r :=  router.SetupRoutes()
-	
+	r := router.SetupRoutes()
+
 	token, err := service.NewTestToken(1)
 	assert.Equal(t, err, nil, "Error should be nil")
 
@@ -77,7 +77,6 @@ func TestGetGroup(t *testing.T) {
 	name := "Nekoma"
 	location := "Tokyo"
 	members := 2
-	
 
 	req := httptest.NewRequest("GET", "/groups/"+strconv.Itoa(groupID), nil)
 	req.Header.Add("Authorization", "Bearer "+token)
@@ -88,7 +87,7 @@ func TestGetGroup(t *testing.T) {
 	err = json.Unmarshal(w.Body.Bytes(), &response)
 
 	log.Println(response.Members)
-	
+
 	assert.Equal(t, err, nil, "Error should be nil")
 	assert.Equal(t, name, *response.Name)
 	assert.Equal(t, location, *response.Location)
@@ -98,16 +97,16 @@ func TestGetGroup(t *testing.T) {
 // groups.DELETE("/:groupId", router.groupsController.DeleteGroup)
 func TestDeleteGroup(t *testing.T) {
 	router := router.NewRouter()
-	r :=  router.SetupRoutes()
-	
+	r := router.SetupRoutes()
+
 	user1, token := NewUser(t, r, "suga")
 	user2, _ := NewUser(t, r, "asahi")
 	user3, _ := NewUser(t, r, "daichi")
-		
+
 	activityId := int32(4)
 
 	members := []int32{user1, user2, user3}
-	
+
 	group := NewGroup(t, r, "Karasuno", "Miyagi", activityId, members, false, token)
 
 	req := httptest.NewRequest("DELETE", "/groups/"+strconv.Itoa(int(group)), nil)
@@ -123,20 +122,20 @@ func TestDeleteGroup(t *testing.T) {
 
 // groups.GET("/user", router.groupsController.ListUserGroups)
 
-func TestUserGroups(t *testing.T){
-router := router.NewRouter()
-	r :=  router.SetupRoutes()
-	
+func TestUserGroups(t *testing.T) {
+	router := router.NewRouter()
+	r := router.SetupRoutes()
+
 	token, err := service.NewTestToken(23)
 	assert.Equal(t, err, nil, "Error should be nil")
-	
+
 	name := "Aoba Johsai"
 	location := "Miyagi"
 	members := 3
 	members2 := 4
 	name2 := "Argentina"
 	location2 := "Buenos Aires"
-	
+
 	limit := "6"
 	offset := "0"
 
@@ -163,16 +162,16 @@ router := router.NewRouter()
 // groups.DELETE("/user-from-group/:groupId", router.groupsController.ExitGroup)
 func TestDeleteUserFromGroup(t *testing.T) {
 	router := router.NewRouter()
-	r :=  router.SetupRoutes()
-	
+	r := router.SetupRoutes()
+
 	user1, token := NewUserWithProfile(t, r, "ushijima", CreateProfile{Name: "ushijima", Age: 17, City: "Miyagi", CurrentSituation: "WORKING", Gender: "Male"})
 	user2, _ := NewUserWithProfile(t, r, "tendo", CreateProfile{Name: "tendo", Age: 16, City: "Miyagi", CurrentSituation: "WORKING", Gender: "Male"})
 	user3, _ := NewUserWithProfile(t, r, "semi", CreateProfile{Name: "semi", Age: 15, City: "Miyagi", CurrentSituation: "WORKING", Gender: "Male"})
-		
+
 	activityId := int32(4)
 
 	members := []int32{user1, user2, user3}
-	
+
 	group := NewGroup(t, r, "Shiratorizawa", "Miyagi", activityId, members, false, token)
 
 	req := httptest.NewRequest("DELETE", "/groups/user-from-group/"+strconv.Itoa(int(group)), nil)
@@ -188,8 +187,8 @@ func TestDeleteUserFromGroup(t *testing.T) {
 
 func TestUpdateGroupDescription(t *testing.T) {
 	router := router.NewRouter()
-	r :=  router.SetupRoutes()
-	
+	r := router.SetupRoutes()
+
 	token, err := service.NewTestToken(32)
 	assert.Equal(t, err, nil, "Error should be nil")
 
@@ -218,7 +217,7 @@ func TestUpdateGroupDescription(t *testing.T) {
 	var response service.GroupWithMembers
 	err = json.Unmarshal(w_2.Body.Bytes(), &response)
 	assert.Equal(t, err, nil, "Error should be nil")
-	
+
 	assert.Equal(t, name, *response.Name)
 	assert.Equal(t, location, *response.Location)
 	assert.Equal(t, desc, *response.Description)
@@ -305,7 +304,7 @@ func TestGetStatusOpenListNoFilter(t *testing.T) {
 
 	limit := "6"
 	offset := "0"
-	
+
 	body := ActivityIdStruct{
 		ActivityID: 0,
 	}
@@ -313,7 +312,7 @@ func TestGetStatusOpenListNoFilter(t *testing.T) {
 	assert.Equal(t, err, nil, "Error should be nil")
 
 	req := httptest.NewRequest("GET", "/groups/open?limit="+limit+"&offset="+offset, bytes.NewReader(jsonBody))
-	req.Header.Add("content-type", "application/json")	
+	req.Header.Add("content-type", "application/json")
 	req.Header.Add("Authorization", "Bearer "+token)
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
@@ -323,7 +322,7 @@ func TestGetStatusOpenListNoFilter(t *testing.T) {
 	log.Println(response)
 
 	err = json.Unmarshal(w.Body.Bytes(), &response)
-	
+
 	assert.Equal(t, err, nil, "Error should be nil")
 
 	assert.LessOrEqual(t, strconv.Itoa(len(response.Groups)), limit)
@@ -373,7 +372,7 @@ func TestGetStatusOpenListWithFilter(t *testing.T) {
 
 	limit := "6"
 	offset := "0"
-	
+
 	body := ActivityIdStruct{
 		ActivityID: 4,
 	}
@@ -381,7 +380,7 @@ func TestGetStatusOpenListWithFilter(t *testing.T) {
 	assert.Equal(t, err, nil, "Error should be nil")
 
 	req := httptest.NewRequest("GET", "/groups/open?limit="+limit+"&offset="+offset, bytes.NewReader(jsonBody))
-	req.Header.Add("content-type", "application/json")	
+	req.Header.Add("content-type", "application/json")
 	req.Header.Add("Authorization", "Bearer "+token)
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
@@ -391,7 +390,7 @@ func TestGetStatusOpenListWithFilter(t *testing.T) {
 	log.Println(response)
 
 	err = json.Unmarshal(w.Body.Bytes(), &response)
-	
+
 	assert.Equal(t, err, nil, "Error should be nil")
 
 	assert.LessOrEqual(t, strconv.Itoa(len(response.Groups)), limit)
@@ -414,7 +413,7 @@ func TestCreatePublic(t *testing.T) {
 		Name:        "PublicGroup",
 		Location:    "location",
 		MembersIds:  []int32{1, 2, 3, 4},
-		Public: true,
+		Public:      true,
 		Description: "",
 	}
 	jsonBody, err := json.Marshal(body)

@@ -166,16 +166,17 @@ WHERE id = $1;
 
 -- name: GetOpenGroupsWithFilter :many
 SELECT 
-    g.id,
-    g.name,
-    g.description,
-    g.location_name,
-    g.location,
-    g.avatar_url,
-    g.week_timeslots,
-    a.name AS activity_name,
-    a.icon,
-    COUNT(gm.user_id) AS member_count
+  g.id,
+  g.name,
+  g.description,
+  g.location_name,
+  g.location,
+  g.avatar_url,
+  g.week_timeslots,
+  a.name AS activity_name,
+  a.icon,
+  g.created_at,
+  COUNT(gm.user_id) AS member_count
 FROM groups g
 JOIN activities a ON g.activity_id = a.id
 WHERE g.public = true
@@ -184,35 +185,38 @@ LIMIT $1 OFFSET $2;
 
 -- name: GetOpenGroupsNoFilter :many
 SELECT 
-    g.id,
-    g.name,
-    g.description,
-    g.location_name,
-    g.location,
-    g.avatar_url,
-    g.week_timeslots,
-    a.name AS activity_name,
-    a.icon,
-    COUNT(gm.user_id) AS member_count
+  g.id,
+  g.name,
+  g.description,
+  g.location_name,
+  g.location,
+  g.avatar_url,
+  g.week_timeslots,
+  a.name AS activity_name,
+  a.icon,
+  g.created_at,
+  COUNT(gm.user_id) AS member_count
 FROM groups g
 JOIN activities a ON g.activity_id = a.id
 LEFT JOIN group_members gm ON g.id = gm.group_id
 WHERE g.public = true
   AND (sqlc.narg('activity_id')::int IS NULL OR g.activity_id = sqlc.narg('activity_id')::int)
-GROUP BY g.id, g.name, g.description, g.location_name, g.avatar_url, g.week_timeslots, a.name, a.icon
+  GROUP BY g.id, g.name, g.description, g.location_name, g.avatar_url, g.week_timeslots, a.name, a.icon, g.created_at
 LIMIT $1 OFFSET $2;
 
 -- name: GetOpenGroupsWithLocation :many
 SELECT 
-    g.id,
-    g.name,
-    g.description,
-    g.location,
-    g.avatar_url,
-    g.week_timeslots,
-    a.name AS activity_name,
-    a.icon,
-    COUNT(gm.user_id) AS member_count,
+  g.id,
+  g.name,
+  g.description,
+  g.location,
+  g.location_name,
+  g.avatar_url,
+  g.week_timeslots,
+  a.name AS activity_name,
+  a.icon,
+  g.created_at,
+  COUNT(gm.user_id) AS member_count,
     CAST((6371 * acos(
         cos(radians(sqlc.arg('latitude')::float)) * 
         cos(radians(CAST(split_part(g.location, ',', 1) AS float))) *
@@ -234,7 +238,7 @@ WHERE g.public = true
         sin(radians(sqlc.arg('latitude')::float)) * 
         sin(radians(CAST(split_part(g.location, ',', 1) AS float)))
     )) <= sqlc.arg('radius')::float
-GROUP BY g.id, g.name, g.description, g.location, g.avatar_url, g.week_timeslots, a.name, a.icon
+GROUP BY g.id, g.name, g.description, g.location, g.avatar_url, g.week_timeslots, a.name, a.icon, g.created_at
 ORDER BY distance_km
 LIMIT $1 OFFSET $2;
 

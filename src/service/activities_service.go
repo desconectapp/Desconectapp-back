@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	repository "gin/db/generated"
+	"log"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -47,7 +48,7 @@ func (s *ActivitiesRequestService) CreateActivityRequest(params repository.Creat
 			return repository.ActivityRequest{}, err
 		}
 		params.ActivityID = &newActivity.ID
-		// Actualizamos la descripcion para que incluya el nombre de la actividad	
+		// Actualizamos la descripcion para que incluya el nombre de la actividad
 		fmt.Printf("Old description: %v\n", *params.Description)
 		formattedDescription := fmt.Sprintf("%s %s", *newActivity.Icon, newActivity.Name)
 		params.Description = &formattedDescription
@@ -70,7 +71,7 @@ func (s *ActivitiesRequestService) CreateActivityRequest(params repository.Creat
 			ActivityID: existingActivityRequest.ActivityID,
 		})
 	}
-	
+
 	// Cambio la descripcion para que sea el nombre de la actividad
 	activity, err := s.queries.GetActivityByID(s.ctx, *params.ActivityID)
 	if err != nil {
@@ -78,6 +79,13 @@ func (s *ActivitiesRequestService) CreateActivityRequest(params repository.Creat
 	}
 	formattedDescription := fmt.Sprintf("%s %s", *activity.Icon, activity.Name)
 	params.Description = &formattedDescription
+
+	locationName, err := getLocationFromCoordinates(fmt.Sprintf("%f", *params.Latitude), fmt.Sprintf("%f", *params.Longitude))
+	log.Printf("Location name: %s", locationName)
+	if err != nil {
+		return repository.ActivityRequest{}, err
+	}
+	params.LocationName = &locationName
 
 	// Armamos la ActivityRequest
 	activityReq, err := s.queries.CreateActivityRequest(s.ctx, params)
