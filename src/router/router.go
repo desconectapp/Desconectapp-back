@@ -156,7 +156,7 @@ func (router *Router) SetupRoutes() *gin.Engine {
 		community.GET("/user", router.communitiesController.ListUserCommunities)
 		community.POST("", router.communitiesController.CreateCommunity)
 		community.DELETE("/:communityId", router.communitiesController.DeleteCommunity)
-		community.DELETE("/user-from-group/:communityId", router.communitiesController.ExitCommunity)
+		community.DELETE("/user-from-community/:communityId", router.communitiesController.ExitCommunity)
 		community.PUT("description/:communityId", router.communitiesController.UpdateCommunityDescription)
 		community.PUT("name/:communityId", router.communitiesController.UpdateCommunityName)
 		community.PUT("location/:communityId", router.communitiesController.UpdateCommunityLocation)
