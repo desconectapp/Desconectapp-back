@@ -110,7 +110,8 @@ func (c *PreferencesController) DeletePreference(ctx *gin.Context) {
 
 func (c *PreferencesController) BatchAddUserPreferences(ctx *gin.Context) {
 	type batchRequest struct {
-		ActivityIds []int32 `json:"activity_ids"`
+		ActivityIds      []int32  `json:"activity_ids"`
+		CustomActivities []string `json:"custom_activities"`
 	}
 
 	var req batchRequest
@@ -125,6 +126,15 @@ func (c *PreferencesController) BatchAddUserPreferences(ctx *gin.Context) {
 	userToken, _ := ctx.Get("userID")
 	params.UserID = userToken.(int32)
 	params.ActivityIds = req.ActivityIds
+
+	for _, customActivity := range req.CustomActivities {
+		newActivityID, err := c.service.GenerateCustomActivity(customActivity)
+		if err != nil {
+			ErrorWithStatus(ctx, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		params.ActivityIds = append(params.ActivityIds, newActivityID)
+	}
 
 	err := c.service.BatchAddPreferences(params)
 
