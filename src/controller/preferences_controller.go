@@ -130,6 +130,7 @@ func (c *PreferencesController) BatchAddUserPreferences(ctx *gin.Context) {
 	for _, customActivity := range req.CustomActivities {
 		newActivityID, err := c.service.GenerateCustomActivity(customActivity)
 		if err != nil {
+			log.Println(err)
 			ErrorWithStatus(ctx, err.Error(), http.StatusInternalServerError)
 			return
 		}

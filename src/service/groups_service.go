@@ -339,3 +339,14 @@ func (s *GroupsService) GetUserRecommendations(filter repository.GetPreferredGro
 	}
 	return openGroups, err
 }
+
+func (s *GroupsService) GenerateCustomActivity(name string) (int32, error) {
+	activity, err := GenerateActivity(&ActivitiesRequestService{
+		queries: s.queries,
+		ctx:     s.ctx,
+	}, name)
+	if err != nil {
+		return 0, err
+	}
+	return activity.ID, nil
+}

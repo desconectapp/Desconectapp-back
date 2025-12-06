@@ -11,6 +11,18 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+type CreateGroupParamsController struct {
+    Name          *string `json:"name"`
+    Description   *string `json:"description"`
+    Location      *string `json:"location"`
+    LocationName  *string `json:"location_name"`
+    ActivityID    int32   `json:"activity_id"`
+    Public        *bool   `json:"public"`
+    WeekTimeslots []int32 `json:"week_timeslots"`
+    UserIds       []int32 `json:"user_ids"`
+	CustomName	string	`json:"custom_activity_name"`
+}
+
 type GroupsController struct {
 	service *service.GroupsService
 }
@@ -105,7 +117,7 @@ func (c *GroupsController) GetGroup(ctx *gin.Context) {
 
 func (c *GroupsController) CreateGroup(ctx *gin.Context) {
 
-	var groupInfo repository.CreateGroupParams
+	var groupInfo CreateGroupParamsController
 
 	if err := ctx.ShouldBind(&groupInfo); err != nil {
 		ErrorWithStatus(ctx, "Could not bind", http.StatusBadRequest)
@@ -117,7 +129,27 @@ func (c *GroupsController) CreateGroup(ctx *gin.Context) {
 		groupInfo.UserIds = append(groupInfo.UserIds, userToken.(int32))
 	}
 
-	group, err := c.service.CreateGroup(groupInfo)
+	var groupParams repository.CreateGroupParams
+
+	groupParams.ActivityID = groupInfo.ActivityID
+	groupParams.Description = groupInfo.Description
+	groupParams.Location = groupInfo.Location
+	groupParams.LocationName = groupInfo.LocationName
+	groupParams.Name = groupInfo.Name
+	groupParams.Public = groupInfo.Public
+	groupParams.UserIds = groupInfo.UserIds
+	groupParams.WeekTimeslots = groupInfo.WeekTimeslots
+
+	if groupInfo.ActivityID == -1 {
+		newActivityID, err := c.service.GenerateCustomActivity(groupInfo.CustomName)
+		if err != nil {
+			ErrorWithStatus(ctx, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		groupParams.ActivityID = newActivityID
+	}
+
+	group, err := c.service.CreateGroup(groupParams)
 
 	log.Println(err)
 
