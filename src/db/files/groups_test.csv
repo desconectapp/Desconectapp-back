@@ -1,9 +1,9 @@
 name,description,location,location_name,public,activity_id
-Karasuno,Karasuno Volleyball Team,Miyagi,Miyagi,false,4
-Nekoma,Nekoma Volleyball Team,Tokyo,Tokyo,false,4
-Fukurodani,Fukurodani Volleyball Team,Tokyo,Tokyo,false,4
-Aoba Johsai,Aoba Johsai Voleybal Team,Miyagi,Miyagi,false,4
-Shiratorizawa,Shiratorizawa Volleyball Team,Miyagi,Miyagi,false,4
-Argentina,Argentina Equipo de Volleyball,Buenos Aires,Buenos Aires,false,4
-Huntrix,Huntrix Girl Band,Seoul,Seoul,false,28
-HuntrixsFans,Huntrixs Fans united,Seoul,Seoul,false,28
+Karasuno,Equipo de Voleibol Karasuno,Miyagi,Miyagi,false,4
+Nekoma,Equipo de Voleibol Nekoma,Tokyo,Tokyo,false,4
+Fukurodani,Equipo de Voleibol Fukurodani,Tokyo,Tokyo,false,4
+Aoba Johsai,Equipo de Voleibol Aoba Johsai,Miyagi,Miyagi,false,4
+Shiratorizawa,Equipo de Voleibol Shiratorizawa,Miyagi,Miyagi,false,4
+Argentina,Equipo de Voleibol Argentina,Buenos Aires,Buenos Aires,false,4
+Huntrix,Banda de Chicas Huntrix,Seoul,Seoul,false,28
+HuntrixsFans,Fans de Huntrix Unidos,Seoul,Seoul,false,28

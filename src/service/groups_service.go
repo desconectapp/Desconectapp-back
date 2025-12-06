@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"fmt"
 	repository "gin/db/generated"
 	"log"
 	"strconv"

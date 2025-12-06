@@ -1,35 +1,35 @@
 user_id,name,age,city,current_situation,gender,profile_complete
-1,juan,33,Buenos Aires,STUDENT,male,true
-2,juana,23,Buenos Aires,UNEMPLOYED,female,true
-3,sofii,19,Buenos Aires,STUDENT,female,true
-4,maxi,24,Buenos Aires,STUDENT,male,true
-5,supre,23,Buenos Aires,UNEMPLOYED,male,true
-6,anita,23,Buenos Aires,STUDENT,female,true
-7,lucho,26,Buenos Aires,WORKING,male,true
-8,martu,23,Buenos Aires,UNEMPLOYED,female,true
-9,valen,23,Buenos Aires,UNEMPLOYED,male,true
-10,marco,23,Buenos Aires,WORKING,male,true
-11,pablo,72,Buenos Aires,UNEMPLOYED,male,true
-12,admin,25,Buenos Aires,WORKING,femake,true
-13,hinata,19,Miyagi,WORKING,male,true
-14,tobio,19,Miyagi,WORKING,male,true
-15,tsukki,19,Miyagi,WORKING,male,true
-16,yamaguchi,19,Miyagi,WORKING,male,true
-17,bokuto,22,Tokio,WORKING,male,true
-18,akaashi,21,Tokio,WORKING,male,true
-19,wasio,21,Tokio,WORKING,male,true
-20,konoha,21,Tokio,WORKING,male,true
-21,kuuro,22,Tokio,WORKING,male,true
-22,kenma,21,Tokio,WORKING,male,true
-23,oikawa,22,Argentina,WORKING,male,true
-24,iwaizumi,22,Miyagi,WORKING,male,true
-25,kunimi,19,Miyagi,WORKING,male,true
-26,juan,29,Argentina,WORKING,male,true
-27,nacho,26,Argentina,WORKING,male,true
-28,miguel,19,Argentina,WORKING,male,true
-29,ushijima,22,Miyagi,WORKING,male,true
-30,tendo,22,Miyagi,WORKING,male,true
-31,semi,22,Miyagi,WORKING,male,true
-32,zoey,25,Miyagi,WORKING,male,true
-33,rumi,24,Miyagi,WORKING,male,true
-34,mira,23,Miyagi,WORKING,male,true
+1,juan,33,Buenos Aires,student,male,true
+2,juana,23,Buenos Aires,job-seeking,female,true
+3,sofii,19,Buenos Aires,student,female,true
+4,maxi,24,Buenos Aires,student,male,true
+5,supre,23,Buenos Aires,job-seeking,male,true
+6,anita,23,Buenos Aires,student,female,true
+7,lucho,26,Buenos Aires,full-time,male,true
+8,martu,23,Buenos Aires,job-seeking,female,true
+9,valen,23,Buenos Aires,job-seeking,male,true
+10,marco,23,Buenos Aires,full-time,male,true
+11,pablo,72,Buenos Aires,job-seeking,male,true
+12,admin,25,Buenos Aires,full-time,female,true
+13,hinata,19,Miyagi,full-time,male,true
+14,tobio,19,Miyagi,full-time,male,true
+15,tsukki,19,Miyagi,full-time,male,true
+16,yamaguchi,19,Miyagi,full-time,male,true
+17,bokuto,22,Tokio,full-time,male,true
+18,akaashi,21,Tokio,full-time,male,true
+19,wasio,21,Tokio,full-time,male,true
+20,konoha,21,Tokio,full-time,male,true
+21,kuuro,22,Tokio,full-time,male,true
+22,kenma,21,Tokio,full-time,male,true
+23,oikawa,22,Argentina,full-time,male,true
+24,iwaizumi,22,Miyagi,full-time,male,true
+25,kunimi,19,Miyagi,full-time,male,true
+26,juan,29,Argentina,full-time,male,true
+27,nacho,26,Argentina,full-time,male,true
+28,miguel,19,Argentina,full-time,male,true
+29,ushijima,22,Miyagi,full-time,male,true
+30,tendo,22,Miyagi,full-time,male,true
+31,semi,22,Miyagi,full-time,male,true
+32,zoey,25,Miyagi,full-time,male,true
+33,rumi,24,Miyagi,full-time,male,true
+34,mira,23,Miyagi,full-time,male,true
