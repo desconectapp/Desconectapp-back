@@ -164,7 +164,7 @@ func getLocationFromCoordinates(lat string, long string) (string, error) {
 		return strings.TrimSpace(v), nil
 	}
 
-	return "", errors.New("no location found")
+	return "Ubicacion no disponible", nil
 }
 
 type GeminiPayload struct {

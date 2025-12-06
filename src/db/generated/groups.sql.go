@@ -210,6 +210,90 @@ func (q *Queries) ExitGroup(ctx context.Context, arg ExitGroupParams) error {
 	return err
 }
 
+const getAllOpenGroups = `-- name: GetAllOpenGroups :many
+SELECT 
+  g.id,
+  g.name,
+  g.description,
+  g.location_name,
+  g.location,
+  g.avatar_url,
+  g.week_timeslots,
+  a.name AS activity_name,
+  a.icon,
+  g.created_at,
+  COUNT(gm.user_id) AS member_count
+FROM groups g
+JOIN activities a ON g.activity_id = a.id
+LEFT JOIN group_members gm ON g.id = gm.group_id
+WHERE g.public = true
+  AND ($3::int IS NULL OR g.activity_id = $3::int)
+  AND ($4::int IS NULL OR NOT EXISTS (
+      SELECT 1 FROM group_members gm2 
+      WHERE gm2.group_id = g.id AND gm2.user_id = $4::int
+  ))
+GROUP BY g.id, g.name, g.description, g.location_name, g.location, g.avatar_url, g.week_timeslots, a.name, a.icon, g.created_at
+LIMIT $1 OFFSET $2
+`
+
+type GetAllOpenGroupsParams struct {
+	Limit      int32  `json:"limit"`
+	Offset     int32  `json:"offset"`
+	ActivityID *int32 `json:"activity_id"`
+	UserID     *int32 `json:"user_id"`
+}
+
+type GetAllOpenGroupsRow struct {
+	ID            int32              `json:"id"`
+	Name          *string            `json:"name"`
+	Description   *string            `json:"description"`
+	LocationName  *string            `json:"location_name"`
+	Location      *string            `json:"location"`
+	AvatarUrl     *string            `json:"avatar_url"`
+	WeekTimeslots []int32            `json:"week_timeslots"`
+	ActivityName  string             `json:"activity_name"`
+	Icon          *string            `json:"icon"`
+	CreatedAt     pgtype.Timestamptz `json:"created_at"`
+	MemberCount   int64              `json:"member_count"`
+}
+
+func (q *Queries) GetAllOpenGroups(ctx context.Context, arg GetAllOpenGroupsParams) ([]GetAllOpenGroupsRow, error) {
+	rows, err := q.db.Query(ctx, getAllOpenGroups,
+		arg.Limit,
+		arg.Offset,
+		arg.ActivityID,
+		arg.UserID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetAllOpenGroupsRow{}
+	for rows.Next() {
+		var i GetAllOpenGroupsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Description,
+			&i.LocationName,
+			&i.Location,
+			&i.AvatarUrl,
+			&i.WeekTimeslots,
+			&i.ActivityName,
+			&i.Icon,
+			&i.CreatedAt,
+			&i.MemberCount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getGroup = `-- name: GetGroup :one
 SELECT 
   g.id,
@@ -297,7 +381,7 @@ func (q *Queries) GetGroupMembers(ctx context.Context, groupID int32) ([]GetGrou
 	return items, nil
 }
 
-const getOpenGroupsNoFilter = `-- name: GetOpenGroupsNoFilter :many
+const getOpenGroupsByActivities = `-- name: GetOpenGroupsByActivities :many
 SELECT 
   g.id,
   g.name,
@@ -314,14 +398,104 @@ FROM groups g
 JOIN activities a ON g.activity_id = a.id
 LEFT JOIN group_members gm ON g.id = gm.group_id
 WHERE g.public = true
-  AND ($3::int IS NULL OR g.activity_id = $3::int)
-  GROUP BY g.id, g.name, g.description, g.location_name, g.avatar_url, g.week_timeslots, a.name, a.icon, g.created_at
+  AND g.activity_id = ANY($3::int[])
+  AND ($4::int IS NULL OR NOT EXISTS (
+      SELECT 1 FROM group_members gm2 
+      WHERE gm2.group_id = g.id AND gm2.user_id = $4::int
+  ))
+GROUP BY g.id, g.name, g.description, g.location_name, g.location, g.avatar_url, g.week_timeslots, a.name, a.icon, g.created_at
+LIMIT $1 OFFSET $2
+`
+
+type GetOpenGroupsByActivitiesParams struct {
+	Limit       int32   `json:"limit"`
+	Offset      int32   `json:"offset"`
+	ActivityIds []int32 `json:"activity_ids"`
+	UserID      *int32  `json:"user_id"`
+}
+
+type GetOpenGroupsByActivitiesRow struct {
+	ID            int32              `json:"id"`
+	Name          *string            `json:"name"`
+	Description   *string            `json:"description"`
+	LocationName  *string            `json:"location_name"`
+	Location      *string            `json:"location"`
+	AvatarUrl     *string            `json:"avatar_url"`
+	WeekTimeslots []int32            `json:"week_timeslots"`
+	ActivityName  string             `json:"activity_name"`
+	Icon          *string            `json:"icon"`
+	CreatedAt     pgtype.Timestamptz `json:"created_at"`
+	MemberCount   int64              `json:"member_count"`
+}
+
+func (q *Queries) GetOpenGroupsByActivities(ctx context.Context, arg GetOpenGroupsByActivitiesParams) ([]GetOpenGroupsByActivitiesRow, error) {
+	rows, err := q.db.Query(ctx, getOpenGroupsByActivities,
+		arg.Limit,
+		arg.Offset,
+		arg.ActivityIds,
+		arg.UserID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetOpenGroupsByActivitiesRow{}
+	for rows.Next() {
+		var i GetOpenGroupsByActivitiesRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Description,
+			&i.LocationName,
+			&i.Location,
+			&i.AvatarUrl,
+			&i.WeekTimeslots,
+			&i.ActivityName,
+			&i.Icon,
+			&i.CreatedAt,
+			&i.MemberCount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getOpenGroupsNoFilter = `-- name: GetOpenGroupsNoFilter :many
+SELECT 
+  g.id,
+  g.name,
+  g.description,
+  g.location_name,
+  g.location,
+  g.avatar_url,
+  g.week_timeslots,
+  a.name AS activity_name,
+  a.icon,
+  g.created_at,
+  COUNT(gm.user_id) AS member_count
+FROM groups g
+JOIN activities a ON g.activity_id = a.id
+LEFT JOIN group_members gm ON g.id = gm.group_id
+JOIN users_preference up ON g.activity_id = up.activity_id AND up.user_id = $3::int
+WHERE g.public = true
+  AND ($4::int IS NULL OR g.activity_id = $4::int)
+  AND ($3::int IS NULL OR NOT EXISTS (
+      SELECT 1 FROM group_members gm2 
+      WHERE gm2.group_id = g.id AND gm2.user_id = $3::int
+  ))
+GROUP BY g.id, g.name, g.description, g.location_name, g.location, g.avatar_url, g.week_timeslots, a.name, a.icon, g.created_at
 LIMIT $1 OFFSET $2
 `
 
 type GetOpenGroupsNoFilterParams struct {
 	Limit      int32  `json:"limit"`
 	Offset     int32  `json:"offset"`
+	UserID     *int32 `json:"user_id"`
 	ActivityID *int32 `json:"activity_id"`
 }
 
@@ -340,7 +514,12 @@ type GetOpenGroupsNoFilterRow struct {
 }
 
 func (q *Queries) GetOpenGroupsNoFilter(ctx context.Context, arg GetOpenGroupsNoFilterParams) ([]GetOpenGroupsNoFilterRow, error) {
-	rows, err := q.db.Query(ctx, getOpenGroupsNoFilter, arg.Limit, arg.Offset, arg.ActivityID)
+	rows, err := q.db.Query(ctx, getOpenGroupsNoFilter,
+		arg.Limit,
+		arg.Offset,
+		arg.UserID,
+		arg.ActivityID,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -386,14 +565,22 @@ SELECT
   COUNT(gm.user_id) AS member_count
 FROM groups g
 JOIN activities a ON g.activity_id = a.id
+LEFT JOIN group_members gm ON g.id = gm.group_id
+JOIN users_preference up ON g.activity_id = up.activity_id AND up.user_id = $3::int
 WHERE g.public = true
-  AND g.activity_id = $3::int
+  AND g.activity_id = $4::int
+  AND ($3::int IS NULL OR NOT EXISTS (
+      SELECT 1 FROM group_members gm2 
+      WHERE gm2.group_id = g.id AND gm2.user_id = $3::int
+  ))
+GROUP BY g.id, g.name, g.description, g.location_name, g.location, g.avatar_url, g.week_timeslots, a.name, a.icon, g.created_at
 LIMIT $1 OFFSET $2
 `
 
 type GetOpenGroupsWithFilterParams struct {
 	Limit      int32  `json:"limit"`
 	Offset     int32  `json:"offset"`
+	UserID     *int32 `json:"user_id"`
 	ActivityID *int32 `json:"activity_id"`
 }
 
@@ -412,7 +599,12 @@ type GetOpenGroupsWithFilterRow struct {
 }
 
 func (q *Queries) GetOpenGroupsWithFilter(ctx context.Context, arg GetOpenGroupsWithFilterParams) ([]GetOpenGroupsWithFilterRow, error) {
-	rows, err := q.db.Query(ctx, getOpenGroupsWithFilter, arg.Limit, arg.Offset, arg.ActivityID)
+	rows, err := q.db.Query(ctx, getOpenGroupsWithFilter,
+		arg.Limit,
+		arg.Offset,
+		arg.UserID,
+		arg.ActivityID,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -470,13 +662,17 @@ WHERE g.public = true
   AND g.location IS NOT NULL
   AND g.location != ''
   AND ($5::int IS NULL OR g.activity_id = $5::int)
+  AND ($6::int IS NULL OR NOT EXISTS (
+      SELECT 1 FROM group_members gm2 
+      WHERE gm2.group_id = g.id AND gm2.user_id = $6::int
+  ))
   AND (6371 * acos(
         cos(radians($3::float)) * 
         cos(radians(CAST(split_part(g.location, ',', 1) AS float))) *
         cos(radians(CAST(split_part(g.location, ',', 2) AS float)) - radians($4::float)) +
         sin(radians($3::float)) * 
         sin(radians(CAST(split_part(g.location, ',', 1) AS float)))
-    )) <= $6::float
+    )) <= $7::float
 GROUP BY g.id, g.name, g.description, g.location, g.avatar_url, g.week_timeslots, a.name, a.icon, g.created_at
 ORDER BY distance_km
 LIMIT $1 OFFSET $2
@@ -488,6 +684,7 @@ type GetOpenGroupsWithLocationParams struct {
 	Latitude   float64 `json:"latitude"`
 	Longitude  float64 `json:"longitude"`
 	ActivityID *int32  `json:"activity_id"`
+	UserID     *int32  `json:"user_id"`
 	Radius     float64 `json:"radius"`
 }
 
@@ -513,6 +710,7 @@ func (q *Queries) GetOpenGroupsWithLocation(ctx context.Context, arg GetOpenGrou
 		arg.Latitude,
 		arg.Longitude,
 		arg.ActivityID,
+		arg.UserID,
 		arg.Radius,
 	)
 	if err != nil {
@@ -623,6 +821,113 @@ func (q *Queries) GetPreferredGroups(ctx context.Context, arg GetPreferredGroups
 			&i.MemberCount,
 			&i.ActivityName,
 			&i.ActivityIcon,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getPreferredGroupsWithLocation = `-- name: GetPreferredGroupsWithLocation :many
+SELECT 
+  g.id,
+  g.name,
+  g.description,
+  g.location,
+  g.location_name,
+  g.avatar_url,
+  g.week_timeslots,
+  a.name AS activity_name,
+  a.icon,
+  g.created_at,
+  COUNT(gm.user_id) AS member_count,
+    CAST((6371 * acos(
+        cos(radians($3::float)) * 
+        cos(radians(CAST(split_part(g.location, ',', 1) AS float))) *
+        cos(radians(CAST(split_part(g.location, ',', 2) AS float)) - radians($4::float)) +
+        sin(radians($3::float)) * 
+        sin(radians(CAST(split_part(g.location, ',', 1) AS float)))
+    )) AS float) AS distance_km
+FROM groups g
+JOIN activities a ON g.activity_id = a.id
+LEFT JOIN group_members gm ON g.id = gm.group_id
+JOIN users_preference up ON g.activity_id = up.activity_id AND up.user_id = $5::int
+WHERE g.public = true
+  AND g.location IS NOT NULL
+  AND g.location != ''
+  AND NOT EXISTS (
+      SELECT 1 FROM group_members gm2 
+      WHERE gm2.group_id = g.id AND gm2.user_id = $5::int
+  )
+  AND (6371 * acos(
+        cos(radians($3::float)) * 
+        cos(radians(CAST(split_part(g.location, ',', 1) AS float))) *
+        cos(radians(CAST(split_part(g.location, ',', 2) AS float)) - radians($4::float)) +
+        sin(radians($3::float)) * 
+        sin(radians(CAST(split_part(g.location, ',', 1) AS float)))
+    )) <= $6::float
+GROUP BY g.id, g.name, g.description, g.location, g.avatar_url, g.week_timeslots, a.name, a.icon, g.created_at
+ORDER BY distance_km
+LIMIT $1 OFFSET $2
+`
+
+type GetPreferredGroupsWithLocationParams struct {
+	Limit     int32   `json:"limit"`
+	Offset    int32   `json:"offset"`
+	Latitude  float64 `json:"latitude"`
+	Longitude float64 `json:"longitude"`
+	UserID    int32   `json:"user_id"`
+	Radius    float64 `json:"radius"`
+}
+
+type GetPreferredGroupsWithLocationRow struct {
+	ID            int32              `json:"id"`
+	Name          *string            `json:"name"`
+	Description   *string            `json:"description"`
+	Location      *string            `json:"location"`
+	LocationName  *string            `json:"location_name"`
+	AvatarUrl     *string            `json:"avatar_url"`
+	WeekTimeslots []int32            `json:"week_timeslots"`
+	ActivityName  string             `json:"activity_name"`
+	Icon          *string            `json:"icon"`
+	CreatedAt     pgtype.Timestamptz `json:"created_at"`
+	MemberCount   int64              `json:"member_count"`
+	DistanceKm    float64            `json:"distance_km"`
+}
+
+func (q *Queries) GetPreferredGroupsWithLocation(ctx context.Context, arg GetPreferredGroupsWithLocationParams) ([]GetPreferredGroupsWithLocationRow, error) {
+	rows, err := q.db.Query(ctx, getPreferredGroupsWithLocation,
+		arg.Limit,
+		arg.Offset,
+		arg.Latitude,
+		arg.Longitude,
+		arg.UserID,
+		arg.Radius,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetPreferredGroupsWithLocationRow{}
+	for rows.Next() {
+		var i GetPreferredGroupsWithLocationRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Description,
+			&i.Location,
+			&i.LocationName,
+			&i.AvatarUrl,
+			&i.WeekTimeslots,
+			&i.ActivityName,
+			&i.Icon,
+			&i.CreatedAt,
+			&i.MemberCount,
+			&i.DistanceKm,
 		); err != nil {
 			return nil, err
 		}
