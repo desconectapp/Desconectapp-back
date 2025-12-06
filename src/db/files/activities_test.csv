@@ -1,55 +1,55 @@
 name,icon,category
-Soccer,⚽,SPORT
-Basketball,🏀,SPORT
-Tennis,🎾,SPORT
-Volleyball,🏐,SPORT
-Baseball,⚾,SPORT
-Softball,🥎,SPORT
-Running,🏃,SPORT
-Swimming,🏊,SPORT
-Biking,🚴,SPORT
+Fútbol,⚽,SPORT
+Básquet,🏀,SPORT
+Tenis,🎾,SPORT
+Vóley,🏐,SPORT
+Béisbol,⚾,SPORT
+Sóftbol,🥎,SPORT
+Correr,🏃,SPORT
+Natación,🏊,SPORT
+Ciclismo,🚴,SPORT
 Yoga,🧘,WELLNESS
-Group Hiking,🥾,OUTDOOR
-Rock Climbing,🧗,OUTDOOR
-Dancing,💃,WELLNESS
-Gym,🏋️,WELLNESS
-Skating,⛸️,SPORT
-Bowling,🎳,GAME
+Senderismo en Grupo,🥾,OUTDOOR
+Escalada,🧗,OUTDOOR
+Baile,💃,WELLNESS
+Gimnasio,🏋️,WELLNESS
+Patinaje,⛸️,SPORT
+Boliche,🎳,GAME
 Golf,🏌️,SPORT
 Mini Golf,🏌️‍♂️,GAME
-Crocheting,🧶,CREATIVE
-Knitting Circle,🧵,CREATIVE
-Art Jam / Painting,🎨,CREATIVE
-Cooking Party,🍳,CREATIVE
-Baking Party,🧁,CREATIVE
-Gardening Club,🌱,OUTDOOR
-Photography Walk,📷,CREATIVE
-Book Club,📚,SOCIAL
-Writing Workshop,📝,CREATIVE
+Crochet,🧶,CREATIVE
+Círculo de Tejido,🧵,CREATIVE
+Sesión de Arte / Pintura,🎨,CREATIVE
+Fiesta de Cocina,🍳,CREATIVE
+Fiesta de Repostería,🧁,CREATIVE
+Club de Jardinería,🌱,OUTDOOR
+Caminata Fotográfica,📷,CREATIVE
+Club de Lectura,📚,SOCIAL
+Taller de Escritura,📝,CREATIVE
 Karaoke,🎤,SOCIAL
-Music Jam,🎸,CREATIVE
-Board Games,♟️,GAME
-Card Games,🃏,GAME
+Sesión de Música,🎸,CREATIVE
+Juegos de Mesa,♟️,GAME
+Juegos de Cartas,🃏,GAME
 Dungeons & Dragons,🐉,GAME
 Pathfinder,🛡️,GAME
-Call of Cthulhu,👁️,GAME
-Tabletop RPGs,🎲,GAME
-Promenading / Walking,🚶,OUTDOOR
-Meditation Circle,🧘‍♂️,WELLNESS
-Fishing Trip,🎣,OUTDOOR
-Movie Night,🎬,INDOOR
-Camping Trip,🏕️,OUTDOOR
-Traveling,✈️,SOCIAL
-Beach Day,🏖️,OUTDOOR
+La Llamada de Cthulhu,👁️,GAME
+Juegos de Rol de Mesa,🎲,GAME
+Paseo / Caminata,🚶,OUTDOOR
+Círculo de Meditación,🧘‍♂️,WELLNESS
+Viaje de Pesca,🎣,OUTDOOR
+Noche de Películas,🎬,INDOOR
+Viaje de Camping,🏕️,OUTDOOR
+Viajar,✈️,SOCIAL
+Día en la Playa,🏖️,OUTDOOR
 Picnic,🧺,OUTDOOR
-Puzzle Night,🧩,GAME
+Noche de Rompecabezas,🧩,GAME
 Escape Room,🔐,GAME
-Potluck Dinner,🍲,SOCIAL
-Trivia Night,❓,GAME
+Cena Compartida,🍲,SOCIAL
+Noche de Trivia,❓,GAME
 Paintball,🔫,OUTDOOR
 Laser Tag,🔫,GAME
 Archery Tag,🏹,OUTDOOR
-Scavenger Hunt,🗺️,GAME
-Amusement Park Visit,🎡,OUTDOOR
-Kite Flying,🪁,OUTDOOR
-Team Building Games,🤝,SOCIAL
+Búsqueda del Tesoro,🗺️,GAME
+Visita al Parque de Diversiones,🎡,OUTDOOR
+Volar Cometas,🪁,OUTDOOR
+Juegos de Team Building,🤝,SOCIAL

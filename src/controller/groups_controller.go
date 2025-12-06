@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -389,7 +390,32 @@ func (c *GroupsController) GetOpenGroups(ctx *gin.Context) {
 	filter.Limit = int32(limit) + 1
 	filter.Offset = int32(offset)
 
-	// Parse activity_id from query params
+	// Get user ID from JWT token if available
+	if userToken, exists := ctx.Get("userID"); exists {
+		userID := userToken.(int32)
+		filter.UserID = &userID
+	}
+
+	// Parse myPreferences flag
+	if myPrefsStr := ctx.Query("myPreferences"); myPrefsStr == "true" {
+		if filter.UserID == nil {
+			ErrorWithStatus(ctx, "Authentication required for myPreferences", http.StatusUnauthorized)
+			return
+		}
+		filter.MyPreferences = true
+	}
+	
+	// Parse activities list
+	if activitiesStr := ctx.Query("activities"); activitiesStr != "" {
+		activityIds := strings.Split(activitiesStr, ",")
+		for _, idStr := range activityIds {
+			if activityId, err := strconv.ParseInt(strings.TrimSpace(idStr), 10, 32); err == nil {
+				filter.ActivityIds = append(filter.ActivityIds, int32(activityId))
+			}
+		}
+	}
+
+	// Parse single activity_id from query params (for backwards compatibility)
 	if activityIdStr := ctx.Query("activity_id"); activityIdStr != "" {
 		if activityId, err := strconv.ParseInt(activityIdStr, 10, 32); err == nil {
 			filter.ActivityId = int32(activityId)

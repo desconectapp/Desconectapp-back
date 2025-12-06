@@ -14,56 +14,56 @@ UNSPLASH_BASE_URL = "https://api.unsplash.com"
 TOTAL_USERS = 48
 
 # Actividades "core" donde queremos MUCHOS matchings
-MATCHING_ACTIVITIES = ["Swimming", "Biking", "Gym"]
+MATCHING_ACTIVITIES = ["Natación", "Ciclismo", "Gimnasio"]
 
 # TODAS las actividades que vamos a crear (name, category)
 TARGET_ACTIVITIES = [
     # Core deportivas
-    ("Swimming", "SPORT"),
-    ("Biking", "SPORT"),
-    ("Gym", "SPORT"),
+    ("Natación", "SPORT"),
+    ("Ciclismo", "SPORT"),
+    ("Gimnasio", "SPORT"),
 
     # Más deporte
-    ("Running", "SPORT"),
-    ("Padel", "SPORT"),
-    ("Tennis", "SPORT"),
-    ("Climbing", "SPORT"),
+    ("Correr", "SPORT"),
+    ("Pádel", "SPORT"),
+    ("Tenis", "SPORT"),
+    ("Escalada", "SPORT"),
     ("Crossfit", "SPORT"),
-    ("Functional Training", "SPORT"),
-    ("Boxing", "SPORT"),
+    ("Entrenamiento Funcional", "SPORT"),
+    ("Boxeo", "SPORT"),
 
     # Outdoor
-    ("Hiking", "OUTDOOR"),
+    ("Senderismo en Grupo", "OUTDOOR"),
     ("Trail Running", "OUTDOOR"),
     ("Kayak", "OUTDOOR"),
-    ("Outdoor Workout", "OUTDOOR"),
+    ("Entrenamiento al Aire Libre", "OUTDOOR"),
 
     # Wellness / bien estar
     ("Yoga", "WELLNESS"),
-    ("Meditation", "WELLNESS"),
+    ("Meditación", "WELLNESS"),
     ("Pilates", "WELLNESS"),
-    ("Stretching", "WELLNESS"),
+    ("Estiramiento", "WELLNESS"),
 
     # Social / juegos
-    ("Board Games", "GAME"),
-    ("Chess", "GAME"),
+    ("Juegos de Mesa", "GAME"),
+    ("Ajedrez", "GAME"),
     ("Dungeons & Dragons", "GAME"),
-    ("Fútbol 5", "SPORT"),
-    ("Basket", "SPORT"),
+    ("Fútbol", "SPORT"),
+    ("Básquet", "SPORT"),
 
     # Creativo / indoor
-    ("Photography Walk", "CREATIVE"),
-    ("Street Photography", "CREATIVE"),
-    ("Painting Workshop", "CREATIVE"),
-    ("Cooking Class", "INDOOR"),
-    ("Baking & Coffee", "INDOOR"),
+    ("Caminata Fotográfica", "CREATIVE"),
+    ("Fotografía Callejera", "CREATIVE"),
+    ("Taller de Pintura", "CREATIVE"),
+    ("Clase de Cocina", "INDOOR"),
+    ("Repostería y Café", "INDOOR"),
 
     # Social / idiomas / baile
-    ("Language Exchange", "SOCIAL"),
+    ("Intercambio de Idiomas", "SOCIAL"),
     ("After Office", "SOCIAL"),
     ("Salsa", "SOCIAL"),
     ("Bachata", "SOCIAL"),
-    ("K-Pop Dance", "SOCIAL"),
+    ("Baile K-Pop", "SOCIAL"),
 ]
 
 # Barrios porteños + coords aproximadas
@@ -95,19 +95,70 @@ LAST_NAMES = [
     "Flores", "Acosta", "Rivas", "Benítez", "Herrera", "Molina", "Castro",
 ]
 
-# Nombres raros para grupos
-WEIRD_GROUP_NAMES = [
-    "Cardio Apocalíptico",
-    "Los Nadadores del Fin del Mundo",
-    "Team Oxígeno Cero",
-    "Pedaleando en Chanclas",
-    "La Logia del Press Banca",
-    "Piscina Intergaláctica",
-    "Bicis & Fainá",
-    "Crossfit Emocional",
-    "Los de la Barra de Proteína",
-    "Club de los Cuadríceps Tristes",
-]
+# Nombres raros para grupos por actividad (solo actividades que tienen nombres raros apropiados)
+WEIRD_GROUP_NAMES_BY_ACTIVITY: Dict[str, List[str]] = {
+    "Natación": [
+        "Los Nadadores del Fin del Mundo",
+        "Team Oxígeno Cero",
+    ],
+    "Ciclismo": [
+        "Pedaleando en Chanclas",
+        "Bicis & Fainá",
+        "El mató un policia biciletado"
+    ],
+    "Gimnasio": [
+        "La Logia del Press Banca",
+        "Crossfit Emocional",
+        "Los de la Barra de Proteína",
+        "Club de los Cuadríceps Tristes",
+    ],
+    "Dungeons & Dragons": [
+        "Drogones y Fisuras",
+        "Dados del Destino",
+        "Goblins de Quilmes",
+    ],
+    "Juegos de Mesa": [
+        "Juegos de Mesa Desesperados",
+    ],
+    "Ajedrez": [
+        "Gambito de envido",
+    ],
+    "Yoga": [
+        "Yoguis del Caos",
+        "Zen y Desesperación",
+    ],
+    "Meditación": [
+        "Meditación para llegar a los 40",
+    ],
+    "Pilates": [
+        "Pilates en el Abismo",
+    ],
+    "Caminata Fotográfica": [
+        "Fotógrafos del Fin del Mundo",
+    ],
+    "Taller de Pintura": [
+        "Acrílicos y Grafitos",
+        "Taller de Arte Desesperado",
+    ],
+    "Clase de Cocina": [
+        "Cocineros del Apocalipsis",
+        "Clase de Cocina Desesperada",
+    ],
+    "Salsa": [
+        "Salsa en el Abismo",
+        "Bailarines Desesperados",
+    ],
+    "Intercambio de Idiomas": [
+        "Intercambio de Idiomas Post Apocalíptico",
+    ],
+    "Senderismo en Grupo": [
+        "Senderistas del Apocalipsis",
+        "Los Caminantes Nocturnos",
+    ],
+    "Kayak": [
+        "Kayak en el Fin del Mundo",
+    ],
+}
 
 # Timeslot clusters para generar muchos matchings
 TIMESLOT_CLUSTERS = {
@@ -141,7 +192,7 @@ def api_post(path: str, token: str = None, json_data=None):
         headers["Authorization"] = f"Bearer {token}"
     resp = requests.post(f"{BASE_URL}{path}", json=json_data, headers=headers)
     if resp.status_code >= 400:
-        raise RuntimeError(f"POST {path} failed [{resp.status_code}]: {resp.status_code} {resp.text}")
+        raise RuntimeError(f"POST {path} falló [{resp.status_code}]: {resp.status_code} {resp.text}")
     return resp.json() if resp.text else None
 
 
@@ -151,7 +202,7 @@ def api_get(path: str, token: str = None, params=None):
         headers["Authorization"] = f"Bearer {token}"
     resp = requests.get(f"{BASE_URL}{path}", headers=headers, params=params)
     if resp.status_code >= 400:
-        raise RuntimeError(f"GET {path} failed [{resp.status_code}]: {resp.status_code} {resp.text}")
+        raise RuntimeError(f"GET {path} falló [{resp.status_code}]: {resp.status_code} {resp.text}")
     return resp.json() if resp.text else None
 
 
@@ -161,7 +212,7 @@ def api_put(path: str, token: str = None, json_data=None):
         headers["Authorization"] = f"Bearer {token}"
     resp = requests.put(f"{BASE_URL}{path}", json=json_data, headers=headers)
     if resp.status_code >= 400:
-        raise RuntimeError(f"PUT {path} failed [{resp.status_code}]: {resp.status_code} {resp.text}")
+        raise RuntimeError(f"PUT {path} falló [{resp.status_code}]: {resp.status_code} {resp.text}")
     return resp.json() if resp.text else None
 
 
@@ -291,9 +342,9 @@ def seed_core_match_activities(
     user_ids: List[int],
 ):
     """
-    Genera muchos matchings solo para Swimming / Biking / Gym.
+    Genera muchos matchings solo para Natación / Ciclismo / Gimnasio.
     """
-    print("[+] Creando activity_requests fuertes para Swimming / Biking / Gym")
+    print("[+] Creando activity_requests fuertes para Natación / Ciclismo / Gimnasio")
 
     random.shuffle(user_ids)
     chunk_size = len(user_ids) // 3
@@ -301,16 +352,16 @@ def seed_core_match_activities(
     users_biking = user_ids[chunk_size: 2 * chunk_size]
     users_gym = user_ids[2 * chunk_size:]
 
-    swim_id = activity_ids["Swimming"]
-    bike_id = activity_ids["Biking"]
-    gym_id = activity_ids["Gym"]
+    swim_id = activity_ids["Natación"]
+    bike_id = activity_ids["Ciclismo"]
+    gym_id = activity_ids["Gimnasio"]
 
-    # Swimming
+    # Natación
     swimming_clusters = [
         TIMESLOT_CLUSTERS["swimming_morning"],
         TIMESLOT_CLUSTERS["swimming_evening"],
     ]
-    print("  [*] Swimming")
+    print("  [*] Natación")
     for idx, user_id in enumerate(users_swimming):
         cluster = swimming_clusters[idx % len(swimming_clusters)]
         desc = random.choice([
@@ -321,12 +372,12 @@ def seed_core_match_activities(
         ])
         create_activity_request_for_user(admin_token, user_id, swim_id, desc, cluster)
 
-    # Biking
+    # Ciclismo
     biking_clusters = [
         TIMESLOT_CLUSTERS["biking_morning"],
         TIMESLOT_CLUSTERS["biking_afternoon"],
     ]
-    print("  [*] Biking")
+    print("  [*] Ciclismo")
     for idx, user_id in enumerate(users_biking):
         cluster = biking_clusters[idx % len(biking_clusters)]
         desc = random.choice([
@@ -337,12 +388,12 @@ def seed_core_match_activities(
         ])
         create_activity_request_for_user(admin_token, user_id, bike_id, desc, cluster)
 
-    # Gym
+    # Gimnasio
     gym_clusters = [
         TIMESLOT_CLUSTERS["gym_after_office"],
         TIMESLOT_CLUSTERS["gym_night"],
     ]
-    print("  [*] Gym")
+    print("  [*] Gimnasio")
     for idx, user_id in enumerate(users_gym):
         cluster = gym_clusters[idx % len(gym_clusters)]
         desc = random.choice([
@@ -363,7 +414,7 @@ def seed_extra_activities(
     user_ids: List[int],
 ):
     """
-    Para cada actividad que no sea Swimming/Biking/Gym,
+    Para cada actividad que no sea Natación/Ciclismo/Gimnasio,
     crea algunos activity_requests más livianos para poblar el sistema.
     """
     print("[+] Creando activity_requests para actividades extra")
@@ -446,7 +497,7 @@ def fetch_unsplash_images(query: str, per_page: int = 30) -> List[str]:
 
     resp = requests.get(f"{UNSPLASH_BASE_URL}/search/photos", params=params)
     if resp.status_code >= 400:
-        raise RuntimeError(f"Unsplash search failed [{resp.status_code}]: {resp.status_code} {resp.text}")
+        raise RuntimeError(f"Búsqueda en Unsplash falló [{resp.status_code}]: {resp.status_code} {resp.text}")
     data = resp.json()
     results = data.get("results", [])
     urls = [r["urls"]["regular"] for r in results if "urls" in r and "regular" in r["urls"]]
@@ -464,29 +515,31 @@ def update_groups_with_images_and_public(
     Usa PUT /admin/groups/:id para:
       - setear avatar_url con una imagen de Unsplash
       - setear public = true
-      - asegurar que TODO grupo tenga nombre:
-          * si ya tiene name -> se respeta
-          * si no tiene:
-              - ~1/3 reciben un nombre raro de WEIRD_GROUP_NAMES
-              - el resto "Grupo #<id>"
+      - SIEMPRE reemplazar el nombre del grupo (que viene del matcher como nombre de actividad):
+          * ~1/3 reciben un nombre raro de WEIRD_GROUP_NAMES
+          * el resto "Grupo #<id>"
       - usar una búsqueda distinta en Unsplash por cada activity_id
         para que la foto represente la actividad del grupo.
     """
 
-    # 1) Mapear activity_id -> nombre de la actividad
-    print("[+] Construyendo mapa activity_id -> activity_name desde /admin/activities")
+    # 1) Mapear activity_id -> nombre y categoría de la actividad
+    print("[+] Construyendo mapa activity_id -> activity_name y category desde /admin/activities")
     activities = api_get(
         "/admin/activities",
         token=admin_token,
         params={"_start": 0, "_end": 1000},
     )
     activity_name_by_id: Dict[int, str] = {}
+    activity_category_by_id: Dict[int, str] = {}
     if isinstance(activities, list):
         for a in activities:
             aid = a.get("id") or a.get("ID")
             aname = (a.get("name") or a.get("Name") or "").strip()
+            acategory = (a.get("category") or a.get("Category") or "").strip()
             if aid is not None and aname:
                 activity_name_by_id[int(aid)] = aname
+            if aid is not None and acategory:
+                activity_category_by_id[int(aid)] = acategory
 
     # 2) Juntar todos los activity_id presentes en los grupos
     activity_ids_in_groups: set[int] = set()
@@ -520,9 +573,9 @@ def update_groups_with_images_and_public(
         # Si no hay resultados, fallback a algo general
         if not urls:
             try:
-                urls = fetch_unsplash_images("gym", per_page=20)
+                urls = fetch_unsplash_images("gimnasio", per_page=20)
             except Exception as e:
-                print(f"       [WARN] Fallback 'gym' también falló: {e}")
+                print(f"       [WARN] Fallback 'gimnasio' también falló: {e}")
                 urls = []
 
         if urls:
@@ -537,23 +590,41 @@ def update_groups_with_images_and_public(
 
     print("[+] Actualizando grupos con avatar_url + public=true y nombres via /admin/groups/:id")
 
-    # 4) Preparar info de nombres (quién ya tiene / quién no)
-    group_info = []
+    # 4) Identificar grupos que tienen actividades con nombres raros disponibles
+    # Solo asignamos nombres raros a grupos cuya actividad tiene nombres raros definidos
+    groups_with_weird_names: Dict[int, str] = {}  # group_id -> activity_name
+    activities_skipped: set[str] = set()  # Actividades sin nombres raros definidos
+    
     for g in groups:
         gid = g.get("id") or g.get("ID")
         if gid is None:
             continue
-        current_name = (g.get("name") or g.get("Name") or "").strip()
-        group_info.append((gid, current_name))
-
-    unnamed_ids = [gid for (gid, current_name) in group_info if not current_name]
-
+        aid_raw = g.get("activity_id") or g.get("ActivityId") or g.get("activityId")
+        try:
+            aid = int(aid_raw) if aid_raw is not None else None
+        except (TypeError, ValueError):
+            aid = None
+        
+        if aid and aid in activity_name_by_id:
+            activity_name = activity_name_by_id[aid]
+            if activity_name in WEIRD_GROUP_NAMES_BY_ACTIVITY:
+                groups_with_weird_names[gid] = activity_name
+            else:
+                # Actividad sin nombres raros definidos - se salteará
+                activities_skipped.add(activity_name)
+    
+    if activities_skipped:
+        print(f"    -> Actividades sin nombres raros (se mantendrá nombre por defecto): {', '.join(sorted(activities_skipped))}")
+    
+    # De los grupos que tienen nombres raros disponibles, ~1/3 reciben nombres raros
     weird_target_ids: set[int] = set()
-    if unnamed_ids:
-        random.shuffle(unnamed_ids)
-        weird_count = max(1, len(unnamed_ids) // 3)
-        weird_count = min(weird_count, len(unnamed_ids))
-        weird_target_ids = set(unnamed_ids[:weird_count])
+    if groups_with_weird_names:
+        gids_with_weird = list(groups_with_weird_names.keys())
+        random.shuffle(gids_with_weird)
+        weird_count = max(1, len(gids_with_weird) // 3)
+        weird_target_ids = set(gids_with_weird[:weird_count])
+        print(f"    -> {len(gids_with_weird)} grupos con actividades que tienen nombres raros disponibles")
+        print(f"    -> {len(weird_target_ids)} grupos recibirán nombres raros")
 
     # 5) Llevamos un índice de rotación de imágenes por activity_id
     img_idx_by_activity: Dict[int, int] = {}
@@ -572,49 +643,55 @@ def update_groups_with_images_and_public(
 
         # elegimos la lista de imágenes correspondiente a esa actividad
         urls_for_activity: List[str] = []
+        img_url = None
         if aid is not None and aid in images_by_activity:
             urls_for_activity = images_by_activity[aid]
+            # índice de rotación por actividad
+            current_idx = img_idx_by_activity.get(aid, 0)
+            img_url = urls_for_activity[current_idx % len(urls_for_activity)]
+            img_idx_by_activity[aid] = current_idx + 1
 
-        # si por alguna razón no tenemos imágenes para esa actividad, hacemos fallback a cualquier otra
-        if not urls_for_activity:
-            any_aid = next(iter(images_by_activity.keys()))
-            urls_for_activity = images_by_activity[any_aid]
-            aid_for_index = any_aid
-        else:
-            aid_for_index = aid
-
-        # índice de rotación por actividad
-        current_idx = img_idx_by_activity.get(aid_for_index, 0)
-        img_url = urls_for_activity[current_idx % len(urls_for_activity)]
-        img_idx_by_activity[aid_for_index] = current_idx + 1
-
-        current_name = (g.get("name") or g.get("Name") or "").strip()
+        # Obtener nombre de la actividad
+        activity_name = activity_name_by_id.get(aid, "") if aid else ""
+        
+        # Solo cambiar nombre si tiene nombre raro disponible Y está en weird_target_ids
+        # Si no, dejar el nombre por defecto (que viene del matcher = nombre de la actividad)
         payload = {
-            "avatar_url": img_url,
             "public": True,
         }
-
-        # Sólo tocamos el nombre si estaba vacío
-        if not current_name:
-            if gid in weird_target_ids and WEIRD_GROUP_NAMES:
-                new_name = random.choice(WEIRD_GROUP_NAMES)
-            else:
-                new_name = f"Grupo #{gid}"
+        
+        # Solo agregar avatar_url si tenemos imagen
+        if img_url:
+            payload["avatar_url"] = img_url
+        
+        if gid in weird_target_ids and activity_name in WEIRD_GROUP_NAMES_BY_ACTIVITY:
+            # Asignar nombre raro de la actividad
+            weird_names = WEIRD_GROUP_NAMES_BY_ACTIVITY[activity_name]
+            new_name = random.choice(weird_names)
             payload["name"] = new_name
+            img_info = f"avatar_url={img_url[:60]}..." if img_url else "avatar_url=None"
             print(
-                f"    -> Grupo {gid}: activity_id={aid} avatar_url={img_url[:60]}..., "
-                f"public=True, name='{new_name}' (antes sin nombre)"
+                f"    -> Grupo {gid}: activity='{activity_name}' {img_info}, "
+                f"public=True, name='{new_name}' (nombre raro)"
+            )
+        elif activity_name not in WEIRD_GROUP_NAMES_BY_ACTIVITY:
+            # Actividad sin nombres raros definidos - mantener nombre por defecto (se saltea)
+            img_info = f"avatar_url={img_url[:60]}..." if img_url else "avatar_url=None"
+            print(
+                f"    -> Grupo {gid}: activity='{activity_name}' {img_info}, "
+                f"public=True, name='{activity_name}' (sin nombres raros, se mantiene por defecto)"
             )
         else:
+            # Actividad tiene nombres raros pero este grupo no fue seleccionado - mantener nombre por defecto
+            img_info = f"avatar_url={img_url[:60]}..." if img_url else "avatar_url=None"
             print(
-                f"    -> Grupo {gid}: activity_id={aid} avatar_url={img_url[:60]}..., "
-                f"public=True, name existente='{current_name}'"
+                f"    -> Grupo {gid}: activity='{activity_name}' {img_info}, "
+                f"public=True, name='{activity_name}' (nombre por defecto)"
             )
 
         api_put(f"/admin/groups/{gid}", token=admin_token, json_data=payload)
 
     print("[+] Todos los grupos actualizados: imagen por actividad, públicos y con nombre garantizado")
-
 
 
 
@@ -636,7 +713,7 @@ def main():
     # 2) Crear usuarios argentinos
     user_ids = create_users_via_admin(admin_token, TOTAL_USERS)
 
-    # 3) Match fuerte para Swimming / Biking / Gym
+    # 3) Match fuerte para Natación / Ciclismo / Gimnasio
     seed_core_match_activities(admin_token, activity_ids, user_ids)
 
     # 4) Activity requests livianos para TODAS las otras actividades
