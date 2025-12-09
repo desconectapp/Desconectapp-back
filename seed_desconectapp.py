@@ -449,7 +449,7 @@ def fetch_unsplash_images(query: str, per_page: int = 30) -> List[str]:
         raise RuntimeError(f"Unsplash search failed [{resp.status_code}]: {resp.status_code} {resp.text}")
     data = resp.json()
     results = data.get("results", [])
-    urls = [r["urls"]["regular"] for r in results if "urls" in r and "regular" in r["urls"]]
+    urls = [r["urls"]["thumb"] for r in results if "urls" in r and "thumb" in r["urls"]]
     print(f"    -> {len(urls)} imágenes obtenidas")
     return urls
 

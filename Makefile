@@ -26,3 +26,6 @@ test: sqlc
 
 down_test:
 	docker compose -f $(TEST_COMPOSE_FILE) down -v -t1
+
+seed:
+	python3 seed_desconectapp.py
