@@ -45,3 +45,14 @@ func (s *PreferenceService) DeletePreference(params repository.DeletePreferenceP
 	id, err := s.queries.DeletePreference(s.ctx, params)
 	return id, err
 }
+
+func (s *PreferenceService) GenerateCustomActivity(name string) (int32, error) {
+	activity, err := GenerateActivity(&ActivitiesRequestService{
+		queries: s.queries,
+		ctx:     s.ctx,
+	}, name)
+	if err != nil {
+		return 0, err
+	}
+	return activity.ID, nil
+}

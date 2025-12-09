@@ -176,6 +176,6 @@ COPY communities(name, description, location, location_name, activity_id)
 FROM '/communities.csv'
 WITH (FORMAT csv, HEADER true);
 
-COPY communities_members(group_id, user_id, is_admin)
+COPY communities_members(community_id, user_id, is_admin)
 FROM '/communities_members.csv'
 WITH (FORMAT csv, HEADER true);

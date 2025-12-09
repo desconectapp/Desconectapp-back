@@ -491,6 +491,16 @@ func (s *GroupsService) GetUserRecommendations(filter repository.GetPreferredGro
 	return openGroups, err
 }
 
+func (s *GroupsService) GenerateCustomActivity(name string) (int32, error) {
+	activity, err := GenerateActivity(&ActivitiesRequestService{
+		queries: s.queries,
+		ctx:     s.ctx,
+	}, name)
+	if err != nil {
+		return 0, err
+	}
+	return activity.ID, nil
+}
 func (s *GroupsService) filterGroupsByLocation(groups []OpenGroup, lat, lng, radius float64, limit int) ([]OpenGroup, error) {
 	var filteredGroups []OpenGroup
 	log.Printf("DEBUG filterGroupsByLocation: Processing %d groups, target lat=%f, lng=%f, radius=%f (NOTE: params may be swapped to match SQL behavior)", len(groups), lat, lng, radius)
