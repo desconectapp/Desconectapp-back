@@ -15,7 +15,7 @@ type CommunityWithMembers struct {
 	Icon         *string                    `json:"icon"`
 	Location     *string                    `json:"location"`
 	LocationName *string                    `json:"locationName"`
-	AvatarUrl    *string                    `json:"avatarUrl"`
+	AvatarUrl    *string                    `json:"avatar_url"`
 	Members      []repository.GetCommunityMembersRow `json:"members"`
 	CreatedAt    string                    `json:"createdAt"`
 	IsCurrentUserAdmin bool               `json:"is_current_user_admin"`
@@ -32,7 +32,7 @@ type CommunityWithLocation struct {
 	ActivityName  string  `json:"activityName"`
 	MemberCount   int32   `json:"memberCount"`
 	DistanceKM    float64 `json:"distanceKm"`
-	AvatarUrl     string  `json:"avatarUrl"`
+	AvatarUrl     string  `json:"avatar_url"`
 	Icon          string  `json:"icon"`
 }
 

@@ -2,14 +2,16 @@ package service
 
 import (
 	"context"
+	"fmt"
 	repository "gin/db/generated"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type AdminGroupService struct {
-	queries *repository.Queries
-	ctx     context.Context
+	queries      *repository.Queries
+	ctx          context.Context
+	supabaseSync *SupabaseSyncService
 }
 
 type AdminGroup struct {
@@ -31,10 +33,12 @@ type AdminGroupMember struct {
 func NewAdminGroupService(conn *pgxpool.Pool) *AdminGroupService {
 	queries := repository.New(conn)
 	ctx := context.Background()
+	supabaseSync := NewSupabaseSyncService(queries)
 
 	return &AdminGroupService{
-		queries: queries,
-		ctx:     ctx,
+		queries:      queries,
+		ctx:          ctx,
+		supabaseSync: supabaseSync,
 	}
 }
 
@@ -172,6 +176,12 @@ func (s *AdminGroupService) CountGroups() (int64, error) {
 }
 
 func (s *AdminGroupService) DeleteGroup(id int32) error {
+	// Delete from Supabase first (before the group is deleted from DB)
+	if syncErr := s.supabaseSync.DeleteGroupMembers(id); syncErr != nil {
+		// Log error but don't fail the operation
+		fmt.Printf("WARN: Failed to delete group members from Supabase: %v\n", syncErr)
+	}
+
 	return s.queries.AdminDeleteGroup(s.ctx, id)
 }
 
@@ -193,15 +203,33 @@ func (s *AdminGroupService) ListGroupMembers(groupID int32) ([]AdminGroupMember,
 }
 
 func (s *AdminGroupService) AddGroupMember(groupID, userID int32) error {
-	return s.queries.AdminAddGroupMember(s.ctx, repository.AdminAddGroupMemberParams{
+	err := s.queries.AdminAddGroupMember(s.ctx, repository.AdminAddGroupMemberParams{
 		GroupID: groupID,
 		UserID:  userID,
 	})
+	if err != nil {
+		return err
+	}
+	// Sync to Supabase after adding member
+	if syncErr := s.supabaseSync.SyncGroupMembers(groupID); syncErr != nil {
+		// Log error but don't fail the operation
+		fmt.Printf("WARN: Failed to sync group members to Supabase: %v\n", syncErr)
+	}
+	return nil
 }
 
 func (s *AdminGroupService) RemoveGroupMember(groupID, userID int32) error {
-	return s.queries.AdminRemoveGroupMember(s.ctx, repository.AdminRemoveGroupMemberParams{
+	err := s.queries.AdminRemoveGroupMember(s.ctx, repository.AdminRemoveGroupMemberParams{
 		GroupID: groupID,
 		UserID:  userID,
 	})
+	if err != nil {
+		return err
+	}
+	// Sync to Supabase after removing member
+	if syncErr := s.supabaseSync.SyncGroupMembers(groupID); syncErr != nil {
+		// Log error but don't fail the operation
+		fmt.Printf("WARN: Failed to sync group members to Supabase: %v\n", syncErr)
+	}
+	return nil
 }

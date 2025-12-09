@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	repository "gin/db/generated"
 	"log"
 	"strconv"
@@ -51,17 +52,20 @@ type ActivityFilter struct {
 }
 
 type GroupsService struct {
-	queries *repository.Queries
-	ctx     context.Context
+	queries        *repository.Queries
+	ctx            context.Context
+	supabaseSync   *SupabaseSyncService
 }
 
 func NewGroupsService(conn *pgxpool.Pool) *GroupsService {
 	queries := repository.New(conn)
 	ctx := context.Background()
+	supabaseSync := NewSupabaseSyncService(queries)
 
 	return &GroupsService{
-		queries: queries,
-		ctx:     ctx,
+		queries:      queries,
+		ctx:          ctx,
+		supabaseSync: supabaseSync,
 	}
 }
 
@@ -81,6 +85,11 @@ func (s *GroupsService) CreateGroup(groupParams repository.CreateGroupParams) (r
 	group, err := s.queries.CreateGroup(s.ctx, groupParams)
 	if err != nil {
 		return repository.CreateGroupRow{}, err
+	}
+	// Sync to Supabase after creating group with members
+	if syncErr := s.supabaseSync.SyncGroupMembers(group.ID); syncErr != nil {
+		// Log error but don't fail the operation
+		fmt.Printf("WARN: Failed to sync group members to Supabase: %v\n", syncErr)
 	}
 	return group, nil
 }
@@ -103,12 +112,28 @@ func (s *GroupsService) ListUserGroups(params repository.ListUserGroupsParams) (
 
 func (s *GroupsService) ExitGroup(exitParams repository.ExitGroupParams) error {
 	err := s.queries.ExitGroup(s.ctx, exitParams)
-	return err
+	if err != nil {
+		return err
+	}
+	// Sync to Supabase after removing member
+	if syncErr := s.supabaseSync.SyncGroupMembers(exitParams.GroupID); syncErr != nil {
+		// Log error but don't fail the operation
+		fmt.Printf("WARN: Failed to sync group members to Supabase: %v\n", syncErr)
+	}
+	return nil
 }
 
 func (s *GroupsService) JoinGroup(joinParams repository.AddUserToGroupParams) error {
 	err := s.queries.AddUserToGroup(s.ctx, joinParams)
-	return err
+	if err != nil {
+		return err
+	}
+	// Sync to Supabase after adding member
+	if syncErr := s.supabaseSync.SyncGroupMembers(joinParams.GroupID); syncErr != nil {
+		// Log error but don't fail the operation
+		fmt.Printf("WARN: Failed to sync group members to Supabase: %v\n", syncErr)
+	}
+	return nil
 }
 
 func (s *GroupsService) GetGroup(groupId int32) (GroupWithMembers, error) {
@@ -148,6 +173,11 @@ func addMembers(group repository.GetGroupRow, members []repository.GetGroupMembe
 }
 
 func (s *GroupsService) DeleteGroup(id int32) (int32, error) {
+	// Delete from Supabase first (before the group is deleted from DB)
+	if syncErr := s.supabaseSync.DeleteGroupMembers(id); syncErr != nil {
+		// Log error but don't fail the operation
+		fmt.Printf("WARN: Failed to delete group members from Supabase: %v\n", syncErr)
+	}
 
 	groupId, err := s.queries.DeleteGroup(s.ctx, id)
 

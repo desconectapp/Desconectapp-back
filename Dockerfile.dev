@@ -1,9 +1,21 @@
 FROM golang:latest
 
-WORKDIR /app
-ADD ./src /app
+# Set GOPROXY to help with network issues (with fallback)
+ENV GOPROXY=https://proxy.golang.org,direct
+ENV GOSUMDB=sum.golang.org
 
+WORKDIR /app
+
+# Copy go mod files first for better caching
+COPY ./src/go.mod ./src/go.sum* ./
+
+# Download dependencies (this will cache if go.mod/go.sum don't change)
+RUN go mod download
+
+# Install CompileDaemon
 RUN go install -mod=mod github.com/githubnemo/CompileDaemon
-RUN go get github.com/gin-gonic/gin
+
+# Copy the rest of the source code
+ADD ./src /app
 
 ENTRYPOINT CompileDaemon --build="go build -o /main main.go" --command=/main

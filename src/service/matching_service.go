@@ -10,17 +10,20 @@ import (
 )
 
 type MatchingService struct {
-	queries *repository.Queries
-	ctx     context.Context
+	queries      *repository.Queries
+	ctx          context.Context
+	supabaseSync *SupabaseSyncService
 }
 
 func NewMatchingService(conn *pgxpool.Pool) *MatchingService {
 	queries := repository.New(conn)
 	ctx := context.Background()
+	supabaseSync := NewSupabaseSyncService(queries)
 
 	return &MatchingService{
-		queries: queries,
-		ctx:     ctx,
+		queries:      queries,
+		ctx:          ctx,
+		supabaseSync: supabaseSync,
 	}
 }
 
@@ -255,6 +258,12 @@ func (s *MatchingService) createGroup(request repository.ActivityRequest, match 
 		if err != nil {
 			return err
 		}
+	}
+
+	// Sync to Supabase after creating group with all members
+	if syncErr := s.supabaseSync.SyncGroupMembers(groupID.ID); syncErr != nil {
+		// Log error but don't fail the operation
+		fmt.Printf("WARN: Failed to sync group members to Supabase: %v\n", syncErr)
 	}
 
 	for _, member := range members {
