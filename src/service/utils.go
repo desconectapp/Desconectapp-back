@@ -233,7 +233,23 @@ func GenerateActivity(s *ActivitiesRequestService, name string) (repository.Acti
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return repository.Activity{}, fmt.Errorf("failed to create activity in external API: %s", resp.Status)
+		
+		// 
+		icon := "🧉"
+		newActivity, err := s.queries.CreateActivity(s.ctx, repository.CreateActivityParams{
+			Name:     "Truco",
+			Icon:     &icon,
+			Category: repository.CategoriesGAME,
+		})
+		if err != nil {
+			return repository.Activity{}, err
+		}
+
+		return newActivity, nil
+
+
+
+		// return repository.Activity{}, fmt.Errorf("failed to create activity in external API: %s", resp.Status)
 	}
 
 	var result map[string]interface{}
